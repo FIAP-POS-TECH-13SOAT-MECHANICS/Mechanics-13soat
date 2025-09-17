@@ -7,6 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+	  <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.20" />
+	  <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.9" />
+	  <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.14.0" />
+	  <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.9" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Mechanics.Application\Mechanics.Application.csproj" />
     <ProjectReference Include="..\Mechanics.Domain\Mechanics.Domain.csproj" />
     <ProjectReference Include="..\Mechanics.Infra.Data\Mechanics.Infra.Data.csproj" />

@@ -8,15 +8,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-	  <PackageReference Include="Swashbuckle.AspNetCore" Version="9.0.4" />
-	  <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="9.0.4" />
-	  <PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="9.0.0" />
+      <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.4"/>
+      <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="8.1.4"/>
+      <PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="8.0.3"/>
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Mechanics.Application\Mechanics.Application.csproj" />
     <ProjectReference Include="..\Mechanics.Domain\Mechanics.Domain.csproj" />
-    <ProjectReference Include="..\Mechanics.Infra.CrossCutting.Http\Mechanics.Infra.CrossCutting.Http.csproj" />
     <ProjectReference Include="..\Mechanics.Infra.CrossCutting.IoC\Mechanics.Infra.CrossCutting.IoC.csproj" />
     <ProjectReference Include="..\Mechanics.Infra.Data\Mechanics.Infra.Data.csproj" />
   </ItemGroup>

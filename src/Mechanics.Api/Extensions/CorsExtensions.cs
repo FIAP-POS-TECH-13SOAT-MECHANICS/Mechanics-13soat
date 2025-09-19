@@ -1,21 +1,20 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-namespace Mechanics.Api.Extensions
+namespace Mechanics.Api.Extensions;
+
+[ExcludeFromCodeCoverage]
+public static class CorsExtensions
 {
-    [ExcludeFromCodeCoverage]
-    public static class CorsExtensions
+    public static void AddGlobalCorsPolicy(this IServiceCollection services)
     {
-        public static void AddGlobalCorsPolicy(this IServiceCollection services)
+        services.AddCors(options =>
         {
-            services.AddCors(options =>
+            options.AddPolicy("AllowAllOrigins", builder =>
             {
-                options.AddPolicy("AllowAllOrigins", builder =>
-                {
-                    builder.AllowAnyOrigin()
-                           .AllowAnyHeader()
-                           .AllowAnyMethod();
-                });
+                builder.AllowAnyOrigin()
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
             });
-        }
+        });
     }
 }

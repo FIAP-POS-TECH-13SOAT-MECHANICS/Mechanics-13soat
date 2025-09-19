@@ -8,10 +8,13 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerDocumentation();
 
-builder.Services.AddLocalHttpClients(builder.Configuration);
-builder.Services.AddLocalServices(builder.Configuration);
+builder.Services.AddDbContext(builder.Configuration)
+    .AddCustomAuthentication(builder.Configuration);
+
+builder.Services.AddHealthChecks()
+    .AddDbHealthCheck();
+
 builder.Services.AddGlobalCorsPolicy();
-builder.Services.AddCustomAuthentication(builder.Configuration);
 
 var app = builder.Build();
 
@@ -21,10 +24,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseRouting();
-app.UseHttpsRedirection();
 app.UseCors("AllowAllOrigins");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-app.Run();
+await app.ApplyMigrations();
+app.UseHealthChecks("/health");
+
+await app.RunAsync();

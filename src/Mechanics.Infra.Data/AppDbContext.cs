@@ -1,0 +1,52 @@
+﻿using Mechanics.Domain.Base;
+using Mechanics.Domain.Customers;
+using Mechanics.Domain.Products;
+using Mechanics.Domain.Vehicles;
+using Mechanics.Domain.WorkOrders;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
+using System.Reflection;
+
+namespace Mechanics.Infra.Data;
+
+public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
+{
+    public DbSet<Customer> Customers { get; set; }
+    public DbSet<Product> Products { get; set; }
+    public DbSet<Vehicle> Vehicles { get; set; }
+    public DbSet<WorkOrder> WorkOrders { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        base.OnModelCreating(modelBuilder);
+
+        modelBuilder.HasDefaultSchema("Mechanics");
+
+        ConfigureAbstractEntities(modelBuilder);
+        modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+    }
+
+    /// <summary>
+    ///     Configuração dos atributos padrão nas entidades do domínio.
+    /// </summary>
+    private static void ConfigureAbstractEntities(ModelBuilder modelBuilder)
+    {
+        var entityTypes = modelBuilder.Model.GetEntityTypes()
+            .Where(type => typeof(AbstractEntity).IsAssignableFrom(type.ClrType));
+
+        foreach (var entityType in entityTypes)
+        {
+            modelBuilder.Entity(entityType.ClrType)
+                .Property(nameof(AbstractEntity.Id))
+                .HasDefaultValueSql("NEWID()")
+                .ValueGeneratedOnAdd();
+
+            modelBuilder.Entity(entityType.ClrType)
+                .Property(nameof(AbstractEntity.CreationDate))
+                .IsRequired()
+                .HasDefaultValueSql("SYSDATETIME()")
+                .ValueGeneratedOnAdd()
+                .Metadata.SetAfterSaveBehavior(PropertySaveBehavior.Ignore);
+        }
+    }
+}

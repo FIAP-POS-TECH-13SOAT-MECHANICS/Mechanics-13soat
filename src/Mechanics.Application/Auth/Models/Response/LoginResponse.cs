@@ -1,8 +1,7 @@
-﻿namespace Mechanics.Application.Auth.Models.Response
+﻿namespace Mechanics.Application.Auth.Models.Response;
+
+public record LoginResponse
 {
-    public record LoginResponse
-    {
-        public string Token { get; set; } = string.Empty;
-        public DateTime Expiration { get; set; }
-    }
+    public string Token { get; set; } = string.Empty;
+    public DateTime Expiration { get; set; }
 }

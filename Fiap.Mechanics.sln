@@ -9,8 +9,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mechanics.Application", "sr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mechanics.Domain", "src\Mechanics.Domain\Mechanics.Domain.csproj", "{A3FD5009-1437-4B63-8BC2-BB3C40F8B1F4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mechanics.Infra.CrossCutting.Http", "src\Mechanics.Infra.CrossCutting.Http\Mechanics.Infra.CrossCutting.Http.csproj", "{830C9ABA-F18A-47F5-B9F9-1E3384293D2C}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mechanics.Infra.CrossCutting.IoC", "src\Mechanics.Infra.CrossCutting.IoC\Mechanics.Infra.CrossCutting.IoC.csproj", "{3D6DE6E4-E925-408D-BD42-AB663364A415}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mechanics.Infra.Data", "src\Mechanics.Infra.Data\Mechanics.Infra.Data.csproj", "{D6FAE2AC-925F-492F-844E-3F8A6E12A566}"
@@ -28,6 +26,16 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "4. Infra Layer", "4. Infra Layer", "{13D1DC0A-156D-4EA3-8057-455165F1AE9B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "5. Tests Layer", "5. Tests Layer", "{E428325E-4AFE-4E4F-BECD-056D9745D20B}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0. Solution Items", "0. Solution Items", "{22DCD109-03AE-40ED-842C-0D5CCCBB6ED4}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+		.editorconfig = .editorconfig
+		.gitignore = .gitignore
+		docker-compose.yml = docker-compose.yml
+		Dockerfile = Dockerfile
+		global.json = global.json
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -47,10 +55,6 @@ Global
 		{A3FD5009-1437-4B63-8BC2-BB3C40F8B1F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A3FD5009-1437-4B63-8BC2-BB3C40F8B1F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A3FD5009-1437-4B63-8BC2-BB3C40F8B1F4}.Release|Any CPU.Build.0 = Release|Any CPU
-		{830C9ABA-F18A-47F5-B9F9-1E3384293D2C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{830C9ABA-F18A-47F5-B9F9-1E3384293D2C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{830C9ABA-F18A-47F5-B9F9-1E3384293D2C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{830C9ABA-F18A-47F5-B9F9-1E3384293D2C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3D6DE6E4-E925-408D-BD42-AB663364A415}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3D6DE6E4-E925-408D-BD42-AB663364A415}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3D6DE6E4-E925-408D-BD42-AB663364A415}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -75,7 +79,6 @@ Global
 		{D91A88B0-ADB0-4D7B-9550-33D471F2F7B4} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{A4620C27-BB24-4973-B416-55F366B98BE1} = {34FF84DD-21BD-4B72-95E3-AAB30DB89BB9}
 		{A3FD5009-1437-4B63-8BC2-BB3C40F8B1F4} = {C2CC87FA-CDB0-428E-B64C-3EE3D60162F7}
-		{830C9ABA-F18A-47F5-B9F9-1E3384293D2C} = {13D1DC0A-156D-4EA3-8057-455165F1AE9B}
 		{3D6DE6E4-E925-408D-BD42-AB663364A415} = {13D1DC0A-156D-4EA3-8057-455165F1AE9B}
 		{D6FAE2AC-925F-492F-844E-3F8A6E12A566} = {13D1DC0A-156D-4EA3-8057-455165F1AE9B}
 		{94844BF3-F9EB-4CBD-ACD4-C1215470DD9D} = {E428325E-4AFE-4E4F-BECD-056D9745D20B}

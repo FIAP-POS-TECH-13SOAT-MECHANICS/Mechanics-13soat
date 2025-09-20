@@ -9,7 +9,7 @@ Repositório do projeto destinado aos Tech Challenges da Oficina Mecânica da FI
 
 ## Execução via Docker
 
-1. Rode o comando `docker compose up -d` na raiz do projeto.
+1. Rode o comando `docker compose up -d --build` na raiz do projeto.
 2. Aguarde o processo concluir e acesse `http://localhost:5000/swagger`.
 
 ### Configurações locais

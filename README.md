@@ -44,3 +44,26 @@ Utilize sempre nomes em PascalCase, sem acentos ou espaços.
 As migrações serão aplicadas automaticamente ao iniciar a aplicação.
 
 `dotnet ef migrations add <NomeDaMigration> --project src\Mechanics.Infra.Data --startup-project src\Mechanics.Api`
+
+## Use-cases
+
+Os casos de uso são implementados no projeto [Mechanics.Application](src/Mechanics.Application) através da biblioteca
+MediatR [(documentação)](https://github.com/LuckyPennySoftware/MediatR/wiki), seguindo o seguinte padrão:
+
+```text
+Mechanics.Application
+└── [domínio]
+    ├── Handlers
+    ├── Requests
+    └── Responses
+```
+
+- **Request**
+    - É a requisição recebida pela controller.
+    - Deve implementar a interface `IRequest<TResponse>`
+    - Pode conter validações.
+- **Response**
+    - É a resposta retornada à controller.
+- **Handler**
+    - Executa a operação seguindo as regras de negócio.
+    - Implementa a interface `IRequestHandler<TRequest, TResponse>`.

@@ -1,4 +1,5 @@
-﻿using Microsoft.OpenApi.Models;
+﻿using Mechanics.Application.Auth.Handlers;
+using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
 using System.Reflection;
 
@@ -14,7 +15,7 @@ public static class SwaggerSetupExtensions
             {
                 Title = "Mechanics API",
                 Version = "v1",
-                Description = "Exemplo com autenticação JWT"
+                Description = "Exemplo com autenticação JWT",
             });
 
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
@@ -24,7 +25,7 @@ public static class SwaggerSetupExtensions
                 Scheme = "bearer",
                 BearerFormat = "JWT",
                 In = ParameterLocation.Header,
-                Description = "Digite o token JWT desta forma: Bearer {seu token}"
+                Description = "Digite o token JWT desta forma: Bearer {seu token}",
             });
 
             c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -35,16 +36,18 @@ public static class SwaggerSetupExtensions
                         Reference = new OpenApiReference
                         {
                             Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
+                            Id = "Bearer",
+                        },
                     },
                     Array.Empty<string>()
-                }
+                },
             });
 
-            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-            c.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
+            var apiXmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, apiXmlFile), includeControllerXmlComments: true);
+            var applicationXmlFile = new FileInfo(typeof(LoginHandler).Assembly.Location);
+            c.IncludeXmlComments(Path.Combine(applicationXmlFile.DirectoryName!,
+                applicationXmlFile.Name.Replace("dll", "xml")));
 
             c.EnableAnnotations();
             c.ExampleFilters();

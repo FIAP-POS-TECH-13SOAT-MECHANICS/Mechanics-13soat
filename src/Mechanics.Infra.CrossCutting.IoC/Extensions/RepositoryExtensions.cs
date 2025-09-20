@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Mechanics.Infra.CrossCutting.IoC;
+namespace Mechanics.Infra.CrossCutting.IoC.Extensions;
 
 public static class RepositoryExtensions
 {

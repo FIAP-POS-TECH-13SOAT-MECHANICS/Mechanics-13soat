@@ -1,5 +1,5 @@
 using Mechanics.Api.Extensions;
-using Mechanics.Infra.CrossCutting.IoC;
+using Mechanics.Infra.CrossCutting.IoC.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,7 +9,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerDocumentation();
 
 builder.Services.AddDbContext(builder.Configuration)
-    .AddCustomAuthentication(builder.Configuration);
+    .AddCustomAuthentication(builder.Configuration)
+    .AddApplicationServices(builder.Configuration);
 
 builder.Services.AddHealthChecks()
     .AddDbHealthCheck();

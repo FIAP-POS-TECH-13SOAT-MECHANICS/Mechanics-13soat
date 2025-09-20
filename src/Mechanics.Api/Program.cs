@@ -1,9 +1,14 @@
+using Mechanics.Api.Conventions;
 using Mechanics.Api.Extensions;
 using Mechanics.Infra.CrossCutting.IoC.Extensions;
+using Microsoft.AspNetCore.Mvc.ApplicationModels;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    options.Conventions.Add(new RouteTokenTransformerConvention(new KebabCaseParameterTransformer()));
+});
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerDocumentation();

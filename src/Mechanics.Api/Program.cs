@@ -33,7 +33,8 @@ app.UseRouting();
 app.UseCors("AllowAllOrigins");
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
+app.MapControllers()
+    .RequireAuthorization();
 
 await app.ApplyMigrations();
 app.UseHealthChecks("/health");

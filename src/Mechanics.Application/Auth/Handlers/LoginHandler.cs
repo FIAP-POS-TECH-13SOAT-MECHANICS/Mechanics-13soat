@@ -1,6 +1,7 @@
 ﻿using Mechanics.Application.Auth.Requests;
 using Mechanics.Application.Auth.Responses;
 using Mechanics.Application.Options;
+using Mechanics.Domain.Auth;
 using MediatR;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -25,7 +26,7 @@ public class LoginHandler(IOptions<JwtOptions> jwtOptions) : IRequestHandler<Log
         {
             new("id", "123456789"),
             new("username", "Teste"),
-            new(ClaimTypes.Role, "Admin"),
+            new(ClaimTypes.Role, RoleNames.Administrator),
         };
 
         var expiration = DateTime.UtcNow.AddMinutes(_options.AccessTokenLifetime);

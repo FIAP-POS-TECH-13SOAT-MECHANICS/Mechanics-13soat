@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Mechanics.Api.Controllers;
@@ -9,7 +8,6 @@ namespace Mechanics.Api.Controllers;
 /// <param name="logger"></param>
 [ApiController]
 [Route("[controller]")]
-[Authorize]
 public class WeatherForecastController(ILogger<WeatherForecastController> logger) : ControllerBase
 {
     private static readonly string[] Summaries =

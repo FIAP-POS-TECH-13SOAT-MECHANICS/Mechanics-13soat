@@ -10,9 +10,11 @@ public class GetRolesHandler(AppDbContext dbContext) : IRequestHandler<GetRolesR
 {
     public async Task<GetRolesResponse> Handle(GetRolesRequest request, CancellationToken cancellationToken)
     {
-        var roles = await dbContext.Roles.ToListAsync(cancellationToken: cancellationToken);
-        var roleResponses = roles.Select(role => new RoleResponse { Id = role.Id, Name = role.Name });
+        var roles = await dbContext.Roles
+            .AsNoTracking()
+            .Select(role => new RoleResponse { Id = role.Id, Name = role.Name })
+            .ToListAsync(cancellationToken: cancellationToken);
 
-        return new GetRolesResponse(roleResponses);
+        return new GetRolesResponse(roles);
     }
 }

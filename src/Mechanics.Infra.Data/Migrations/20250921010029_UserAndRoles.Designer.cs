@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Mechanics.Infra.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250920220351_UserAndRoles")]
+    [Migration("20250921010029_UserAndRoles")]
     partial class UserAndRoles
     {
         /// <inheritdoc />
@@ -55,19 +55,19 @@ namespace Mechanics.Infra.Data.Migrations
                         {
                             Id = new Guid("2afde195-550b-498e-a63d-7a6d556b25ba"),
                             CreationDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Administrador"
+                            Name = "ADMINISTRATOR"
                         },
                         new
                         {
                             Id = new Guid("a1097867-aa3e-416c-8685-190516b62a12"),
                             CreationDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Atendente"
+                            Name = "ATTENDANT"
                         },
                         new
                         {
                             Id = new Guid("f6027484-89a4-49f6-a9cb-4d1733c2bab7"),
                             CreationDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Name = "Mecânico"
+                            Name = "MECHANIC"
                         });
                 });
 
@@ -91,11 +91,19 @@ namespace Mechanics.Infra.Data.Migrations
                     b.Property<Guid>("RoleId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("UserName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("FullName");
 
                     b.HasIndex("RoleId");
+
+                    b.HasIndex("UserName")
+                        .IsUnique();
 
                     b.ToTable("Users", "Mechanics");
                 });

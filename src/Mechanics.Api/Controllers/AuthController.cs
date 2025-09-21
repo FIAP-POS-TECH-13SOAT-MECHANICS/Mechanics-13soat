@@ -1,5 +1,7 @@
 ﻿using Mechanics.Application.Auth.Requests;
 using Mechanics.Application.Auth.Responses;
+using Mechanics.Application.Generic;
+using Mechanics.Domain.Auth;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,7 +15,7 @@ namespace Mechanics.Api.Controllers;
 [ApiController]
 [ApiExplorerSettings(GroupName = "v1")]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Roles = RoleNames.Administrator)]
 public class AuthController(IMediator mediator) : ControllerBase
 {
     /// <summary>
@@ -42,6 +44,35 @@ public class AuthController(IMediator mediator) : ControllerBase
     public async Task<IActionResult> GetRolesAsync()
     {
         var response = await mediator.Send(new GetRolesRequest());
+        return Ok(response);
+    }
+
+    /// <summary>
+    ///     Cria um novo usuário.
+    /// </summary>
+    [HttpPost("user")]
+    [Consumes(typeof(CreateUserRequest), "application/json")]
+    [Produces("application/json", Type = typeof(CreateItemResponse))]
+    [ProducesResponseType(typeof(CreateItemResponse), (int)HttpStatusCode.Created)]
+    [ProducesResponseType((int)HttpStatusCode.BadRequest)]
+    public async Task<IActionResult> CreateUserAsync(CreateUserRequest request)
+    {
+        var response = await mediator.Send(request);
+        return StatusCode((int)HttpStatusCode.Created, response);
+    }
+
+    /// <summary>
+    ///     Busca um usuário.
+    /// </summary>
+    [HttpPost("user/{id:guid}")]
+    [Produces("application/json", Type = typeof(GetUserResponse))]
+    [ProducesResponseType(typeof(GetUserResponse), (int)HttpStatusCode.OK)]
+    public async Task<IActionResult> GetUserAsync(Guid id)
+    {
+        var response = await mediator.Send(new GetUserRequest { Id = id });
+        if (response is null)
+            return NotFound();
+
         return Ok(response);
     }
 }

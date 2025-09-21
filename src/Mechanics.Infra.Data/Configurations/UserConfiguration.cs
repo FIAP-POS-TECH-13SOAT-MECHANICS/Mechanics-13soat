@@ -13,6 +13,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired();
         builder.HasIndex(entity => entity.FullName);
 
+        builder.Property(entity => entity.UserName)
+            .HasMaxLength(100)
+            .IsRequired();
+        builder.HasIndex(entity => entity.UserName).IsUnique();
+
         builder.HasOne(entity => entity.Role)
             .WithMany()
             .HasForeignKey(entity => entity.RoleId)

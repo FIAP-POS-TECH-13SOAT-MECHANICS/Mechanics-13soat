@@ -8,7 +8,7 @@ namespace Mechanics.Application.Auth.Handlers;
 
 public class GetUserHandler(AppDbContext dbContext) : IRequestHandler<GetUserRequest, GetUserResponse?>
 {
-    public async Task<GetUserResponse?> Handle(GetUserRequest request, CancellationToken cancellationToken)
+    public async Task<GetUserResponse?> Handle(GetUserRequest request, CancellationToken cancellationToken = default)
     {
         var user = await dbContext.Users
             .AsNoTracking()

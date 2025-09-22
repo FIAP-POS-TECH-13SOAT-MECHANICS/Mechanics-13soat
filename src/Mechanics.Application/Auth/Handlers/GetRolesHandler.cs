@@ -8,7 +8,7 @@ namespace Mechanics.Application.Auth.Handlers;
 
 public class GetRolesHandler(AppDbContext dbContext) : IRequestHandler<GetRolesRequest, GetRolesResponse>
 {
-    public async Task<GetRolesResponse> Handle(GetRolesRequest request, CancellationToken cancellationToken)
+    public async Task<GetRolesResponse> Handle(GetRolesRequest request, CancellationToken cancellationToken = default)
     {
         var roles = await dbContext.Roles
             .AsNoTracking()

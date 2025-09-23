@@ -1,11 +1,13 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
 
-namespace Mechanics.Api.Conventions;
+namespace Mechanics.Api.Extensions;
 
 /// <summary>
 /// Transforms route tokens like controller/action names from PascalCase to kebab-case.
 /// Example: "WeatherForecast" -> "weather-forecast"
 /// </summary>
+[ExcludeFromCodeCoverage]
 public partial class KebabCaseParameterTransformer : IOutboundParameterTransformer
 {
     public string? TransformOutbound(object? value)

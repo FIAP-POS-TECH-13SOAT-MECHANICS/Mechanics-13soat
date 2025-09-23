@@ -1,7 +1,7 @@
-using Mechanics.Api.Conventions;
 using Mechanics.Api.Extensions;
 using Mechanics.Infra.CrossCutting.IoC.Extensions;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
+using KebabCaseParameterTransformer = Mechanics.Api.Extensions.KebabCaseParameterTransformer;
 
 namespace Mechanics.Api;
 

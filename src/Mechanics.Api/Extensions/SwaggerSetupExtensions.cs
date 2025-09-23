@@ -15,7 +15,7 @@ public static class SwaggerSetupExtensions
             {
                 Title = "Mechanics API",
                 Version = "v1",
-                Description = "Exemplo com autenticação JWT",
+                Description = "API para gestão de ordens de serviço.",
             });
 
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme

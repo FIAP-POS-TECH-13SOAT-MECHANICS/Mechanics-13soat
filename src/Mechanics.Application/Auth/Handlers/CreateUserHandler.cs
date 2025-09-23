@@ -1,5 +1,5 @@
 ﻿using Mechanics.Application.Auth.Requests;
-using Mechanics.Application.Generic;
+using Mechanics.Application.Utils;
 using Mechanics.Domain.Auth;
 using Mechanics.Infra.Data;
 using MediatR;

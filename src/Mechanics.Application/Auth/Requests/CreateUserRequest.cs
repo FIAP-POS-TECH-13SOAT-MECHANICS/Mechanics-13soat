@@ -1,4 +1,4 @@
-﻿using Mechanics.Application.Generic;
+﻿using Mechanics.Application.Utils;
 using MediatR;
 
 namespace Mechanics.Application.Auth.Requests;

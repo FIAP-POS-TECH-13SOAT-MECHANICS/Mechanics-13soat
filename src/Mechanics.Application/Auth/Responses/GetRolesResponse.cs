@@ -1,4 +1,4 @@
-﻿using Mechanics.Application.Generic;
+﻿using Mechanics.Application.Utils;
 
 namespace Mechanics.Application.Auth.Responses;
 

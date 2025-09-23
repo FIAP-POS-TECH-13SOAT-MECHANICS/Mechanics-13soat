@@ -1,6 +1,6 @@
 ﻿using Mechanics.Application.Auth.Requests;
 using Mechanics.Application.Auth.Responses;
-using Mechanics.Application.Generic;
+using Mechanics.Application.Utils;
 using Mechanics.Domain.Auth;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -34,7 +34,22 @@ public class UsersController(IMediator mediator) : ControllerBase
     }
 
     /// <summary>
-    ///     Busca um usuário.
+    ///     Busca usuários por nome.
+    /// </summary>
+    /// <response code="200">Consulta executada.</response>
+    /// <response code="400">Parâmetros inválidos.</response>
+    [HttpGet]
+    [Produces("application/json", Type = typeof(GetUsersResponse))]
+    [ProducesResponseType(typeof(GetUsersResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetUsers([FromQuery] GetUsersRequest request, CancellationToken cancellationToken = default)
+    {
+        var response = await mediator.Send(request, cancellationToken);
+        return Ok(response);
+    }
+
+    /// <summary>
+    ///     Busca um usuário pelo ID.
     /// </summary>
     /// <response code="200">Registro encontrado.</response>
     /// <response code="404">Registro não encontrado.</response>

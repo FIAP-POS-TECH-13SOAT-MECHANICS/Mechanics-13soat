@@ -3,40 +3,46 @@ using Mechanics.Api.Extensions;
 using Mechanics.Infra.CrossCutting.IoC.Extensions;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 
-var builder = WebApplication.CreateBuilder(args);
+namespace Mechanics.Api;
 
-builder.Services.AddControllers(options =>
+public class Program
 {
-    options.Conventions.Add(new RouteTokenTransformerConvention(new KebabCaseParameterTransformer()));
-});
-builder.Services.AddEndpointsApiExplorer();
+    public static async Task Main(string[] args)
+    {
+        var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddSwaggerDocumentation();
+        builder.Services.AddControllers(options =>
+            options.Conventions.Add(new RouteTokenTransformerConvention(new KebabCaseParameterTransformer())));
+        builder.Services.AddEndpointsApiExplorer();
 
-builder.Services.AddDbContext(builder.Configuration)
-    .AddCustomAuthentication(builder.Configuration)
-    .AddApplicationServices(builder.Configuration);
+        builder.Services.AddSwaggerDocumentation();
 
-builder.Services.AddHealthChecks()
-    .AddDbHealthCheck();
+        builder.Services.AddDbContext(builder.Configuration)
+            .AddCustomAuthentication(builder.Configuration)
+            .AddApplicationServices(builder.Configuration);
 
-builder.Services.AddGlobalCorsPolicy();
+        builder.Services.AddHealthChecks()
+            .AddDbHealthCheck();
 
-var app = builder.Build();
+        builder.Services.AddGlobalCorsPolicy();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwaggerDocumentation();
+        var app = builder.Build();
+
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwaggerDocumentation();
+        }
+
+        app.UseRouting();
+        app.UseCors("AllowAllOrigins");
+        app.UseAuthentication();
+        app.UseAuthorization();
+        app.MapControllers()
+            .RequireAuthorization();
+
+        await app.ApplyMigrations();
+        app.UseHealthChecks("/health");
+
+        await app.RunAsync();
+    }
 }
-
-app.UseRouting();
-app.UseCors("AllowAllOrigins");
-app.UseAuthentication();
-app.UseAuthorization();
-app.MapControllers()
-    .RequireAuthorization();
-
-await app.ApplyMigrations();
-app.UseHealthChecks("/health");
-
-await app.RunAsync();

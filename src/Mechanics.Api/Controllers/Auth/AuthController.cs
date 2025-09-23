@@ -28,9 +28,9 @@ public class AuthController(IMediator mediator) : ControllerBase
     [Produces("application/json", Type = typeof(LoginResponse))]
     [ProducesResponseType(typeof(LoginResponse), (int)HttpStatusCode.OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> LoginAsync(LoginRequest request)
+    public async Task<IActionResult> Login(LoginRequest request, CancellationToken cancellationToken)
     {
-        var response = await mediator.Send(request);
+        var response = await mediator.Send(request, cancellationToken);
         return response is not null ? Ok(response) : Unauthorized();
     }
 }

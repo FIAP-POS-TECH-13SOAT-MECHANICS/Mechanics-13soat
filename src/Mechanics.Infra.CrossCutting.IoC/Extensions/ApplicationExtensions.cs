@@ -10,8 +10,14 @@ public static class ApplicationExtensions
     {
         services.AddMediatR(config =>
         {
-            config.LicenseKey = configuration.GetValue<string>("MediatRLicenseKey");
+            config.LicenseKey = configuration.GetValue<string>("LuckyPennyLicenseKey");
             config.RegisterServicesFromAssembly(typeof(LoginHandler).Assembly);
+        });
+
+        services.AddAutoMapper(config =>
+        {
+            config.LicenseKey = configuration.GetValue<string>("LuckyPennyLicenseKey");
+            config.AddMaps(typeof(LoginHandler).Assembly);
         });
 
         return services;

@@ -22,9 +22,9 @@ public class RolesController(IMediator mediator) : ControllerBase
     [HttpGet]
     [Produces("application/json", Type = typeof(GetRolesResponse))]
     [ProducesResponseType(typeof(GetRolesResponse), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetRolesAsync()
+    public async Task<IActionResult> GetRoles(CancellationToken cancellationToken)
     {
-        var response = await mediator.Send(new GetRolesRequest());
+        var response = await mediator.Send(new GetRolesRequest(), cancellationToken);
         return Ok(response);
     }
 }

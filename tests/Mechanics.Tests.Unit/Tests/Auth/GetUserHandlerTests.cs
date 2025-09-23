@@ -1,4 +1,5 @@
-﻿using Mechanics.Application.Auth.Handlers;
+﻿using AutoMapper;
+using Mechanics.Application.Auth.Handlers;
 using Mechanics.Application.Auth.Requests;
 using Mechanics.Domain.Auth;
 using Mechanics.Tests.Unit.Helpers;
@@ -11,6 +12,8 @@ namespace Mechanics.Tests.Unit.Tests.Auth;
 [TestCategory("Users")]
 public class GetUserHandlerTests
 {
+    private readonly IMapper _mapper = AutoMapperFactory.CreateMap("Auth");
+
     [TestMethod("Retorna usuário quando o Id existe.")]
     public async Task It_ShouldReturnUser_WhenIdExists()
     {
@@ -23,7 +26,7 @@ public class GetUserHandlerTests
             .WithData(ctx => ctx.Users.Add(user))
             .Build();
 
-        var handler = new GetUserHandler(context);
+        var handler = new GetUserHandler(context, _mapper);
         var request = new GetUserRequest { Id = userId };
 
         // Act
@@ -44,7 +47,7 @@ public class GetUserHandlerTests
     {
         // Arrange
         await using var context = new DbContextTestBuilder().Build();
-        var handler = new GetUserHandler(context);
+        var handler = new GetUserHandler(context, _mapper);
         var request = new GetUserRequest { Id = Guid.NewGuid() };
 
         // Act

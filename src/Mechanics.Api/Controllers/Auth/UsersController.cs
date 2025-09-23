@@ -27,10 +27,10 @@ public class UsersController(IMediator mediator) : ControllerBase
     [Produces("application/json", Type = typeof(CreateItemResponse))]
     [ProducesResponseType(typeof(CreateItemResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> CreateUserAsync(CreateUserRequest request)
+    public async Task<IActionResult> CreateUser(CreateUserRequest request, CancellationToken cancellationToken = default)
     {
-        var response = await mediator.Send(request);
-        return StatusCode(StatusCodes.Status201Created, response);
+        var response = await mediator.Send(request, cancellationToken);
+        return CreatedAtAction(nameof(GetUser), new { id = response.CreatedId }, response);
     }
 
     /// <summary>
@@ -41,9 +41,9 @@ public class UsersController(IMediator mediator) : ControllerBase
     [HttpGet("{id:guid}")]
     [Produces("application/json", Type = typeof(GetUserResponse))]
     [ProducesResponseType(typeof(GetUserResponse), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetUserAsync(Guid id)
+    public async Task<IActionResult> GetUser(Guid id, CancellationToken cancellationToken = default)
     {
-        var response = await mediator.Send(new GetUserRequest { Id = id });
+        var response = await mediator.Send(new GetUserRequest { Id = id }, cancellationToken);
         if (response is null)
             return NotFound();
 

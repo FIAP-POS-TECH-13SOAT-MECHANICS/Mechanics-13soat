@@ -1,10 +1,8 @@
-﻿using Mechanics.Application.Auth.Responses;
-using Mechanics.Application.Utils;
-using MediatR;
+﻿using Mechanics.Application.Utils.PagedList;
 
 namespace Mechanics.Application.Auth.Requests;
 
-public class GetUsersRequest : PaginatedListRequest, IRequest<GetUsersResponse>
+public class GetUsersRequest : PaginatedListRequest
 {
     public string Name { get; init; } = "";
 }

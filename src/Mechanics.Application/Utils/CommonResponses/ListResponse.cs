@@ -1,4 +1,4 @@
-﻿namespace Mechanics.Application.Utils;
+﻿namespace Mechanics.Application.Utils.CommonResponses;
 
 public class ListResponse<T>(IEnumerable<T> items)
 {

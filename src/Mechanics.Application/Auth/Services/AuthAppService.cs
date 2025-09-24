@@ -1,21 +1,21 @@
 ﻿using Mechanics.Application.Auth.Requests;
 using Mechanics.Application.Auth.Responses;
 using Mechanics.Application.Options;
+using Mechanics.Application.Utils;
 using Mechanics.Domain.Auth;
-using MediatR;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace Mechanics.Application.Auth.Handlers;
+namespace Mechanics.Application.Auth.Services;
 
-public class LoginHandler(IOptions<JwtOptions> jwtOptions) : IRequestHandler<LoginRequest, LoginResponse?>
+public class AuthAppService(IOptions<JwtOptions> jwtOptions) : IAppService
 {
     private readonly JwtOptions _options = jwtOptions.Value;
 
-    public Task<LoginResponse?> Handle(LoginRequest request, CancellationToken cancellationToken)
+    public Task<LoginResponse?> Login(LoginRequest request, CancellationToken cancellationToken = default)
     {
         if (request.Password != "12345")
             return Task.FromResult<LoginResponse?>(null);
@@ -24,8 +24,8 @@ public class LoginHandler(IOptions<JwtOptions> jwtOptions) : IRequestHandler<Log
 
         var claims = new List<Claim>
         {
-            new("id", "123456789"),
-            new("username", "Teste"),
+            new("id", "1b0359c8-3e7c-42bb-b8cf-36d58957fb31"),
+            new("username", "Administrator"),
             new(ClaimTypes.Role, RoleNames.Administrator),
         };
 

@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace Mechanics.Application.Utils;
+namespace Mechanics.Application.Utils.PagedList;
 
 public static class PaginatedListQueryExtension
 {

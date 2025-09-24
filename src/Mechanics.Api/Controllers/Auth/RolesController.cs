@@ -1,7 +1,6 @@
-﻿using Mechanics.Application.Auth.Requests;
-using Mechanics.Application.Auth.Responses;
+﻿using Mechanics.Application.Auth.Responses;
+using Mechanics.Application.Auth.Services;
 using Mechanics.Domain.Auth;
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,7 +13,7 @@ namespace Mechanics.Api.Controllers.Auth;
 [ApiExplorerSettings(GroupName = "v1")]
 [Route("api/auth/[controller]")]
 [Authorize(Roles = RoleNames.Administrator)]
-public class RolesController(IMediator mediator) : ControllerBase
+public class RolesController(RolesAppService service) : ControllerBase
 {
     /// <summary>
     ///     Lista os perfis de acesso disponíveis.
@@ -24,7 +23,7 @@ public class RolesController(IMediator mediator) : ControllerBase
     [ProducesResponseType(typeof(GetRolesResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetRoles(CancellationToken cancellationToken)
     {
-        var response = await mediator.Send(new GetRolesRequest(), cancellationToken);
+        var response = await service.GetRoles(cancellationToken);
         return Ok(response);
     }
 }

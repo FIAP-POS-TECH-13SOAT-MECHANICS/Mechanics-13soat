@@ -1,4 +1,4 @@
-﻿using Mechanics.Application.Auth.Handlers;
+﻿using Mechanics.Application.Utils;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
 using System.Reflection;
@@ -45,7 +45,7 @@ public static class SwaggerSetupExtensions
 
             var apiXmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
             c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, apiXmlFile), includeControllerXmlComments: true);
-            var applicationXmlFile = new FileInfo(typeof(LoginHandler).Assembly.Location);
+            var applicationXmlFile = new FileInfo(typeof(IAppService).Assembly.Location);
             c.IncludeXmlComments(Path.Combine(applicationXmlFile.DirectoryName!,
                 applicationXmlFile.Name.Replace("dll", "xml")));
 

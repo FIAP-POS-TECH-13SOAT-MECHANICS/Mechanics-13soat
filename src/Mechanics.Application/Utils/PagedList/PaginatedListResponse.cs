@@ -1,4 +1,4 @@
-﻿namespace Mechanics.Application.Utils;
+﻿namespace Mechanics.Application.Utils.PagedList;
 
 public abstract class PaginatedListResponse<T>(IEnumerable<T> items, int totalCount)
 {

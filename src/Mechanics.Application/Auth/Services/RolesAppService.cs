@@ -1,15 +1,14 @@
 ﻿using AutoMapper;
-using Mechanics.Application.Auth.Requests;
 using Mechanics.Application.Auth.Responses;
+using Mechanics.Application.Utils;
 using Mechanics.Infra.Data;
-using MediatR;
 using Microsoft.EntityFrameworkCore;
 
-namespace Mechanics.Application.Auth.Handlers;
+namespace Mechanics.Application.Auth.Services;
 
-public class GetRolesHandler(AppDbContext dbContext, IMapper mapper) : IRequestHandler<GetRolesRequest, GetRolesResponse>
+public class RolesAppService(AppDbContext dbContext, IMapper mapper) : IAppService
 {
-    public async Task<GetRolesResponse> Handle(GetRolesRequest request, CancellationToken cancellationToken = default)
+    public async Task<GetRolesResponse> GetRoles(CancellationToken cancellationToken = default)
     {
         var roles = await dbContext.Roles
             .AsNoTracking()

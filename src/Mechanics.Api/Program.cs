@@ -19,7 +19,7 @@ public class Program
 
         builder.Services.AddDbContext(builder.Configuration)
             .AddCustomAuthentication(builder.Configuration)
-            .AddApplicationServices(builder.Configuration);
+            .AddAppServices(builder.Configuration);
 
         builder.Services.AddHealthChecks()
             .AddDbHealthCheck();

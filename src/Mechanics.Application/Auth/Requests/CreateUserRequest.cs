@@ -1,9 +1,6 @@
-﻿using Mechanics.Application.Utils;
-using MediatR;
+﻿namespace Mechanics.Application.Auth.Requests;
 
-namespace Mechanics.Application.Auth.Requests;
-
-public class CreateUserRequest : IRequest<CreateItemResponse>
+public class CreateUserRequest
 {
     /// <summary>
     ///     Nome completo do usuário.

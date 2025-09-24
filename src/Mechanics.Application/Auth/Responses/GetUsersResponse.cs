@@ -1,4 +1,4 @@
-﻿using Mechanics.Application.Utils;
+﻿using Mechanics.Application.Utils.PagedList;
 
 namespace Mechanics.Application.Auth.Responses;
 

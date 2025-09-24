@@ -1,6 +1,6 @@
 ﻿using Mechanics.Application.Auth.Requests;
 using Mechanics.Application.Auth.Responses;
-using MediatR;
+using Mechanics.Application.Auth.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
@@ -13,7 +13,7 @@ namespace Mechanics.Api.Controllers.Auth;
 [ApiController]
 [ApiExplorerSettings(GroupName = "v1")]
 [Route("api/auth")]
-public class AuthController(IMediator mediator) : ControllerBase
+public class AuthController(AuthAppService service) : ControllerBase
 {
     /// <summary>
     ///     Gera um token JWT para o usuário fornecido.
@@ -30,7 +30,7 @@ public class AuthController(IMediator mediator) : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
     public async Task<IActionResult> Login(LoginRequest request, CancellationToken cancellationToken)
     {
-        var response = await mediator.Send(request, cancellationToken);
+        var response = await service.Login(request, cancellationToken);
         return response is not null ? Ok(response) : Unauthorized();
     }
 }

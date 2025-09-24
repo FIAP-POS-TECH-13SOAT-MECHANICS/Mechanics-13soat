@@ -1,9 +1,6 @@
-﻿using Mechanics.Application.Auth.Responses;
-using MediatR;
+﻿namespace Mechanics.Application.Auth.Requests;
 
-namespace Mechanics.Application.Auth.Requests;
-
-public class LoginRequest : IRequest<LoginResponse?>
+public class LoginRequest
 {
     /// <summary>
     ///     Nome de usuário.

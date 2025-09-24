@@ -1,8 +1,8 @@
 ﻿using Mechanics.Application.Auth.Requests;
 using Mechanics.Application.Auth.Responses;
-using Mechanics.Application.Utils;
+using Mechanics.Application.Auth.Services;
+using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Domain.Auth;
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,7 +15,7 @@ namespace Mechanics.Api.Controllers.Auth;
 [ApiExplorerSettings(GroupName = "v1")]
 [Route("api/auth/[controller]")]
 [Authorize(Roles = RoleNames.Administrator)]
-public class UsersController(IMediator mediator) : ControllerBase
+public class UsersController(UserAppService service) : ControllerBase
 {
     /// <summary>
     ///     Cria um novo usuário.
@@ -29,7 +29,7 @@ public class UsersController(IMediator mediator) : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateUser(CreateUserRequest request, CancellationToken cancellationToken = default)
     {
-        var response = await mediator.Send(request, cancellationToken);
+        var response = await service.CreateUser(request, cancellationToken);
         return CreatedAtAction(nameof(GetUser), new { id = response.CreatedId }, response);
     }
 
@@ -44,7 +44,7 @@ public class UsersController(IMediator mediator) : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetUsers([FromQuery] GetUsersRequest request, CancellationToken cancellationToken = default)
     {
-        var response = await mediator.Send(request, cancellationToken);
+        var response = await service.GetUsers(request, cancellationToken);
         return Ok(response);
     }
 
@@ -58,7 +58,7 @@ public class UsersController(IMediator mediator) : ControllerBase
     [ProducesResponseType(typeof(GetUserResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUser(Guid id, CancellationToken cancellationToken = default)
     {
-        var response = await mediator.Send(new GetUserRequest { Id = id }, cancellationToken);
+        var response = await service.GetUser(new GetUserRequest { Id = id }, cancellationToken);
         if (response is null)
             return NotFound();
 

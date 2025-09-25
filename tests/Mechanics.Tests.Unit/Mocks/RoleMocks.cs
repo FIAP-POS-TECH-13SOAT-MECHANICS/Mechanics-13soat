@@ -18,4 +18,7 @@ public static class RoleMocks
 
     public static Role CreateMechanicRole(Guid id) =>
         new() { Id = id, Name = RoleNames.Mechanic };
+
+    public static Role CreateAdministratorRole(Guid id) =>
+        new() { Id = id, Name = RoleNames.Administrator };
 }

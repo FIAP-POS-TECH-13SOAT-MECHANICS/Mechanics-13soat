@@ -13,13 +13,13 @@ public static class UserMocks
             RoleId = roleId,
         };
 
-    public static User CreateUser(Guid userId, Role role)
+    public static User CreateUser(Guid userId, string name, Role role)
     {
         return new User
         {
             Id = userId,
-            FullName = "JOSÉ DA SILVA",
-            UserName = "jose.silva",
+            FullName = name.ToUpper(),
+            UserName = name.Replace(' ', '.').ToLower(),
             RoleId = role.Id,
             Role = role,
         };

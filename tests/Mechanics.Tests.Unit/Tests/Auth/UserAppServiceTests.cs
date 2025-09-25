@@ -66,7 +66,7 @@ public class UserAppServiceTests
         // Arrange
         var userId = Guid.NewGuid();
         var roleId = Guid.NewGuid();
-        var user = UserMocks.CreateUser(userId, RoleMocks.CreateMechanicRole(roleId));
+        var user = UserMocks.CreateUser(userId, "Maria da Silva", RoleMocks.CreateMechanicRole(roleId));
 
         await using var context = new DbContextTestBuilder()
             .WithData(ctx => ctx.Users.Add(user))
@@ -101,6 +101,84 @@ public class UserAppServiceTests
 
         // Assert
         Assert.IsNull(response);
+    }
+
+    #endregion
+
+    #region listar usuários
+
+    [TestMethod("Retorna lista de usuários.")]
+    public async Task It_ShouldReturnUsersList()
+    {
+        // Arrange
+        List<User> users =
+        [
+            UserMocks.CreateUser(Guid.NewGuid(), "Joao Silva", RoleMocks.CreateMechanicRole(Guid.NewGuid())),
+            UserMocks.CreateUser(Guid.NewGuid(), "Jose Silva", RoleMocks.CreateAdministratorRole(Guid.NewGuid())),
+        ];
+        await using var context = new DbContextTestBuilder().WithData(users).Build();
+        var handler = new UserAppService(context, _mapper);
+        var request = new GetUsersRequest { Page = 1, ItemsPerPage = 10 };
+
+        // Act
+        var response = await handler.GetUsers(request, TestContext.CancellationTokenSource.Token);
+
+        // Assert
+        Assert.IsNotNull(response);
+        Assert.AreEqual(users.Count, response.Items.Count());
+        Assert.AreEqual(users.Count, response.TotalCount);
+    }
+
+    [TestMethod("Retorna listas paginadas de usuários.")]
+    public async Task It_ShouldReturnUsersPaginatedList()
+    {
+        // Arrange
+        List<User> users =
+        [
+            UserMocks.CreateUser(Guid.NewGuid(), "Joao Silva", RoleMocks.CreateMechanicRole(Guid.NewGuid())),
+            UserMocks.CreateUser(Guid.NewGuid(), "Jose Silva", RoleMocks.CreateAdministratorRole(Guid.NewGuid())),
+        ];
+        await using var context = new DbContextTestBuilder().WithData(users).Build();
+        var handler = new UserAppService(context, _mapper);
+        var request1 = new GetUsersRequest { Page = 1, ItemsPerPage = 1 };
+        var request2 = new GetUsersRequest { Page = 2, ItemsPerPage = 1 };
+
+        // Act
+        var response1 = await handler.GetUsers(request1, TestContext.CancellationTokenSource.Token);
+        var response2 = await handler.GetUsers(request2, TestContext.CancellationTokenSource.Token);
+
+        // Assert
+        Assert.IsNotNull(response1);
+        Assert.AreEqual(1, response1.Items.Count());
+        Assert.AreEqual(2, response1.TotalCount);
+        Assert.Contains(user => user.Id == users[0].Id, response1.Items);
+        Assert.IsNotNull(response2);
+        Assert.AreEqual(1, response2.Items.Count());
+        Assert.AreEqual(2, response2.TotalCount);
+        Assert.Contains(user => user.Id == users[1].Id, response2.Items);
+    }
+
+    [TestMethod("Retorna lista paginada filtrando usuários pelo nome.")]
+    public async Task It_ShouldReturnUsers_WhenFilterByName()
+    {
+        // Arrange
+        List<User> users =
+        [
+            UserMocks.CreateUser(Guid.NewGuid(), "Joao Silva", RoleMocks.CreateMechanicRole(Guid.NewGuid())),
+            UserMocks.CreateUser(Guid.NewGuid(), "Jose Silva", RoleMocks.CreateAdministratorRole(Guid.NewGuid())),
+        ];
+        await using var context = new DbContextTestBuilder().WithData(users).Build();
+        var handler = new UserAppService(context, _mapper);
+        var request = new GetUsersRequest { Page = 1, ItemsPerPage = 10, Name = "joao" };
+
+        // Act
+        var response = await handler.GetUsers(request, TestContext.CancellationTokenSource.Token);
+
+        // Assert
+        Assert.IsNotNull(response);
+        Assert.AreEqual(1, response.Items.Count());
+        Assert.AreEqual(1, response.TotalCount);
+        Assert.Contains(user => user.Id == users[0].Id, response.Items);
     }
 
     #endregion

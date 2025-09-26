@@ -18,12 +18,7 @@ public class UserAppService(AppDbContext dbContext, IMapper mapper) : IAppServic
         if (!roleExists)
             throw new KeyNotFoundException("Role not found");
 
-        var entity = new User
-        {
-            FullName = request.FullName,
-            UserName = request.UserName,
-            RoleId = request.RoleId,
-        };
+        var entity = mapper.Map<User>(request);
 
         await dbContext.Users.AddAsync(entity, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);

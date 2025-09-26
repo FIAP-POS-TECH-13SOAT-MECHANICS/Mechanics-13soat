@@ -1,4 +1,4 @@
-# Mechanics-13soat
+# Fiap.Mechanics
 
 Repositório do projeto destinado aos Tech Challenges da Oficina Mecânica da FIAP.
 
@@ -47,23 +47,40 @@ As migrações serão aplicadas automaticamente ao iniciar a aplicação.
 
 ## Use-cases
 
-Os casos de uso são implementados no projeto [Mechanics.Application](src/Mechanics.Application) através da biblioteca
-MediatR [(documentação)](https://github.com/LuckyPennySoftware/MediatR/wiki), seguindo o seguinte padrão:
+Os casos de uso são implementados no projeto [Mechanics.Application](src/Mechanics.Application) seguindo o seguinte
+padrão:
 
 ```text
 Mechanics.Application
-└── [domínio]
-    ├── Handlers
+└── [Domínio]
     ├── Requests
-    └── Responses
+    |   └── Get[Entidade]Request.cs
+    ├── Responses
+    |   └── Get[Entidade]Response.cs
+    ├── Services
+    |   └── [Entidade]AppService.cs
+    └── [Domínio]MapperProfile.cs
 ```
 
 - **Request**
     - É a requisição recebida pela controller.
-    - Deve implementar a interface `IRequest<TResponse>`
     - Pode conter validações.
 - **Response**
     - É a resposta retornada à controller.
-- **Handler**
+- **Service**
     - Executa a operação seguindo as regras de negócio.
-    - Implementa a interface `IRequestHandler<TRequest, TResponse>`.
+    - Implementa a interface `IAppService` (configura automaticamente a injeção de dependência).
+    - Devem ser agrupados por entidade de domínio.
+- **MapperProfile**
+    - Configura o mapeamento entre as entidades e os DTOs de request e response.
+    - Estende a classe `AutoMapper.Profile`.
+    - Request e response devem estar em DTOs separados (não utilize `ReverseMap()`).
+    - Mantenha o arquivo em ordem alfabética e separe os DTOs de cada entidade com uma linha em branco.
+
+### DTOs comuns
+
+O namespace `Application.Utils` contém algumas classes que podem ser utilizadas em diferentes contextos:
+
+- `CreateItemResponse`: Retorna o ID de um objeto recém-criado.
+- `ListResponse`: Encapsula uma lista de objetos.
+- `PagedList`: Padroniza consulta de itens utilizando paginação.

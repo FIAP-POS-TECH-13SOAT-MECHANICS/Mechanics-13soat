@@ -7,6 +7,10 @@ namespace Mechanics.Api;
 
 public class Program
 {
+    protected Program()
+    {
+    }
+
     public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
@@ -28,11 +32,6 @@ public class Program
 
         var app = builder.Build();
 
-        if (app.Environment.IsDevelopment())
-        {
-            app.UseSwaggerDocumentation();
-        }
-
         app.UseRouting();
         app.UseCors("AllowAllOrigins");
         app.UseAuthentication();
@@ -40,7 +39,12 @@ public class Program
         app.MapControllers()
             .RequireAuthorization();
 
-        await app.ApplyMigrations();
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseSwaggerDocumentation();
+            await app.ApplyMigrations();
+        }
+
         app.UseHealthChecks("/health");
 
         await app.RunAsync();

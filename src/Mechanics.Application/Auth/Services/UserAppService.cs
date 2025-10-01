@@ -19,6 +19,7 @@ public class UserAppService(AppDbContext dbContext, IMapper mapper) : IAppServic
             throw new KeyNotFoundException("Role not found");
 
         var entity = mapper.Map<User>(request);
+        entity.Normalize();
 
         await dbContext.Users.AddAsync(entity, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -60,6 +61,7 @@ public class UserAppService(AppDbContext dbContext, IMapper mapper) : IAppServic
         user.FullName = request.FullName ?? user.FullName;
         user.UserName = request.UserName ?? user.UserName;
         user.RoleId = request.RoleId ?? user.RoleId;
+        user.Normalize();
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return new UpdateItemResponse();

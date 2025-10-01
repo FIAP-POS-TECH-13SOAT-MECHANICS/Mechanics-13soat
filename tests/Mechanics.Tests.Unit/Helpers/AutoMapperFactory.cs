@@ -11,7 +11,7 @@ public static class AutoMapperFactory
         var config = new MapperConfiguration(cfg =>
         {
             var profiles = typeof(AuthMapperProfile).Assembly.GetTypes()
-                .Where(type => type.Namespace!.Contains(domain) && type.BaseType == typeof(Profile));
+                .Where(type => (type.Namespace?.Contains(domain) ?? false) && type.BaseType == typeof(Profile));
 
             foreach (var profile in profiles)
                 cfg.AddProfile(profile);

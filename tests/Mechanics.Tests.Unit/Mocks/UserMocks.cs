@@ -5,13 +5,16 @@ namespace Mechanics.Tests.Unit.Mocks;
 
 public static class UserMocks
 {
-    public static CreateUserRequest BuildRequest(Guid roleId) =>
+    public static CreateUserRequest BuildCreateRequest(Guid roleId) =>
         new()
         {
             FullName = "MARIA FERNANDA SOUZA",
             UserName = "maria.souza",
             RoleId = roleId,
         };
+
+    public static UpdateUserRequest BuildUpdateRequest(Guid roleId) =>
+        new() { RoleId = roleId };
 
     public static User CreateUser(Guid userId, string name, Role role)
     {

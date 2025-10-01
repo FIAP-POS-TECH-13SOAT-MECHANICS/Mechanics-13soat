@@ -29,7 +29,7 @@ public class UsersController(UserAppService service) : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateUser(CreateUserRequest request, CancellationToken cancellationToken = default)
     {
-        var response = await service.CreateUser(request, cancellationToken);
+        var response = await service.Create(request, cancellationToken);
         return CreatedAtAction(nameof(GetUser), new { id = response.CreatedId }, response);
     }
 
@@ -44,7 +44,7 @@ public class UsersController(UserAppService service) : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> GetUsers([FromQuery] GetUsersRequest request, CancellationToken cancellationToken = default)
     {
-        var response = await service.GetUsers(request, cancellationToken);
+        var response = await service.GetList(request, cancellationToken);
         return Ok(response);
     }
 
@@ -58,10 +58,26 @@ public class UsersController(UserAppService service) : ControllerBase
     [ProducesResponseType(typeof(GetUserResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUser(Guid id, CancellationToken cancellationToken = default)
     {
-        var response = await service.GetUser(new GetUserRequest { Id = id }, cancellationToken);
+        var response = await service.Get(new GetUserRequest { Id = id }, cancellationToken);
         if (response is null)
             return NotFound();
 
         return Ok(response);
+    }
+
+    /// <summary>
+    ///     Atualiza um usuário.
+    /// </summary>
+    /// <response code="200">Registro atualizado.</response>
+    /// <response code="400">Registro inválido.</response>
+    [HttpPut("/{id:guid}")]
+    [Consumes(typeof(CreateUserRequest), "application/json")]
+    [Produces("application/json", Type = typeof(CreateItemResponse))]
+    [ProducesResponseType(typeof(CreateItemResponse), StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateUser(Guid id, UpdateUserRequest request, CancellationToken cancellationToken = default)
+    {
+        var response = await service.Update(id, request, cancellationToken);
+        return response is null ? NotFound() : NoContent();
     }
 }

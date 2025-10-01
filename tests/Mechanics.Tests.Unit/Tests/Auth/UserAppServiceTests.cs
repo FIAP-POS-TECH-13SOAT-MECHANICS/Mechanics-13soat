@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Mechanics.Application.Auth.Requests;
 using Mechanics.Application.Auth.Services;
+using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Domain.Auth;
 using Mechanics.Tests.Unit.Helpers;
 using Mechanics.Tests.Unit.Mocks;
@@ -27,10 +28,10 @@ public class UserAppServiceTests
             .WithData(ctx => ctx.Roles.Add(new Role { Id = roleId, Name = RoleNames.Administrator }))
             .Build();
         var handler = new UserAppService(context, _mapper);
-        var request = UserMocks.BuildRequest(roleId);
+        var request = UserMocks.BuildCreateRequest(roleId);
 
         // Act
-        var response = await handler.CreateUser(request, CancellationToken.None);
+        var response = await handler.Create(request, CancellationToken.None);
 
         // Assert
         Assert.IsNotNull(response);
@@ -48,10 +49,10 @@ public class UserAppServiceTests
     {
         await using var context = new DbContextTestBuilder().Build();
         var handler = new UserAppService(context, _mapper);
-        var request = UserMocks.BuildRequest(new Guid("f2d59afa-6e85-4557-8ff1-733343ba83f8"));
+        var request = UserMocks.BuildCreateRequest(new Guid("f2d59afa-6e85-4557-8ff1-733343ba83f8"));
 
         var ex = await Assert.ThrowsExactlyAsync<KeyNotFoundException>(() => handler
-            .CreateUser(request, TestContext.CancellationTokenSource.Token));
+            .Create(request, TestContext.CancellationTokenSource.Token));
 
         Assert.AreEqual("Role not found", ex.Message);
     }
@@ -76,7 +77,7 @@ public class UserAppServiceTests
         var request = new GetUserRequest { Id = userId };
 
         // Act
-        var response = await handler.GetUser(request, TestContext.CancellationTokenSource.Token);
+        var response = await handler.Get(request, TestContext.CancellationTokenSource.Token);
 
         // Assert
         Assert.IsNotNull(response);
@@ -97,7 +98,7 @@ public class UserAppServiceTests
         var request = new GetUserRequest { Id = Guid.NewGuid() };
 
         // Act
-        var response = await handler.GetUser(request, CancellationToken.None);
+        var response = await handler.Get(request, CancellationToken.None);
 
         // Assert
         Assert.IsNull(response);
@@ -121,7 +122,7 @@ public class UserAppServiceTests
         var request = new GetUsersRequest { Page = 1, ItemsPerPage = 10 };
 
         // Act
-        var response = await handler.GetUsers(request, TestContext.CancellationTokenSource.Token);
+        var response = await handler.GetList(request, TestContext.CancellationTokenSource.Token);
 
         // Assert
         Assert.IsNotNull(response);
@@ -144,8 +145,8 @@ public class UserAppServiceTests
         var request2 = new GetUsersRequest { Page = 2, ItemsPerPage = 1 };
 
         // Act
-        var response1 = await handler.GetUsers(request1, TestContext.CancellationTokenSource.Token);
-        var response2 = await handler.GetUsers(request2, TestContext.CancellationTokenSource.Token);
+        var response1 = await handler.GetList(request1, TestContext.CancellationTokenSource.Token);
+        var response2 = await handler.GetList(request2, TestContext.CancellationTokenSource.Token);
 
         // Assert
         Assert.IsNotNull(response1);
@@ -172,13 +173,60 @@ public class UserAppServiceTests
         var request = new GetUsersRequest { Page = 1, ItemsPerPage = 10, Name = "joao" };
 
         // Act
-        var response = await handler.GetUsers(request, TestContext.CancellationTokenSource.Token);
+        var response = await handler.GetList(request, TestContext.CancellationTokenSource.Token);
 
         // Assert
         Assert.IsNotNull(response);
         Assert.AreEqual(1, response.Items.Count());
         Assert.AreEqual(1, response.TotalCount);
         Assert.Contains(user => user.Id == users[0].Id, response.Items);
+    }
+
+    #endregion
+
+    #region atualizar usuário
+
+    [TestMethod("Atualiza role do usuário quando outros dados são null.")]
+    public async Task It_ShouldUpdateUserRole_WhenOtherDataIsNull()
+    {
+        // Arrange
+        var mechanicId = Guid.NewGuid();
+        var administratorId = Guid.NewGuid();
+        var user = UserMocks.CreateUser(Guid.NewGuid(), "Maria da Silva", RoleMocks.CreateMechanicRole(mechanicId));
+        await using var context = new DbContextTestBuilder()
+            .WithData(ctx =>
+            {
+                ctx.Users.Add(user);
+                ctx.Roles.Add(RoleMocks.CreateAdministratorRole(administratorId));
+            })
+            .Build();
+        var userId = context.Users.First().Id;
+        var handler = new UserAppService(context, _mapper);
+        var request = UserMocks.BuildUpdateRequest(administratorId);
+
+        // Act
+        var response = await handler.Update(userId, request, CancellationToken.None);
+
+        // Assert
+        Assert.IsNotNull(response);
+        Assert.IsInstanceOfType<UpdateItemResponse>(response);
+        var updated = await context.Users.AsNoTracking().FirstOrDefaultAsync(TestContext.CancellationTokenSource.Token);
+        Assert.IsNotNull(updated);
+        Assert.AreEqual(user.FullName, updated.FullName);
+        Assert.AreEqual(user.UserName, updated.UserName);
+        Assert.AreEqual(administratorId, updated.RoleId);
+    }
+
+    [TestMethod("Retorna null quando o usuário não existe.")]
+    public async Task It_ShouldReturnNull_WhenUserDoesNotExist()
+    {
+        await using var context = new DbContextTestBuilder().Build();
+        var handler = new UserAppService(context, _mapper);
+        var request = UserMocks.BuildUpdateRequest(new Guid("f2d59afa-6e85-4557-8ff1-733343ba83f8"));
+
+        var response = await handler.Update(Guid.NewGuid(), request, TestContext.CancellationTokenSource.Token);
+
+        Assert.IsNull(response);
     }
 
     #endregion

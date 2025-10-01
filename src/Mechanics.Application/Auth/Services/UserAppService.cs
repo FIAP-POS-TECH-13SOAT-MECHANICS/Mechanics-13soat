@@ -12,7 +12,7 @@ namespace Mechanics.Application.Auth.Services;
 
 public class UserAppService(AppDbContext dbContext, IMapper mapper) : IAppService
 {
-    public async Task<CreateItemResponse> CreateUser(CreateUserRequest request, CancellationToken cancellationToken)
+    public async Task<CreateItemResponse> Create(CreateUserRequest request, CancellationToken cancellationToken)
     {
         var roleExists = await dbContext.Roles.AnyAsync(r => r.Id == request.RoleId, cancellationToken);
         if (!roleExists)
@@ -26,7 +26,7 @@ public class UserAppService(AppDbContext dbContext, IMapper mapper) : IAppServic
         return new CreateItemResponse { CreatedId = entity.Id };
     }
 
-    public async Task<GetUserResponse?> GetUser(GetUserRequest request, CancellationToken cancellationToken)
+    public async Task<GetUserResponse?> Get(GetUserRequest request, CancellationToken cancellationToken)
     {
         var user = await dbContext.Users
             .AsNoTracking()
@@ -36,7 +36,7 @@ public class UserAppService(AppDbContext dbContext, IMapper mapper) : IAppServic
         return user is null ? null : mapper.Map<GetUserResponse>(user);
     }
 
-    public async Task<GetUsersResponse> GetUsers(GetUsersRequest request, CancellationToken cancellationToken)
+    public async Task<GetUsersResponse> GetList(GetUsersRequest request, CancellationToken cancellationToken)
     {
         var normalizedName = request.Name.Trim().ToUpper();
         var emptyName = string.IsNullOrWhiteSpace(request.Name);
@@ -47,5 +47,21 @@ public class UserAppService(AppDbContext dbContext, IMapper mapper) : IAppServic
 
         var (items, count) = await query.GetPaginatedList(request, cancellationToken);
         return new GetUsersResponse(mapper.Map<IEnumerable<GetUserResponse>>(items), count);
+    }
+
+    public async Task<UpdateItemResponse?> Update(Guid id, UpdateUserRequest request, CancellationToken cancellationToken)
+    {
+        var user = await dbContext.Users
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+
+        if (user is null)
+            return null;
+
+        user.FullName = request.FullName ?? user.FullName;
+        user.UserName = request.UserName ?? user.UserName;
+        user.RoleId = request.RoleId ?? user.RoleId;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return new UpdateItemResponse();
     }
 }

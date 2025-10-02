@@ -24,4 +24,8 @@
     <ProjectReference Include="..\Mechanics.Infra.Data\Mechanics.Infra.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Middlewares\"/>
+  </ItemGroup>
+
 </Project>

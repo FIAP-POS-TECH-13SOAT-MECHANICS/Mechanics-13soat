@@ -9,6 +9,12 @@ public class Customer : AbstractEntity, INormalizable
     public required PersonalDocument Document { get; set; }
     public ICollection<Vehicle>? Vehicles { get; init; }
 
+    public bool IsNormalized() =>
+        FullName[0] != ' ' &&
+        FullName[^1] != ' ' &&
+        FullName.All(c => !char.IsLetter(c) || char.IsUpper(c)) &&
+        Document.IsNormalized();
+
     public void Normalize()
     {
         FullName = FullName.ToUpper().Trim();

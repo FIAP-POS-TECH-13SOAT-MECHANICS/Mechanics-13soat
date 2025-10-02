@@ -1,22 +1,32 @@
 ﻿using Mechanics.Domain.Base;
+using Mechanics.Domain.Base.Validation;
 
 namespace Mechanics.Domain.Customers;
 
-public class PersonalDocument(DocumentType type, string number) : INormalizable
+public class PersonalDocument(DocumentType type, string number) : INormalizable, IValidatable
 {
     public DocumentType Type { get; } = type;
     public string Number { get; private set; } = number;
 
     public static implicit operator string(PersonalDocument document) => document.Number;
 
+    public bool IsNormalized() =>
+        Type == DocumentType.Cpf && RegexUtils.Cpf().IsMatch(Number) ||
+        Type == DocumentType.Cnpj && RegexUtils.Cnpj().IsMatch(Number);
+
     public void Normalize()
     {
-        Number = Number.Replace(".", "").Replace("-", "").Replace("/", "").ToUpper().Trim();
+        Number = Type == DocumentType.Cpf
+            ? Number.Replace(".", "").Replace("-", "").Trim()
+            : Number.Replace(".", "").Replace("-", "").Replace("/", "").ToUpper().Trim();
     }
 
-    public bool IsValid()
+    public void Validate(ValidationBuilder builder)
     {
-        return Type == DocumentType.Cpf ? Number.Length is 11 : Number.Length is 14;
+        builder.AddConditionalValidation(Type == DocumentType.Cpf, conditionalBuilder =>
+            conditionalBuilder.AddValidation(Number.Length is 11, nameof(Number), "Invalid CPF."));
+        builder.AddConditionalValidation(Type == DocumentType.Cnpj, conditionalBuilder =>
+            conditionalBuilder.AddValidation(Number.Length is 14, nameof(Number), "Invalid CNPJ."));
     }
 
     public override string ToString() => Number;

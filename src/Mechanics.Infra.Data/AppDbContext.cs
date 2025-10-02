@@ -4,6 +4,7 @@ using Mechanics.Domain.Customers;
 using Mechanics.Domain.Products;
 using Mechanics.Domain.Vehicles;
 using Mechanics.Domain.WorkOrders;
+using Mechanics.Infra.Data.Interceptors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using System.Reflection;
@@ -27,6 +28,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         ConfigureAbstractEntities(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
+    }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder
+            .AddInterceptors(new NormalizationInterceptor());
+
+        base.OnConfiguring(optionsBuilder);
     }
 
     /// <summary>

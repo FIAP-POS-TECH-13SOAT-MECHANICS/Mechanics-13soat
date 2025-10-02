@@ -1,4 +1,5 @@
 using Mechanics.Api.Extensions;
+using Mechanics.Api.Middlewares;
 using Mechanics.Infra.CrossCutting.IoC.Extensions;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using KebabCaseParameterTransformer = Mechanics.Api.Extensions.KebabCaseParameterTransformer;
@@ -38,6 +39,8 @@ public class Program
         app.UseAuthorization();
         app.MapControllers()
             .RequireAuthorization();
+
+        app.UseMiddleware<DomainValidationMiddleware>();
 
         if (app.Environment.IsDevelopment())
         {

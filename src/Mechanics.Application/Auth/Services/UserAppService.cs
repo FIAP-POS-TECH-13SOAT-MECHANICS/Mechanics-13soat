@@ -5,6 +5,7 @@ using Mechanics.Application.Utils;
 using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Application.Utils.PagedList;
 using Mechanics.Domain.Auth;
+using Mechanics.Domain.Base.Validation;
 using Mechanics.Infra.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,7 +20,7 @@ public class UserAppService(AppDbContext dbContext, IMapper mapper) : IAppServic
             throw new KeyNotFoundException("Role not found");
 
         var entity = mapper.Map<User>(request);
-        entity.Normalize();
+        Validator.ValidateAndThrow(entity);
 
         await dbContext.Users.AddAsync(entity, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
@@ -52,16 +53,17 @@ public class UserAppService(AppDbContext dbContext, IMapper mapper) : IAppServic
 
     public async Task<UpdateItemResponse?> Update(Guid id, UpdateUserRequest request, CancellationToken cancellationToken)
     {
-        var user = await dbContext.Users
+        var entity = await dbContext.Users
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
-        if (user is null)
+        if (entity is null)
             return null;
 
-        user.FullName = request.FullName ?? user.FullName;
-        user.UserName = request.UserName ?? user.UserName;
-        user.RoleId = request.RoleId ?? user.RoleId;
-        user.Normalize();
+        entity.FullName = request.FullName ?? entity.FullName;
+        entity.UserName = request.UserName ?? entity.UserName;
+        entity.RoleId = request.RoleId ?? entity.RoleId;
+
+        Validator.ValidateAndThrow(entity);
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return new UpdateItemResponse();

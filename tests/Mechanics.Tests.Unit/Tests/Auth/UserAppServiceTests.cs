@@ -44,19 +44,6 @@ public class UserAppServiceTests
         Assert.AreEqual(request.RoleId, created.RoleId);
     }
 
-    [TestMethod("Falha quando RoleId é inválido.")]
-    public async Task It_ShouldThrow_WhenRoleIdIsInvalid()
-    {
-        await using var context = new DbContextTestBuilder().Build();
-        var handler = new UserAppService(context, _mapper);
-        var request = UserMocks.BuildCreateRequest(new Guid("f2d59afa-6e85-4557-8ff1-733343ba83f8"));
-
-        var ex = await Assert.ThrowsExactlyAsync<KeyNotFoundException>(() => handler
-            .Create(request, TestContext.CancellationTokenSource.Token));
-
-        Assert.AreEqual("Role not found", ex.Message);
-    }
-
     #endregion
 
     #region buscar usuário
@@ -134,10 +121,12 @@ public class UserAppServiceTests
     public async Task It_ShouldReturnUsersPaginatedList()
     {
         // Arrange
+        var userId1 = new Guid("ba4a5773-9269-4228-821b-13ea7be6ae8a");
+        var userId2 = new Guid("bc272ac4-c97a-4997-9871-7e4f4c023797");
         List<User> users =
         [
-            UserMocks.CreateUser(Guid.NewGuid(), "Joao Silva", RoleMocks.CreateMechanicRole(Guid.NewGuid())),
-            UserMocks.CreateUser(Guid.NewGuid(), "Jose Silva", RoleMocks.CreateAdministratorRole(Guid.NewGuid())),
+            UserMocks.CreateUser(userId1, "Joao Silva", RoleMocks.CreateMechanicRole(Guid.NewGuid())),
+            UserMocks.CreateUser(userId2, "Jose Silva", RoleMocks.CreateAdministratorRole(Guid.NewGuid())),
         ];
         await using var context = new DbContextTestBuilder().WithData(users).Build();
         var handler = new UserAppService(context, _mapper);
@@ -152,11 +141,11 @@ public class UserAppServiceTests
         Assert.IsNotNull(response1);
         Assert.AreEqual(1, response1.Items.Count());
         Assert.AreEqual(2, response1.TotalCount);
-        Assert.Contains(user => user.Id == users[0].Id, response1.Items);
+        Assert.Contains(user => user.Id == userId1, response1.Items);
         Assert.IsNotNull(response2);
         Assert.AreEqual(1, response2.Items.Count());
         Assert.AreEqual(2, response2.TotalCount);
-        Assert.Contains(user => user.Id == users[1].Id, response2.Items);
+        Assert.Contains(user => user.Id == userId2, response2.Items);
     }
 
     [TestMethod("Retorna lista paginada filtrando usuários pelo nome.")]

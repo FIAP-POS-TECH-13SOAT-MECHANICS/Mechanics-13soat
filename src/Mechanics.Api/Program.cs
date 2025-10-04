@@ -17,14 +17,18 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Services.AddControllers(options =>
-            options.Conventions.Add(new RouteTokenTransformerConvention(new KebabCaseParameterTransformer())));
+        {
+            options.Conventions.Add(new RouteTokenTransformerConvention(new KebabCaseParameterTransformer()));
+            options.Filters.Add<RequestValidationFilter>();
+        });
         builder.Services.AddEndpointsApiExplorer();
 
         builder.Services.AddSwaggerDocumentation();
 
         builder.Services.AddDbContext(builder.Configuration)
             .AddCustomAuthentication(builder.Configuration)
-            .AddAppServices(builder.Configuration);
+            .AddAppServices(builder.Configuration)
+            .AddRequestValidators();
 
         builder.Services.AddHealthChecks()
             .AddDbHealthCheck();

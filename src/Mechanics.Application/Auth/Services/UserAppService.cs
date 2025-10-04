@@ -15,10 +15,6 @@ public class UserAppService(AppDbContext dbContext, IMapper mapper) : IAppServic
 {
     public async Task<CreateItemResponse> Create(CreateUserRequest request, CancellationToken cancellationToken)
     {
-        var roleExists = await dbContext.Roles.AnyAsync(r => r.Id == request.RoleId, cancellationToken);
-        if (!roleExists)
-            throw new KeyNotFoundException("Role not found");
-
         var entity = mapper.Map<User>(request);
         Validator.ValidateAndThrow(entity);
 

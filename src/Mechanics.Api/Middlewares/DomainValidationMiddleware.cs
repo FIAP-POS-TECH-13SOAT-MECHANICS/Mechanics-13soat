@@ -19,10 +19,13 @@ public class DomainValidationMiddleware(RequestDelegate next)
             context.Response.StatusCode = 400;
             context.Response.ContentType = "application/json";
 
+            var errors = e.ValidationResult.Errors
+                .ToDictionary(pair => pair.Key, pair => pair.Value);
+
             var response = new ProblemDetails
             {
-                Extensions = e.ValidationResult.Errors
-                    .ToDictionary(pair => pair.Key, object (pair) => pair.Value)!,
+                Status = 400,
+                Extensions = new Dictionary<string, object?> { { "errors", errors } },
             };
             await context.Response.WriteAsync(JsonSerializer.Serialize(response, SerializerOptions));
         }

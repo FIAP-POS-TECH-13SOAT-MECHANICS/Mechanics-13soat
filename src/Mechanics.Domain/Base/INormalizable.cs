@@ -16,5 +16,5 @@ public static class NormalizableExtensions
     public static bool IsTrimmedLowerCase(this string str) =>
         !str.StartsWith(' ') &&
         !str.EndsWith(' ') &&
-        str.All(c => !char.IsLetter(c) || char.IsUpper(c));
+        str.All(c => !char.IsLetter(c) || char.IsLower(c));
 }

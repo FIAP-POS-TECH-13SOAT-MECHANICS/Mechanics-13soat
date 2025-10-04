@@ -10,9 +10,7 @@ public class Customer : AbstractEntity, INormalizable
     public ICollection<Vehicle>? Vehicles { get; init; }
 
     public bool IsNormalized() =>
-        FullName[0] != ' ' &&
-        FullName[^1] != ' ' &&
-        FullName.All(c => !char.IsLetter(c) || char.IsUpper(c)) &&
+        FullName.IsTrimmedUpperCase() &&
         Document.IsNormalized();
 
     public void Normalize()

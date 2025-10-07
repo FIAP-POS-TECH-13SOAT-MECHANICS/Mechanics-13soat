@@ -2,6 +2,14 @@
 
 public static class Validator
 {
+    public static bool Validate(IValidatable validatable)
+    {
+        var builder = new ValidationBuilder();
+        validatable.Validate(builder);
+
+        return builder.Build().Valid;
+    }
+
     public static void ValidateAndThrow(IValidatable validatable)
     {
         var builder = new ValidationBuilder();

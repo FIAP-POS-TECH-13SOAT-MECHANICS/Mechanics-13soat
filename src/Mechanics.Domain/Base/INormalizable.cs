@@ -1,8 +1,19 @@
-﻿namespace Mechanics.Domain.Base;
+﻿using System.Diagnostics.Contracts;
+
+namespace Mechanics.Domain.Base;
 
 public interface INormalizable
 {
+    /// <summary>
+    ///     Indica que o objeto está normalizado, de acordo com <see cref="Normalize()"/>.
+    /// </summary>
+    /// <returns><c>true</c> se o objeto estiver normalizado, caso contrário, <c>false</c>.</returns>
+    [Pure]
     bool IsNormalized();
+
+    /// <summary>
+    ///     Normaliza o objeto.
+    /// </summary>
     void Normalize();
 }
 

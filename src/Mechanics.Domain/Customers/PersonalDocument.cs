@@ -17,16 +17,16 @@ public class PersonalDocument(DocumentType type, string number) : INormalizable,
     public void Normalize()
     {
         Number = Type == DocumentType.Cpf
-            ? Number.Replace(".", "").Replace("-", "").Trim()
-            : Number.Replace(".", "").Replace("-", "").Replace("/", "").ToUpper().Trim();
+            ? new string(Number.Where(char.IsDigit).ToArray())
+            : new string(Number.Where(char.IsLetterOrDigit).Select(char.ToUpperInvariant).ToArray());
     }
 
     public void Validate(ValidationBuilder builder)
     {
         builder.AddConditionalValidation(Type == DocumentType.Cpf, conditionalBuilder =>
-            conditionalBuilder.AddValidation(Number.Length is 11, nameof(Number), "Invalid CPF."));
+            conditionalBuilder.AddValidation(ValidateCpf(), nameof(Number), "Invalid CPF."));
         builder.AddConditionalValidation(Type == DocumentType.Cnpj, conditionalBuilder =>
-            conditionalBuilder.AddValidation(Number.Length is 14, nameof(Number), "Invalid CNPJ."));
+            conditionalBuilder.AddValidation(ValidateCnpj(), nameof(Number), "Invalid CNPJ."));
     }
 
     public override string ToString() => Number;
@@ -40,6 +40,60 @@ public class PersonalDocument(DocumentType type, string number) : INormalizable,
     }
 
     public override int GetHashCode() => Number.GetHashCode();
+
+    private bool ValidateCpf()
+    {
+        if (!IsNormalized() || Number.Distinct().Count() == 1)
+            return false;
+
+        var sum = 0;
+        for (var i = 0; i < 9; i++)
+            sum += (Number[i] - '0') * (10 - i);
+
+        var remainder = sum % 11;
+        var firstDigit = remainder < 2 ? 0 : 11 - remainder;
+
+        if (firstDigit != Number[9] - '0')
+            return false;
+
+        sum = 0;
+        for (var i = 0; i < 10; i++)
+            sum += (Number[i] - '0') * (11 - i);
+
+        remainder = sum % 11;
+        var secondDigit = remainder < 2 ? 0 : 11 - remainder;
+
+        return secondDigit == Number[10] - '0';
+    }
+
+    private bool ValidateCnpj()
+    {
+        if (!IsNormalized())
+            return false;
+
+        const int baseValue = 48;
+        int[] weights = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+
+        var sumDv1 = 0;
+        var sumDv2 = 0;
+
+        for (var i = 0; i < 12; i++)
+        {
+            var asciiDigit = Number[i] - baseValue;
+            sumDv1 += asciiDigit * weights[i + 1];
+            sumDv2 += asciiDigit * weights[i];
+        }
+
+        var dv1 = sumDv1 % 11 < 2 ? 0 : 11 - (sumDv1 % 11);
+
+        if (dv1 != Number[12] - '0')
+            return false;
+
+        sumDv2 += dv1 * weights[12];
+        var dv2 = sumDv2 % 11 < 2 ? 0 : 11 - (sumDv2 % 11);
+
+        return dv2 == Number[13] - '0';
+    }
 }
 
 public enum DocumentType

@@ -2,6 +2,8 @@ using Mechanics.Api.Extensions;
 using Mechanics.Api.Middlewares;
 using Mechanics.Infra.CrossCutting.IoC.Extensions;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using KebabCaseParameterTransformer = Mechanics.Api.Extensions.KebabCaseParameterTransformer;
 
 namespace Mechanics.Api;
@@ -20,7 +22,8 @@ public class Program
         {
             options.Conventions.Add(new RouteTokenTransformerConvention(new KebabCaseParameterTransformer()));
             options.Filters.Add<RequestValidationFilter>();
-        });
+        }).AddJsonOptions(options =>
+            options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)));
         builder.Services.AddEndpointsApiExplorer();
 
         builder.Services.AddSwaggerDocumentation();

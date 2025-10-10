@@ -24,12 +24,12 @@ public class UserAppService(AppDbContext dbContext, IMapper mapper) : IAppServic
         return new CreateItemResponse { CreatedId = entity.Id };
     }
 
-    public async Task<GetUserResponse?> Get(GetUserRequest request, CancellationToken cancellationToken)
+    public async Task<GetUserResponse?> Get(Guid id, CancellationToken cancellationToken)
     {
         var user = await dbContext.Users
             .AsNoTracking()
             .Include(u => u.Role)
-            .FirstOrDefaultAsync(u => u.Id == request.Id, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
 
         return user is null ? null : mapper.Map<GetUserResponse>(user);
     }

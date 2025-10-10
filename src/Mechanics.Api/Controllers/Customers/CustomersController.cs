@@ -1,62 +1,63 @@
-﻿using Mechanics.Application.Auth.Requests;
-using Mechanics.Application.Auth.Responses;
-using Mechanics.Application.Auth.Services;
+﻿using Mechanics.Application.Customers.Requests;
+using Mechanics.Application.Customers.Responses;
+using Mechanics.Application.Customers.Services;
 using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Mechanics.Api.Controllers.Auth;
+namespace Mechanics.Api.Controllers.Customers;
 
 /// <summary>
-///     Controller para gerenciar cadastros de usuários.
+///     Controller para gerenciar cadastros de clientes.
 /// </summary>
 [ApiController]
 [ApiExplorerSettings(GroupName = "v1")]
-[Route("api/auth/[controller]")]
-[Authorize(Roles = RoleNames.Administrator)]
-public class UsersController(UserAppService service) : ControllerBase
+[Route("api/[controller]")]
+[Authorize]
+public class CustomersController(CustomerAppService service) : ControllerBase
 {
     /// <summary>
-    ///     Cria um novo usuário.
+    ///     Cria um novo cliente.
     /// </summary>
     /// <response code="201">Registro cadastrado.</response>
     /// <response code="400">Registro inválido.</response>
     [HttpPost]
-    [Consumes(typeof(CreateUserRequest), "application/json")]
+    [Authorize(Roles = $"{RoleNames.Administrator},{RoleNames.Attendant}")]
+    [Consumes(typeof(CreateCustomerRequest), "application/json")]
     [Produces("application/json", Type = typeof(CreateItemResponse))]
     [ProducesResponseType(typeof(CreateItemResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> CreateUser(CreateUserRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> CreateCustomer(CreateCustomerRequest request, CancellationToken cancellationToken = default)
     {
         var response = await service.Create(request, cancellationToken);
-        return CreatedAtAction(nameof(GetUser), new { id = response.CreatedId }, response);
+        return CreatedAtAction(nameof(GetCustomer), new { id = response.CreatedId }, response);
     }
 
     /// <summary>
-    ///     Busca usuários por nome.
+    ///     Busca clientes por nome.
     /// </summary>
     /// <response code="200">Consulta executada.</response>
     /// <response code="400">Parâmetros inválidos.</response>
     [HttpGet]
-    [Produces("application/json", Type = typeof(GetUsersResponse))]
-    [ProducesResponseType(typeof(GetUsersResponse), StatusCodes.Status200OK)]
+    [Produces("application/json", Type = typeof(GetCustomersResponse))]
+    [ProducesResponseType(typeof(GetCustomersResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetUsers([FromQuery] GetUsersRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetCustomers([FromQuery] GetCustomersRequest request, CancellationToken cancellationToken = default)
     {
         var response = await service.GetList(request, cancellationToken);
         return Ok(response);
     }
 
     /// <summary>
-    ///     Busca um usuário pelo ID.
+    ///     Busca um cliente pelo ID.
     /// </summary>
     /// <response code="200">Registro encontrado.</response>
     /// <response code="404">Registro não encontrado.</response>
     [HttpGet("{id:guid}")]
-    [Produces("application/json", Type = typeof(GetUserResponse))]
-    [ProducesResponseType(typeof(GetUserResponse), StatusCodes.Status200OK)]
-    public async Task<IActionResult> GetUser(Guid id, CancellationToken cancellationToken = default)
+    [Produces("application/json", Type = typeof(GetCustomerResponse))]
+    [ProducesResponseType(typeof(GetCustomerResponse), StatusCodes.Status200OK)]
+    public async Task<IActionResult> GetCustomer(Guid id, CancellationToken cancellationToken = default)
     {
         var response = await service.Get(id, cancellationToken);
         if (response is null)
@@ -66,16 +67,17 @@ public class UsersController(UserAppService service) : ControllerBase
     }
 
     /// <summary>
-    ///     Atualiza um usuário.
+    ///     Atualiza um cliente.
     /// </summary>
     /// <response code="200">Registro atualizado.</response>
     /// <response code="400">Registro inválido.</response>
-    [HttpPut("/{id:guid}")]
-    [Consumes(typeof(CreateUserRequest), "application/json")]
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = $"{RoleNames.Administrator},{RoleNames.Attendant}")]
+    [Consumes(typeof(UpdateCustomerRequest), "application/json")]
     [Produces("application/json", Type = typeof(CreateItemResponse))]
     [ProducesResponseType(typeof(CreateItemResponse), StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UpdateUser(Guid id, UpdateUserRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> UpdateCustomer(Guid id, UpdateCustomerRequest request, CancellationToken cancellationToken = default)
     {
         var response = await service.Update(id, request, cancellationToken);
         return response is null ? NotFound() : NoContent();

@@ -15,4 +15,7 @@ public static partial class RegexUtils
 
     [GeneratedRegex(@"\p{Mn}", RegexOptions.Compiled)]
     public static partial Regex NonUnicodeChar();
+
+    [GeneratedRegex(@"^\d{4}$", RegexOptions.Compiled)]
+    public static partial Regex Year();
 }

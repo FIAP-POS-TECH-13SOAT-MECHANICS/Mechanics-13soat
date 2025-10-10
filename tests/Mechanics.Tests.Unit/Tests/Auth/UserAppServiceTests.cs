@@ -61,10 +61,9 @@ public class UserAppServiceTests
             .Build();
 
         var handler = new UserAppService(context, _mapper);
-        var request = new GetUserRequest { Id = userId };
 
         // Act
-        var response = await handler.Get(request, TestContext.CancellationTokenSource.Token);
+        var response = await handler.Get(userId, TestContext.CancellationTokenSource.Token);
 
         // Assert
         Assert.IsNotNull(response);
@@ -82,10 +81,10 @@ public class UserAppServiceTests
         // Arrange
         await using var context = new DbContextTestBuilder().Build();
         var handler = new UserAppService(context, _mapper);
-        var request = new GetUserRequest { Id = Guid.NewGuid() };
+        var userId = Guid.NewGuid();
 
         // Act
-        var response = await handler.Get(request, CancellationToken.None);
+        var response = await handler.Get(userId, CancellationToken.None);
 
         // Assert
         Assert.IsNull(response);

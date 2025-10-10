@@ -8,8 +8,11 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
 {
     public void Configure(EntityTypeBuilder<Customer> builder)
     {
-        builder.Property(entity => entity.FullName).HasMaxLength(100).IsRequired();
-        builder.HasIndex(entity => entity.FullName);
+        builder.Property(entity => entity.Name).HasMaxLength(100).IsRequired();
+        builder.HasIndex(entity => entity.Name);
+
+        builder.Property(entity => entity.Email).HasMaxLength(100).IsRequired();
+        builder.HasIndex(entity => entity.Email).IsUnique();
 
         builder.OwnsOne(entity => entity.Document, document =>
         {

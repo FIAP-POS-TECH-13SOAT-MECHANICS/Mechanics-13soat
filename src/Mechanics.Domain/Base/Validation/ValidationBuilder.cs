@@ -43,9 +43,12 @@ public class ValidationBuilder
             return this;
         foreach (var (field, errors) in result.Errors)
         {
-            var fieldErrors = _errors.GetValueOrDefault($"{fieldName}.{field}") ?? [];
+            var key = $"{fieldName}.{field}";
+            if (!_errors.ContainsKey(key))
+                _errors.Add(key, []);
+
             foreach (var error in errors)
-                fieldErrors.Add(error);
+                _errors[key].Add(error);
         }
 
         return this;

@@ -1,11 +1,21 @@
 ﻿using Mechanics.Domain.Base;
+using Mechanics.Domain.Base.Validation;
 using Mechanics.Domain.WorkOrders;
 
 namespace Mechanics.Domain.Products;
 
-public class Product : AbstractEntity
+public class Product : AbstractEntity, IValidatable
 {
-    public required string Description { get; init; }
+    public required string Name { get; set; }
+    public required string Description { get; set; }
     public required ProductType Type { get; init; }
+
+    public required int Quantity { get; set; }
+
+    public required StatusType Status { get; set; }
     public IEnumerable<WorkOrder>? WorkOrders { get; init; }
+
+
+    public void Validate(ValidationBuilder builder) =>
+        builder.AddValidation(Quantity >= 0, nameof(Quantity), "Quantity can't be less than 0");
 }

@@ -32,7 +32,7 @@ O exemplo abaixo contém algumas configurações comuns:
             "Microsoft": "Information"
         }
     },
-    // acessar o banco de fora do container Docker
+    // acessar o banco de fora do container Docker (necessário para criar migrações)
     "ConnectionStrings": {
         "DefaultConnection": "Server=localhost;User Id=sa;Password=2%r6dZ6Xk@g3;TrustServerCertificate=True;"
     }
@@ -43,6 +43,16 @@ O exemplo abaixo contém algumas configurações comuns:
 
 Após alterar as classes de domínio, crie uma nova migração no banco de dados com o comando abaixo.
 Utilize sempre nomes em PascalCase, sem acentos ou espaços.
+
+### Preparação do ambiente
+
+1. Instale o Dotnet EF Tools com o comando `dotnet tool install --global dotnet-ef`.
+2. Configure a connectionString para `localhost` usando [appsettings.Development.json](#configurações-locais).
+3. Suba o container do banco de dados com o comando `docker compose up mssql -d`.
+
+### Criação da migração
+
+Execute o comando abaixo na raiz do repositório.
 As migrações serão aplicadas automaticamente ao iniciar a aplicação.
 
 `dotnet ef migrations add <NomeDaMigration> --project src\Mechanics.Infra.Data --startup-project src\Mechanics.Api`

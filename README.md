@@ -35,6 +35,10 @@ O exemplo abaixo contém algumas configurações comuns:
     // acessar o banco de fora do container Docker
     "ConnectionStrings": {
         "DefaultConnection": "Server=localhost;User Id=sa;Password=2%r6dZ6Xk@g3;TrustServerCertificate=True;"
+    },
+    "EmailSenderOptions": {
+        // desabilitar envio de email
+        "Enabled": false
     }
 }
 ```

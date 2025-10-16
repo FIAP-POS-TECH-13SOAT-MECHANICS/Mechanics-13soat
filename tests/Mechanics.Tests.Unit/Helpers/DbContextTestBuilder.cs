@@ -23,7 +23,7 @@ public class DbContextTestBuilder
     /// <inheritdoc cref="WithData(Action{AppDbContext})" />
     public DbContextTestBuilder WithData<T>(IEnumerable<T> seeder) where T : class
     {
-        _seeders.Add(context => context.Set<T>().AddRange(seeder));
+        _seeders.Add(context => context.AddRange(seeder));
         return this;
     }
 

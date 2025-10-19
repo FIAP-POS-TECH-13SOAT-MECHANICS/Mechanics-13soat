@@ -9,8 +9,8 @@ public class LicensePlate(string number) : IValidatable, INormalizable
 
     public static implicit operator string(LicensePlate licensePlate) => licensePlate.Number;
     private static string Normalize(string number) => number.Replace("-", "").ToUpper().Trim();
-
     public override string ToString() => Number;
+    public string Format() => $"{Number[..3]}-{Number[3..]}";
 
     public void Validate(ValidationBuilder builder) =>
         builder.AddValidation(Number.Length is 7, nameof(Number), "Plate must have 7 characters.")

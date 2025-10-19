@@ -31,7 +31,8 @@ public class Program
         builder.Services.AddDbContext(builder.Configuration)
             .AddCustomAuthentication(builder.Configuration)
             .AddAppServices(builder.Configuration)
-            .AddRequestValidators();
+            .AddRequestValidators()
+            .AddEmailSender(builder.Configuration);
 
         builder.Services.AddHealthChecks()
             .AddDbHealthCheck();

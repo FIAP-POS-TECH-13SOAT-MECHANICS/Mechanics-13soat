@@ -32,4 +32,6 @@ public class Vehicle : AbstractEntity, IValidatable, INormalizable
         Year = new string(Year.Where(char.IsDigit).ToArray());
         LicensePlate.Normalize();
     }
+
+    public override string ToString() => $"{Manufacturer} {Model} {Year} - {LicensePlate.Format()}";
 }

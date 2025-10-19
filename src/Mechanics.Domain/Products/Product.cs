@@ -12,7 +12,7 @@ public class Product : AbstractEntity, IValidatable
 
     public required int Quantity { get; set; }
 
-    public required StatusType Status { get; set; }
+    public required ProductStatusType Status { get; set; }
     public IEnumerable<WorkOrder>? WorkOrders { get; init; }
 
 

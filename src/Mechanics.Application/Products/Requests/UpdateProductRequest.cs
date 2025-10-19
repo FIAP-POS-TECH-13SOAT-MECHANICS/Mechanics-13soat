@@ -22,6 +22,6 @@ public class UpdateProductRequest
     /// <summary>
     ///     Status do produto. Opcional para atualização.
     /// </summary>
-    public StatusType? Status { get; init; }
+    public ProductStatusType? Status { get; init; }
 
 }

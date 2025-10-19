@@ -10,5 +10,5 @@ public class GetProductResponse
     public required string Description { get; init; }
     public required ProductType Type { get; init; }
     public required int Quantity { get; init; }
-    public required StatusType Status { get; init; }
+    public required ProductStatusType Status { get; init; }
 }

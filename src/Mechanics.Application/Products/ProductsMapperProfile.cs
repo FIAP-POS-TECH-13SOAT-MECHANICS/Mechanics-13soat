@@ -9,8 +9,6 @@ public class ProductsMapperProfile : Profile
 {
     public ProductsMapperProfile()
     {
-        //CreateMap<PersonalDocumentRequest, PersonalDocument>()
-            //.ConstructUsing(src => new PersonalDocument(src.Type!.Value, src.Number));
         CreateMap<CreateProductRequest, Product>();
 
         CreateMap<Product, GetProductResponse>();

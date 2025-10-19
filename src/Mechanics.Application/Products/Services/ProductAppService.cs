@@ -39,8 +39,6 @@ public class ProductAppService(AppDbContext dbContext, IMapper mapper) : IAppSer
     {
         var entity = mapper.Map<Product>(request);
 
-        // if (!entity.IsNormalized())
-        //    entity.Normalize();
         Validator.ValidateAndThrow(entity);
 
         await dbContext.Products.AddAsync(entity, cancellationToken);

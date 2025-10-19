@@ -12,7 +12,7 @@ public class ProductMocks
         Description = "Pneu Pirelli",
         Type = ProductType.Part,
         Quantity = 10,
-        Status = StatusType.ACTIVE
+        Status = ProductStatusType.Active
     };
 
     public static CreateProductRequest BuildInvalidCreateRequest() => new()
@@ -21,7 +21,7 @@ public class ProductMocks
         Description = "",
         Type = ProductType.Part,
         Quantity = -1,
-        Status = StatusType.ACTIVE
+        Status = ProductStatusType.Active
     };
 
     public static UpdateProductRequest BuildUpdateRequest() => new()
@@ -29,7 +29,7 @@ public class ProductMocks
         Name = "Roda",
         Description = "Roda prateada",
         Quantity = 10,
-        Status = StatusType.ACTIVE
+        Status = ProductStatusType.Active
     };
 
     public static UpdateProductRequest BuildInvalidUpdateRequest() => new()
@@ -37,7 +37,7 @@ public class ProductMocks
         Name = "",
         Description = "",
         Quantity = -1,
-        Status = StatusType.ACTIVE
+        Status = ProductStatusType.Active
     };
 
     public static Product CreateProduct(Guid id) => new()
@@ -47,7 +47,7 @@ public class ProductMocks
         Description = "Roda preta",
         Type = ProductType.Part,
         Quantity = 10,
-        Status = StatusType.ACTIVE
+        Status = ProductStatusType.Active
     };
 
     public static Product CreateInvalidProduct(Guid id) => new()
@@ -57,6 +57,6 @@ public class ProductMocks
         Description = "",
         Type = ProductType.Part,
         Quantity = -1,
-        Status = StatusType.ACTIVE
+        Status = ProductStatusType.Active
     };
 }

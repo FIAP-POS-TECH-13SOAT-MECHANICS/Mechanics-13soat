@@ -127,12 +127,12 @@ namespace Mechanics.Infra.Data.Migrations
                         {
                             Id = new Guid("db27b85d-b0f3-4300-bb45-7841f0d11617"),
                             CreationDate = new DateTime(2025, 10, 12, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Email = "admin@mechanics.com",
+                            Email = "administrator@mechanics.com",
                             FullName = "Administrator User",
                             PasswordHash = "AQAAAAIAAYagAAAAEPGF9Xsz+ARiCopDgQbQ8gbGubN6bhvNhpKiy8XK2BORE5eV95VywrM9rVE48i2m8w==",
                             RoleId = new Guid("2afde195-550b-498e-a63d-7a6d556b25ba"),
                             SecurityStamp = "efcaaf76-0535-45fc-a79c-06ab92c064bb",
-                            UserName = "admin"
+                            UserName = "administrator"
                         },
                         new
                         {

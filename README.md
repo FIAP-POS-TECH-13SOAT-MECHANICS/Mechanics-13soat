@@ -135,3 +135,13 @@ Também pode ser útil normalizar os dados antes de executar certas validações
 Defina as regras implementando a interface `INormalizable`.
 Ao persistir os dados (chamar `SaveChangesAsync()`), a entidade é interceptada na camada de infraestrutura e, caso
 `IsNormalized()` seja `false`, o método `Normalize()` é executado.
+
+## Usuários padrão
+
+Os seguintes logins podem ser utilizados para testes:
+
+| Usuário         | Senha       | Perfil        |
+|-----------------|-------------|---------------|
+| `administrator` | `5eCre+Key` | Administrador |
+| `attendant`     | `5eCre+Key` | Atendente     |
+| `mechanic`      | `5eCre+Key` | Mecânico      |

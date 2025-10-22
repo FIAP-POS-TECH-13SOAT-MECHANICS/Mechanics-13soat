@@ -5,7 +5,7 @@ public class LoginRequest
     /// <summary>
     ///     Nome de usuário.
     /// </summary>
-    /// <example>admin</example>
+    /// <example>administrator</example>
     public required string UserName { get; init; }
 
     /// <summary>

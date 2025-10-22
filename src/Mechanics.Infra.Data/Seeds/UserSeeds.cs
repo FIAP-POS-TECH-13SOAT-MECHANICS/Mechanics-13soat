@@ -14,8 +14,8 @@ public static class UserSeeds
             {
                 Id = new Guid("db27b85d-b0f3-4300-bb45-7841f0d11617"),
                 FullName = "Administrator User",
-                UserName = "admin",
-                Email = "admin@mechanics.com",
+                UserName = "administrator",
+                Email = "administrator@mechanics.com",
                 RoleId = GetRoleId(RoleNames.Administrator),
                 SecurityStamp = new Guid("efcaaf76-0535-45fc-a79c-06ab92c064bb").ToString(),
                 PasswordHash = "AQAAAAIAAYagAAAAEPGF9Xsz+ARiCopDgQbQ8gbGubN6bhvNhpKiy8XK2BORE5eV95VywrM9rVE48i2m8w==",

@@ -1,5 +1,6 @@
 ﻿using Mechanics.Application.Auth.Requests;
 using Mechanics.Domain.Auth;
+using Microsoft.AspNetCore.Identity;
 
 namespace Mechanics.Tests.Unit.Mocks;
 
@@ -30,7 +31,26 @@ public static class UserMocks
             Role = role,
             Email = $"{userName}@mechanics.com",
             PasswordHash = "",
-            SecurityStamp = "",
+            SecurityStamp = userId.ToString(),
         };
+    }
+
+    public static User CreateUser(string userName, string userPassword)
+    {
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            FullName = userName.ToUpper(),
+            UserName = userName,
+            RoleId = Guid.Empty,
+            Role = new Role { Name = RoleNames.Administrator },
+            Email = $"{userName}@mechanics.com",
+            PasswordHash = "",
+            SecurityStamp = userName,
+        };
+
+        user.PasswordHash = new PasswordHasher<User>().HashPassword(user, userPassword);
+
+        return user;
     }
 }

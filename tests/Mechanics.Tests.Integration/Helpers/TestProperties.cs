@@ -17,8 +17,6 @@ public static class TestProperties
         Environment.SetEnvironmentVariable("JwtOptions__AccessTokenLifetime", "60");
         Environment.SetEnvironmentVariable("ConnectionStrings__Default", _container.GetConnectionString());
         Factory = new ApplicationFactory();
-
-        await Factory.AddTestUsers(context.CancellationTokenSource.Token);
     }
 
     [AssemblyCleanup]

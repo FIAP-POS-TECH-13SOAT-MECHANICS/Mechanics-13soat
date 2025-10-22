@@ -1,4 +1,5 @@
 ﻿using Mechanics.Domain.Auth;
+using Mechanics.Infra.Data.Seeds;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -18,10 +19,25 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired();
         builder.HasIndex(entity => entity.UserName).IsUnique();
 
+        builder.Property(entity => entity.Email)
+            .HasMaxLength(100)
+            .IsRequired();
+        builder.HasIndex(entity => entity.Email).IsUnique();
+
+        builder.Property(entity => entity.PasswordHash)
+            .HasMaxLength(256)
+            .IsRequired();
+
+        builder.Property(entity => entity.SecurityStamp)
+            .HasMaxLength(64)
+            .IsRequired();
+
         builder.HasOne(entity => entity.Role)
             .WithMany()
             .HasForeignKey(entity => entity.RoleId)
             .OnDelete(DeleteBehavior.NoAction)
             .IsRequired();
+
+        builder.HasData(UserSeeds.GetSeeds());
     }
 }

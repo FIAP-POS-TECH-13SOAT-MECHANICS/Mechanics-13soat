@@ -73,7 +73,7 @@ public class UsersController(UserAppService service) : ControllerBase
     [HttpPut("/{id:guid}")]
     [Consumes(typeof(CreateUserRequest), "application/json")]
     [Produces("application/json", Type = typeof(CreateItemResponse))]
-    [ProducesResponseType(typeof(CreateItemResponse), StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> UpdateUser(Guid id, UpdateUserRequest request, CancellationToken cancellationToken = default)
     {

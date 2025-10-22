@@ -15,7 +15,8 @@ public class EmailSenderService(EmailSenderOptions options) : IEmailSenderServic
         try
         {
             await client.ConnectAsync(options.SmtpServer, options.SmtpPort, options.SslRequired, cancellationToken);
-            await client.AuthenticateAsync(options.UserName, options.Password, cancellationToken);
+            if (!string.IsNullOrWhiteSpace(options.UserName) && !string.IsNullOrWhiteSpace(options.Password))
+                await client.AuthenticateAsync(options.UserName, options.Password, cancellationToken);
 
             var mimeMessage = new MimeMessage();
             mimeMessage.From.Add(new MailboxAddress(options.SenderInformation.Name, options.SenderInformation.Address));

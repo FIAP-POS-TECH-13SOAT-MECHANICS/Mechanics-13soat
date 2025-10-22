@@ -28,9 +28,9 @@ public class ApplicationFactory : WebApplicationFactory<Program>
         {
             var client = CreateClient();
             var response = await client.PostAsJsonAsync("api/auth/login",
-                new LoginRequest { Username = roleName, Password = "12345" });
+                new LoginRequest { UserName = roleName, Password = "12345" });
 
-            var content = await response.Content.ReadFromJsonAsync<LoginResponse>();
+            var content = await response.Content.ReadFromJsonAsync<TokenResponse>();
             _tokens[roleName] = content!.AccessToken;
             return content.AccessToken;
         }
@@ -52,6 +52,9 @@ public static class ApplicationFactoryExtensions
                 FullName = role.Name,
                 UserName = role.Name.ToLower(),
                 RoleId = role.Id,
+                Email = $"{role.Name.ToLower()}@mechanics.com",
+                PasswordHash = "",
+                SecurityStamp = role.Name,
             }));
 
         await context.SaveChangesAsync(cancellationToken);

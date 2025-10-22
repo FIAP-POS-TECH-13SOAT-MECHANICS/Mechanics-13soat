@@ -16,6 +16,13 @@ public static class Validator
         validatable.Validate(builder);
         builder.Build().ThrowIfInvalid();
     }
+
+    public static void BuildAndThrow(Action<ValidationBuilder> validationAction)
+    {
+        var builder = new ValidationBuilder();
+        validationAction(builder);
+        builder.Build().ThrowIfInvalid();
+    }
 }
 
 public class DomainValidationException(ValidationResult validationResult) : Exception("One or more validations failed.")

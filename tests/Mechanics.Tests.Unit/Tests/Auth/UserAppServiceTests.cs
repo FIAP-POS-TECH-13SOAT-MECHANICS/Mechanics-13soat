@@ -1,11 +1,13 @@
 ﻿using AutoMapper;
 using Mechanics.Application.Auth.Requests;
 using Mechanics.Application.Auth.Services;
+using Mechanics.Application.Notification.Services;
 using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Domain.Auth;
 using Mechanics.Tests.Unit.Helpers;
 using Mechanics.Tests.Unit.Mocks;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 
 namespace Mechanics.Tests.Unit.Tests.Auth;
 
@@ -16,6 +18,7 @@ public class UserAppServiceTests
 {
     public TestContext TestContext { get; set; }
     private readonly IMapper _mapper = AutoMapperFactory.CreateMap("Auth");
+    private readonly IEmailService _mailService = Mock.Of<IEmailService>();
 
     #region cadastrar usuário
 
@@ -27,7 +30,7 @@ public class UserAppServiceTests
         await using var context = new DbContextTestBuilder()
             .WithData(ctx => ctx.Roles.Add(new Role { Id = roleId, Name = RoleNames.Administrator }))
             .Build();
-        var handler = new UserAppService(context, _mapper);
+        var handler = new UserAppService(context, _mapper, _mailService);
         var request = UserMocks.BuildCreateRequest(roleId);
 
         // Act
@@ -60,7 +63,7 @@ public class UserAppServiceTests
             .WithData(ctx => ctx.Users.Add(user))
             .Build();
 
-        var handler = new UserAppService(context, _mapper);
+        var handler = new UserAppService(context, _mapper, _mailService);
 
         // Act
         var response = await handler.Get(userId, TestContext.CancellationTokenSource.Token);
@@ -80,7 +83,7 @@ public class UserAppServiceTests
     {
         // Arrange
         await using var context = new DbContextTestBuilder().Build();
-        var handler = new UserAppService(context, _mapper);
+        var handler = new UserAppService(context, _mapper, _mailService);
         var userId = Guid.NewGuid();
 
         // Act
@@ -104,7 +107,7 @@ public class UserAppServiceTests
             UserMocks.CreateUser(Guid.NewGuid(), "Jose Silva", RoleMocks.CreateAdministratorRole(Guid.NewGuid())),
         ];
         await using var context = new DbContextTestBuilder().WithData(users).Build();
-        var handler = new UserAppService(context, _mapper);
+        var handler = new UserAppService(context, _mapper, _mailService);
         var request = new GetUsersRequest { Page = 1, ItemsPerPage = 10 };
 
         // Act
@@ -128,7 +131,7 @@ public class UserAppServiceTests
             UserMocks.CreateUser(userId2, "Jose Silva", RoleMocks.CreateAdministratorRole(Guid.NewGuid())),
         ];
         await using var context = new DbContextTestBuilder().WithData(users).Build();
-        var handler = new UserAppService(context, _mapper);
+        var handler = new UserAppService(context, _mapper, _mailService);
         var request1 = new GetUsersRequest { Page = 1, ItemsPerPage = 1 };
         var request2 = new GetUsersRequest { Page = 2, ItemsPerPage = 1 };
 
@@ -157,7 +160,7 @@ public class UserAppServiceTests
             UserMocks.CreateUser(Guid.NewGuid(), "Jose Silva", RoleMocks.CreateAdministratorRole(Guid.NewGuid())),
         ];
         await using var context = new DbContextTestBuilder().WithData(users).Build();
-        var handler = new UserAppService(context, _mapper);
+        var handler = new UserAppService(context, _mapper, _mailService);
         var request = new GetUsersRequest { Page = 1, ItemsPerPage = 10, Name = "joao" };
 
         // Act
@@ -189,7 +192,7 @@ public class UserAppServiceTests
             })
             .Build();
         var userId = context.Users.First().Id;
-        var handler = new UserAppService(context, _mapper);
+        var handler = new UserAppService(context, _mapper, _mailService);
         var request = UserMocks.BuildUpdateRequest(administratorId);
 
         // Act
@@ -209,7 +212,7 @@ public class UserAppServiceTests
     public async Task It_ShouldReturnNull_WhenUserDoesNotExist()
     {
         await using var context = new DbContextTestBuilder().Build();
-        var handler = new UserAppService(context, _mapper);
+        var handler = new UserAppService(context, _mapper, _mailService);
         var request = UserMocks.BuildUpdateRequest(new Guid("f2d59afa-6e85-4557-8ff1-733343ba83f8"));
 
         var response = await handler.Update(Guid.NewGuid(), request, TestContext.CancellationTokenSource.Token);

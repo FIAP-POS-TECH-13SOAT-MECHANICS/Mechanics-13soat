@@ -11,6 +11,7 @@ public static class UserMocks
             FullName = "MARIA FERNANDA SOUZA",
             UserName = "maria.souza",
             RoleId = roleId,
+            Email = "maria.souza@mechanics.com",
         };
 
     public static UpdateUserRequest BuildUpdateRequest(Guid roleId) =>
@@ -18,13 +19,18 @@ public static class UserMocks
 
     public static User CreateUser(Guid userId, string name, Role role)
     {
+        var userName = name.Replace(' ', '.').ToLower();
+
         return new User
         {
             Id = userId,
             FullName = name.ToUpper(),
-            UserName = name.Replace(' ', '.').ToLower(),
+            UserName = userName,
             RoleId = role.Id,
             Role = role,
+            Email = $"{userName}@mechanics.com",
+            PasswordHash = "",
+            SecurityStamp = "",
         };
     }
 }

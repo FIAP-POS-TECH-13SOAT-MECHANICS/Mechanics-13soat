@@ -21,6 +21,7 @@ public class CreateUserTest(TestContext testContext)
         {
             FullName = "MARIA FERNANDA SOUZA",
             UserName = "maria.souza",
+            Email = "maria.souza@mechanics.com",
             RoleId = new Guid("f2d59afa-6e85-4557-8ff1-733343ba83f8"),
         };
 

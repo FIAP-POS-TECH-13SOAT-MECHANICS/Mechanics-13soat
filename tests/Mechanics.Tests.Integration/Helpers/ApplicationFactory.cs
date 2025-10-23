@@ -31,4 +31,11 @@ public class ApplicationFactory : WebApplicationFactory<Program>
             return content.AccessToken;
         }
     }
+
+    public HttpClient GetEmailClient()
+    {
+        var client = CreateClient();
+        client.BaseAddress = TestProperties.GetEmailClientUri();
+        return client;
+    }
 }

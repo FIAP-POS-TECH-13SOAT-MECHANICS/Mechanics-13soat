@@ -13,6 +13,7 @@ Repositório do projeto destinado aos Tech Challenges da Oficina Mecânica da FI
 
 1. Rode o comando `docker compose up -d --build` na raiz do projeto.
 2. Aguarde o processo concluir e acesse `http://localhost:5000/swagger`.
+3. Acesse o cliente de e-mail em `http://localhost:8025`.
 
 ### Configurações locais
 
@@ -38,7 +39,9 @@ O exemplo abaixo contém algumas configurações comuns:
     },
     "EmailSenderOptions": {
         // desabilitar envio de email
-        "Enabled": false
+        "Enabled": false,
+        // acessar servidor SMTP de fora do container Docker
+        "SmtpServer": "localhost"
     }
 }
 ```

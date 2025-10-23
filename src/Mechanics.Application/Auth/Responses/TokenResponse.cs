@@ -3,6 +3,6 @@
 public record TokenResponse
 {
     public required string AccessToken { get; init; }
-    public string? RefreshToken { get; init; }
-    public required DateTime ExpirationDate { get; init; }
+    public required string RefreshToken { get; init; }
+    public required DateTimeOffset ExpirationDate { get; init; }
 }

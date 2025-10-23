@@ -10,7 +10,7 @@ using System.Text;
 
 namespace Mechanics.Application.Utils;
 
-public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions) : IJwtTokenHandler
+public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions, TimeProvider timeProvider) : IJwtTokenHandler
 {
     private readonly JwtOptions _options = jwtOptions.Value;
     private readonly JsonWebTokenHandler _tokenHandler = new();
@@ -18,7 +18,7 @@ public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions) : IJwtTokenHandler
 
     public TokenResponse CreateTokenResponse(User user)
     {
-        var expiration = DateTime.UtcNow.AddMinutes(_options.AccessTokenLifetime);
+        var expiration = timeProvider.GetUtcNow().AddMinutes(_options.AccessTokenLifetime);
 
         return new TokenResponse
         {
@@ -50,7 +50,7 @@ public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions) : IJwtTokenHandler
         return validationResult.IsValid;
     }
 
-    private string GenerateAccessToken(User user, DateTime expiration)
+    private string GenerateAccessToken(User user, DateTimeOffset expiration)
     {
         var claims = new List<Claim>
         {
@@ -64,10 +64,10 @@ public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions) : IJwtTokenHandler
         {
             Issuer = JwtTokenIssuer,
             Subject = new ClaimsIdentity(claims),
-            Expires = expiration,
+            Expires = expiration.UtcDateTime,
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
-            IssuedAt = DateTime.UtcNow,
-            NotBefore = DateTime.UtcNow,
+            IssuedAt = timeProvider.GetUtcNow().UtcDateTime,
+            NotBefore = timeProvider.GetUtcNow().UtcDateTime,
         };
 
         return _tokenHandler.CreateToken(tokenDescriptor);
@@ -85,9 +85,9 @@ public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions) : IJwtTokenHandler
         {
             Issuer = JwtTokenIssuer,
             Subject = new ClaimsIdentity(claims),
-            Expires = DateTime.UtcNow.AddMinutes(_options.RefreshTokenLifetime),
+            Expires = timeProvider.GetUtcNow().UtcDateTime.AddMinutes(_options.RefreshTokenLifetime),
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
-            IssuedAt = DateTime.UtcNow,
+            IssuedAt = timeProvider.GetUtcNow().UtcDateTime,
         };
 
         return _tokenHandler.CreateToken(tokenDescriptor);

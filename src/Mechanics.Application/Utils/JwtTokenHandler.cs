@@ -2,6 +2,7 @@
 using Mechanics.Application.Options;
 using Mechanics.Application.Utils.TokenGenerator;
 using Mechanics.Domain.Auth;
+using Mechanics.Infra.Data.Seeds;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -15,6 +16,7 @@ public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions, TimeProvider timeP
     private readonly JwtOptions _options = jwtOptions.Value;
     private readonly JsonWebTokenHandler _tokenHandler = new();
     private const string JwtTokenIssuer = "fiap-mechanics";
+    private readonly Dictionary<Guid, string> _roles = RoleSeeds.GetSeeds().ToDictionary(r => r.Id, role => role.Name);
 
     public TokenResponse CreateTokenResponse(User user)
     {
@@ -56,7 +58,7 @@ public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions, TimeProvider timeP
         {
             new("sub", user.Id.ToString()),
             new("userName", user.UserName),
-            new("role", RoleNames.Administrator),
+            new("role", _roles[user.RoleId]),
         };
 
         var key = Encoding.ASCII.GetBytes(_options.SecretKey);

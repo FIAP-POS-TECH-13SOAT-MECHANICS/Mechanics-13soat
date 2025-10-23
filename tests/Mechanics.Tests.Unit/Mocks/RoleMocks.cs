@@ -15,10 +15,4 @@ public static class RoleMocks
             .Select(field => (string)field.GetValue(null)!)
             .Select(name => new Role { Id = Guid.NewGuid(), Name = name })
             .ToList();
-
-    public static Role CreateMechanicRole(Guid id) =>
-        new() { Id = id, Name = RoleNames.Mechanic };
-
-    public static Role CreateAdministratorRole(Guid id) =>
-        new() { Id = id, Name = RoleNames.Administrator };
 }

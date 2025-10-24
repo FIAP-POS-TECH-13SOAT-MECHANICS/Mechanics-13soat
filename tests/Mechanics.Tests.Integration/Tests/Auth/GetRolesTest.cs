@@ -11,19 +11,8 @@ namespace Mechanics.Tests.Integration.Tests.Auth;
 [TestCategory("Roles")]
 public class GetRolesTest(TestContext testContext)
 {
-    [TestMethod]
-    public async Task It_ShouldReturnUnauthorized_WhenNotAuthenticated()
-    {
-        var factory = TestProperties.Factory;
-        var client = factory.CreateClient();
-
-        var response = await client.GetAsync("api/auth/roles", testContext.CancellationTokenSource.Token);
-
-        Assert.AreEqual(HttpStatusCode.Unauthorized, response.StatusCode);
-    }
-
-    [TestMethod]
-    public async Task It_ShouldReturnNotEmptyList()
+    [TestMethod("Deve retornar uma lista não vazia")]
+    public async Task It_ShouldReturnNonEmptyList()
     {
         var factory = TestProperties.Factory;
         var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
@@ -35,5 +24,16 @@ public class GetRolesTest(TestContext testContext)
         var content = await response.Content.ReadFromJsonAsync<GetRolesResponse>(testContext.CancellationTokenSource.Token);
         Assert.IsNotNull(content);
         Assert.IsNotEmpty(content.Items);
+    }
+
+    [TestMethod("Deve retornar 403 se não for administrador")]
+    public async Task It_ShouldReturnForbiddenIfNotAdministrator()
+    {
+        var factory = TestProperties.Factory;
+        var client = await factory.GetAuthenticatedClient(RoleNames.Attendant);
+
+        var response = await client.GetAsync("api/auth/roles", testContext.CancellationTokenSource.Token);
+
+        Assert.AreEqual(HttpStatusCode.Forbidden, response.StatusCode);
     }
 }

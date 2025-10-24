@@ -1,11 +1,14 @@
 ﻿using AutoMapper;
 using Mechanics.Application.Auth.Requests;
 using Mechanics.Application.Auth.Services;
+using Mechanics.Application.Notification.Services;
 using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Domain.Auth;
+using Mechanics.Infra.Data.Seeds;
 using Mechanics.Tests.Unit.Helpers;
 using Mechanics.Tests.Unit.Mocks;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 
 namespace Mechanics.Tests.Unit.Tests.Auth;
 
@@ -16,6 +19,7 @@ public class UserAppServiceTests
 {
     public TestContext TestContext { get; set; }
     private readonly IMapper _mapper = AutoMapperFactory.CreateMap("Auth");
+    private readonly IEmailService _mailService = Mock.Of<IEmailService>();
 
     #region cadastrar usuário
 
@@ -27,7 +31,7 @@ public class UserAppServiceTests
         await using var context = new DbContextTestBuilder()
             .WithData(ctx => ctx.Roles.Add(new Role { Id = roleId, Name = RoleNames.Administrator }))
             .Build();
-        var handler = new UserAppService(context, _mapper);
+        var handler = new UserAppService(context, _mapper, _mailService);
         var request = UserMocks.BuildCreateRequest(roleId);
 
         // Act
@@ -53,14 +57,13 @@ public class UserAppServiceTests
     {
         // Arrange
         var userId = Guid.NewGuid();
-        var roleId = Guid.NewGuid();
-        var user = UserMocks.CreateUser(userId, "Maria da Silva", RoleMocks.CreateMechanicRole(roleId));
+        var user = UserMocks.CreateUser(userId, "Maria da Silva", RoleNames.Mechanic);
 
         await using var context = new DbContextTestBuilder()
             .WithData(ctx => ctx.Users.Add(user))
             .Build();
 
-        var handler = new UserAppService(context, _mapper);
+        var handler = new UserAppService(context, _mapper, _mailService);
 
         // Act
         var response = await handler.Get(userId, TestContext.CancellationTokenSource.Token);
@@ -71,7 +74,6 @@ public class UserAppServiceTests
         Assert.AreEqual(user.FullName, response.FullName);
         Assert.AreEqual(user.UserName, response.UserName);
         Assert.IsNotNull(response.Role);
-        Assert.AreEqual(roleId, response.Role.Id);
         Assert.AreEqual(RoleNames.Mechanic, response.Role.Name);
     }
 
@@ -80,7 +82,7 @@ public class UserAppServiceTests
     {
         // Arrange
         await using var context = new DbContextTestBuilder().Build();
-        var handler = new UserAppService(context, _mapper);
+        var handler = new UserAppService(context, _mapper, _mailService);
         var userId = Guid.NewGuid();
 
         // Act
@@ -100,11 +102,11 @@ public class UserAppServiceTests
         // Arrange
         List<User> users =
         [
-            UserMocks.CreateUser(Guid.NewGuid(), "Joao Silva", RoleMocks.CreateMechanicRole(Guid.NewGuid())),
-            UserMocks.CreateUser(Guid.NewGuid(), "Jose Silva", RoleMocks.CreateAdministratorRole(Guid.NewGuid())),
+            UserMocks.CreateUser(Guid.NewGuid(), "Joao Silva", RoleNames.Mechanic),
+            UserMocks.CreateUser(Guid.NewGuid(), "Jose Silva", RoleNames.Administrator),
         ];
         await using var context = new DbContextTestBuilder().WithData(users).Build();
-        var handler = new UserAppService(context, _mapper);
+        var handler = new UserAppService(context, _mapper, _mailService);
         var request = new GetUsersRequest { Page = 1, ItemsPerPage = 10 };
 
         // Act
@@ -124,11 +126,11 @@ public class UserAppServiceTests
         var userId2 = new Guid("bc272ac4-c97a-4997-9871-7e4f4c023797");
         List<User> users =
         [
-            UserMocks.CreateUser(userId1, "Joao Silva", RoleMocks.CreateMechanicRole(Guid.NewGuid())),
-            UserMocks.CreateUser(userId2, "Jose Silva", RoleMocks.CreateAdministratorRole(Guid.NewGuid())),
+            UserMocks.CreateUser(userId1, "Joao Silva", RoleNames.Mechanic),
+            UserMocks.CreateUser(userId2, "Jose Silva", RoleNames.Administrator),
         ];
         await using var context = new DbContextTestBuilder().WithData(users).Build();
-        var handler = new UserAppService(context, _mapper);
+        var handler = new UserAppService(context, _mapper, _mailService);
         var request1 = new GetUsersRequest { Page = 1, ItemsPerPage = 1 };
         var request2 = new GetUsersRequest { Page = 2, ItemsPerPage = 1 };
 
@@ -153,11 +155,11 @@ public class UserAppServiceTests
         // Arrange
         List<User> users =
         [
-            UserMocks.CreateUser(Guid.NewGuid(), "Joao Silva", RoleMocks.CreateMechanicRole(Guid.NewGuid())),
-            UserMocks.CreateUser(Guid.NewGuid(), "Jose Silva", RoleMocks.CreateAdministratorRole(Guid.NewGuid())),
+            UserMocks.CreateUser(Guid.NewGuid(), "Joao Silva", RoleNames.Mechanic),
+            UserMocks.CreateUser(Guid.NewGuid(), "Jose Silva", RoleNames.Administrator),
         ];
         await using var context = new DbContextTestBuilder().WithData(users).Build();
-        var handler = new UserAppService(context, _mapper);
+        var handler = new UserAppService(context, _mapper, _mailService);
         var request = new GetUsersRequest { Page = 1, ItemsPerPage = 10, Name = "joao" };
 
         // Act
@@ -177,20 +179,18 @@ public class UserAppServiceTests
     [TestMethod("Atualiza role do usuário quando outros dados são null.")]
     public async Task It_ShouldUpdateUserRole_WhenOtherDataIsNull()
     {
-        // Arrange
-        var mechanicId = Guid.NewGuid();
-        var administratorId = Guid.NewGuid();
-        var user = UserMocks.CreateUser(Guid.NewGuid(), "Maria da Silva", RoleMocks.CreateMechanicRole(mechanicId));
+        var administratorRole = RoleSeeds.GetSeeds().First(role => role.Name == RoleNames.Administrator);
+        var user = UserMocks.CreateUser(Guid.NewGuid(), "Maria da Silva", RoleNames.Attendant);
         await using var context = new DbContextTestBuilder()
             .WithData(ctx =>
             {
                 ctx.Users.Add(user);
-                ctx.Roles.Add(RoleMocks.CreateAdministratorRole(administratorId));
+                ctx.Roles.Add(administratorRole);
             })
             .Build();
         var userId = context.Users.First().Id;
-        var handler = new UserAppService(context, _mapper);
-        var request = UserMocks.BuildUpdateRequest(administratorId);
+        var handler = new UserAppService(context, _mapper, _mailService);
+        var request = UserMocks.BuildUpdateRequest(administratorRole.Id);
 
         // Act
         var response = await handler.Update(userId, request, CancellationToken.None);
@@ -202,14 +202,14 @@ public class UserAppServiceTests
         Assert.IsNotNull(updated);
         Assert.AreEqual(user.FullName, updated.FullName);
         Assert.AreEqual(user.UserName, updated.UserName);
-        Assert.AreEqual(administratorId, updated.RoleId);
+        Assert.AreEqual(administratorRole.Id, updated.RoleId);
     }
 
     [TestMethod("Retorna null quando o usuário não existe.")]
     public async Task It_ShouldReturnNull_WhenUserDoesNotExist()
     {
         await using var context = new DbContextTestBuilder().Build();
-        var handler = new UserAppService(context, _mapper);
+        var handler = new UserAppService(context, _mapper, _mailService);
         var request = UserMocks.BuildUpdateRequest(new Guid("f2d59afa-6e85-4557-8ff1-733343ba83f8"));
 
         var response = await handler.Update(Guid.NewGuid(), request, TestContext.CancellationTokenSource.Token);

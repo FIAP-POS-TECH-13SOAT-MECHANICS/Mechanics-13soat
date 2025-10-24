@@ -13,6 +13,7 @@ Repositório do projeto destinado aos Tech Challenges da Oficina Mecânica da FI
 
 1. Rode o comando `docker compose up -d --build` na raiz do projeto.
 2. Aguarde o processo concluir e acesse `http://localhost:5000/swagger`.
+3. Acesse o cliente de e-mail em `http://localhost:8025`.
 
 ### Configurações locais
 
@@ -38,7 +39,9 @@ O exemplo abaixo contém algumas configurações comuns:
     },
     "EmailSenderOptions": {
         // desabilitar envio de email
-        "Enabled": false
+        "Enabled": false,
+        // acessar servidor SMTP de fora do container Docker
+        "SmtpServer": "localhost"
     }
 }
 ```
@@ -135,3 +138,13 @@ Também pode ser útil normalizar os dados antes de executar certas validações
 Defina as regras implementando a interface `INormalizable`.
 Ao persistir os dados (chamar `SaveChangesAsync()`), a entidade é interceptada na camada de infraestrutura e, caso
 `IsNormalized()` seja `false`, o método `Normalize()` é executado.
+
+## Usuários padrão
+
+Os seguintes logins podem ser utilizados para testes:
+
+| Usuário         | Senha       | Perfil        |
+|-----------------|-------------|---------------|
+| `administrator` | `5eCre+Key` | Administrador |
+| `attendant`     | `5eCre+Key` | Atendente     |
+| `mechanic`      | `5eCre+Key` | Mecânico      |

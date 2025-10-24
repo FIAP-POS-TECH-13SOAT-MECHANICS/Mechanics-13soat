@@ -48,7 +48,8 @@ public class Program
         app.MapControllers()
             .RequireAuthorization();
 
-        app.UseMiddleware<DomainValidationMiddleware>();
+        app.UseMiddleware<ExceptionHandlerMiddleware>()
+            .UseMiddleware<DomainValidationMiddleware>();
 
         if (app.Environment.IsDevelopment())
         {

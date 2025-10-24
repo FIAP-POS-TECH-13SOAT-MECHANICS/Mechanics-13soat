@@ -1,50 +1,86 @@
 ﻿using Mechanics.Application.Auth.Requests;
 using Mechanics.Application.Auth.Responses;
-using Mechanics.Application.Options;
+using Mechanics.Application.Notification.Services;
 using Mechanics.Application.Utils;
+using Mechanics.Application.Utils.CommonResponses;
+using Mechanics.Application.Utils.TokenGenerator;
 using Mechanics.Domain.Auth;
-using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
+using Mechanics.Domain.Base.Validation;
+using Mechanics.Infra.Data;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace Mechanics.Application.Auth.Services;
 
-public class AuthAppService(IOptions<JwtOptions> jwtOptions) : IAppService
+public class AuthAppService(AppDbContext dbContext, IEmailService emailService, IJwtTokenHandler tokenHandler) : IAppService
 {
-    private readonly JwtOptions _options = jwtOptions.Value;
-
-    public Task<LoginResponse?> Login(LoginRequest request, CancellationToken cancellationToken = default)
+    public async Task<TokenResponse?> Login(LoginRequest request, CancellationToken cancellationToken = default)
     {
-        if (request.Password != "12345")
-            return Task.FromResult<LoginResponse?>(null);
+        var normalizedUserName = request.UserName.Trim().ToLowerInvariant();
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.UserName == normalizedUserName, cancellationToken);
+        if (user is null)
+            return null;
 
-        var key = Encoding.ASCII.GetBytes(_options.SecretKey);
+        var passwordVerificationResult = new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.Password);
+        return passwordVerificationResult is not PasswordVerificationResult.Failed ? tokenHandler.CreateTokenResponse(user) : null;
+    }
 
-        var claims = new List<Claim>
-        {
-            new("id", "1b0359c8-3e7c-42bb-b8cf-36d58957fb31"),
-            new("username", "Administrator"),
-            new(ClaimTypes.Role, RoleNames.Administrator),
-        };
+    public async Task<TokenResponse?> Refresh(RefreshTokenRequest request, CancellationToken cancellationToken)
+    {
+        var userId = tokenHandler.GetUserId(request.RefreshToken);
+        if (userId is null)
+            return null;
 
-        var expiration = DateTime.UtcNow.AddMinutes(_options.AccessTokenLifetime);
+        var user = await dbContext.Users.FindAsync([userId], cancellationToken: cancellationToken);
+        if (user is null || !await tokenHandler.ValidateRefreshToken(request.RefreshToken, user.SecurityStamp))
+            return null;
 
-        var tokenDescriptor = new SecurityTokenDescriptor
-        {
-            Subject = new ClaimsIdentity(claims),
-            Expires = expiration,
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
-        };
+        return tokenHandler.CreateTokenResponse(user);
+    }
 
-        var tokenHandler = new JwtSecurityTokenHandler();
-        var token = tokenHandler.CreateToken(tokenDescriptor);
+    public async Task<UpdateItemResponse?> CreatePassword(CreatePasswordRequest request, CancellationToken cancellationToken)
+    {
+        var normalizedUserName = request.UserName.Trim().ToLowerInvariant();
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.UserName == normalizedUserName, cancellationToken);
+        if (user is null || user.GetPasswordCreationCode() != request.PasswordCreationCode)
+            return null;
 
-        return Task.FromResult(new LoginResponse
-        {
-            AccessToken = tokenHandler.WriteToken(token),
-            ExpirationDate = expiration,
-        })!;
+        user.PasswordHash = new PasswordHasher<User>().HashPassword(user, request.Password);
+        user.SecurityStamp = Guid.NewGuid().ToString();
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        await emailService.UserPasswordChanged(user, cancellationToken);
+
+        return new UpdateItemResponse();
+    }
+
+    public async Task ResetPassword(ResetPasswordRequest request, CancellationToken cancellationToken)
+    {
+        var normalizedUserName = request.UserName.Trim().ToLowerInvariant();
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.UserName == normalizedUserName, cancellationToken);
+        if (user is null)
+            return;
+
+        await emailService.SendUserPasswordCreationCode(user, user.GetPasswordCreationCode(), cancellationToken);
+    }
+
+    public async Task ChangePassword(Guid userId, ChangePasswordRequest request, CancellationToken cancellationToken)
+    {
+        var user = await dbContext.Users.FindAsync([userId], cancellationToken: cancellationToken);
+        if (user is null)
+            throw new ApplicationException("User not found.");
+
+        var verificationResult = new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword);
+        Validator.BuildAndThrow(builder =>
+            builder.AddValidation(verificationResult != PasswordVerificationResult.Failed, nameof(request.CurrentPassword),
+                "Invalid current password."));
+
+        user.PasswordHash = new PasswordHasher<User>().HashPassword(user, request.NewPassword);
+        user.SecurityStamp = Guid.NewGuid().ToString();
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        await emailService.UserPasswordChanged(user, cancellationToken);
     }
 }

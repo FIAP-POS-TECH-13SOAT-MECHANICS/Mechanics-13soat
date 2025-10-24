@@ -16,6 +16,7 @@
     <PackageReference Include="MSTest.TestAdapter" Version="3.10.4"/>
     <PackageReference Include="MSTest.TestFramework" Version="3.10.4"/>
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.20"/>
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="8.10.0"/>
   </ItemGroup>
 
   <ItemGroup>

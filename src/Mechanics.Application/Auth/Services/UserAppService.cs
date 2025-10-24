@@ -1,25 +1,33 @@
 ﻿using AutoMapper;
 using Mechanics.Application.Auth.Requests;
 using Mechanics.Application.Auth.Responses;
+using Mechanics.Application.Notification.Services;
 using Mechanics.Application.Utils;
 using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Application.Utils.PagedList;
 using Mechanics.Domain.Auth;
 using Mechanics.Domain.Base.Validation;
 using Mechanics.Infra.Data;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Mechanics.Application.Auth.Services;
 
-public class UserAppService(AppDbContext dbContext, IMapper mapper) : IAppService
+public class UserAppService(AppDbContext dbContext, IMapper mapper, IEmailService emailService) : IAppService
 {
     public async Task<CreateItemResponse> Create(CreateUserRequest request, CancellationToken cancellationToken)
     {
         var entity = mapper.Map<User>(request);
         Validator.ValidateAndThrow(entity);
 
+        entity.PasswordHash = new PasswordHasher<User>().HashPassword(entity, Guid.NewGuid().ToString());
+        entity.SecurityStamp = Guid.NewGuid().ToString();
+
         await dbContext.Users.AddAsync(entity, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
+
+        var passwordCreationCode = entity.GetPasswordCreationCode();
+        await emailService.SendUserPasswordCreationCode(entity, passwordCreationCode, cancellationToken);
 
         return new CreateItemResponse { CreatedId = entity.Id };
     }

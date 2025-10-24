@@ -1,4 +1,6 @@
 ﻿using Mechanics.Application.Options;
+using Mechanics.Application.Utils;
+using Mechanics.Application.Utils.TokenGenerator;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,6 +11,8 @@ namespace Mechanics.Infra.CrossCutting.IoC.Extensions;
 
 public static class AuthExtensions
 {
+    private const string JwtTokenIssuer = "fiap-mechanics";
+
     public static IServiceCollection AddCustomAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
         var configurationSection = configuration.GetSection(nameof(JwtOptions));
@@ -26,7 +30,8 @@ public static class AuthExtensions
             {
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidateIssuer = false,
+                    ValidateIssuer = true,
+                    ValidIssuer = JwtTokenIssuer,
                     ValidateAudience = false,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
@@ -35,6 +40,7 @@ public static class AuthExtensions
             });
 
         services.AddAuthorization();
+        services.AddSingleton<IJwtTokenHandler, JwtTokenHandler>();
 
         return services;
     }

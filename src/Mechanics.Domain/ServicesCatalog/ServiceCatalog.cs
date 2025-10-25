@@ -25,7 +25,7 @@ public class ServiceCatalog : AbstractEntity, IValidatable
     public required decimal BasePrice { get; set; }
 
     /// <summary>
-    ///     Tempo médio de execução (em horas).
+    ///     Tempo médio de execução (em minutos).
     /// </summary>
     public required int AverageTime { get; set; }
 

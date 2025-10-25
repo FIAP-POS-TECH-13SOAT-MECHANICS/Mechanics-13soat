@@ -37,7 +37,11 @@ public class WorkOrder : AbstractEntity
 
     /// <summary>
     ///     Gera uma nova chave de acesso única por cliente.
+    ///     
     /// </summary>
+    /// <param name="existingOrders">As ordens de serviço do cliente.</param>
+    /// <remarks>A chave é composta por 8 dígitos e deve ser única por cliente.</remarks>
+    /// <returns>Uma nova chave de acesso para ser usada em <see cref="AccessKey"/>.</returns>
     public static string GenerateNewAccessKey(IEnumerable<WorkOrder> existingOrders)
     {
         var existingKeys = existingOrders.Select(order => order.AccessKey).ToHashSet();

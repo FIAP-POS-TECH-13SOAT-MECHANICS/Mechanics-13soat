@@ -42,15 +42,26 @@ public static class ServicesCatalogMocks
         Status = ServiceCatalogStatusType.Active
     };
 
-    public static ServiceCatalog CreateService(Guid id) => new()
+    public static ServiceCatalog CreateService(Guid id, string? name = null) => new()
     {
         Id = id,
-        Name = "Freios",
+        Name = name ?? "Freios",
         Description = "Revisão completa dos freios",
         BasePrice = 299.90m,
         AverageTime = 60,
         Status = ServiceCatalogStatusType.Active
     };
+
+    public static ServiceCatalog CreateSuggestedService(Guid id, string name, string description) => new()
+    {
+        Id = id,
+        Name = name,
+        Description = description,
+        BasePrice = 149.90m,
+        AverageTime = 40,
+        Status = ServiceCatalogStatusType.Active
+    };
+
 
     public static ServiceCatalog CreateInvalidService(Guid id) => new()
     {

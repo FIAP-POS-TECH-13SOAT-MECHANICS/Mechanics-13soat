@@ -15,15 +15,18 @@ public class ServiceCatalogAppService(AppDbContext dbContext, IMapper mapper) : 
 {
     public async Task<GetServicesCatalogResponse> GetList(GetServiceCatalogRequest request, CancellationToken cancellationToken)
     {
-        var normalizedName = request.Name?.Trim().ToUpper();
-        var emptyName = string.IsNullOrWhiteSpace(normalizedName);
+        var query = dbContext.ServiceCatalog.AsNoTracking();
 
-        var query = dbContext.ServiceCatalog
-            .AsNoTracking()
-            .Where(c => emptyName || c.Name.ToUpper().Contains(normalizedName!));
+        if (!string.IsNullOrWhiteSpace(request.Name))
+        {
+            var normalizedName = request.Name.Trim().ToUpperInvariant();
+            query = query.Where(c => c.Name.ToUpper().Contains(normalizedName));
+        }
 
         if (request.Status.HasValue)
+        {
             query = query.Where(c => c.Status == request.Status);
+        }
 
         var (items, count) = await query.GetPaginatedList(request, cancellationToken);
         var mapped = mapper.Map<IEnumerable<GetServiceCatalogResponse>>(items);

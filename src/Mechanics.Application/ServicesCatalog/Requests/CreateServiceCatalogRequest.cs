@@ -23,7 +23,7 @@ public class CreateServiceCatalogRequest
     public required decimal BasePrice { get; init; }
 
     /// <summary>
-    ///     Tempo médio de execução (em horas).
+    ///     Tempo médio de execução (em minutos).
     /// </summary>
     public required int AverageTime { get; init; }
 

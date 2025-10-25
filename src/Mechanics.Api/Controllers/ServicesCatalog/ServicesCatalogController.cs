@@ -5,6 +5,7 @@ using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 
 namespace Mechanics.Api.Controllers.ServicesCatalog;
 
@@ -54,6 +55,7 @@ public class ServiceCatalogController(ServiceCatalogAppService service) : Contro
     ///     Sugerir os serviços oferecidos com base no tipo de veículo.
     /// </summary>
     /// <param name="vehicleType">Tipo do veículo (ex: SUV, Sedan, Hatch).</param>
+    /// <param name="cancellationToken"></param>
     /// <response code="200">Sugestões geradas com sucesso.</response>
     /// <response code="400">Parâmetros inválidos.</response>
     [HttpGet("suggestions")]
@@ -80,10 +82,21 @@ public class ServiceCatalogController(ServiceCatalogAppService service) : Contro
     [Produces("application/json", Type = typeof(CreateItemResponse))]
     [ProducesResponseType(typeof(CreateItemResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> CreateServiceCatalog(CreateServiceCatalogRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> CreateServiceCatalog([FromBody] CreateServiceCatalogRequest request, CancellationToken cancellationToken = default)
     {
-        var response = await service.Create(request, cancellationToken);
-        return CreatedAtAction(nameof(GetServiceCatalog), new { id = response.CreatedId }, response);
+        try
+        {
+            var response = await service.Create(request, cancellationToken);
+            return CreatedAtAction(nameof(GetServiceCatalog), new { id = response.CreatedId }, response);
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
     /// <summary>

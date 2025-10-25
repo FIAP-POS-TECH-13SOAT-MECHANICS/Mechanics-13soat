@@ -23,7 +23,7 @@ public class UpdateServiceCatalogRequest
     public decimal? BasePrice { get; init; }
 
     /// <summary>
-    ///     Tempo médio de execução (em horas). Opcional para atualização.
+    ///     Tempo médio de execução (em minutos). Opcional para atualização.
     /// </summary>
     public int? AverageTime { get; init; }
 

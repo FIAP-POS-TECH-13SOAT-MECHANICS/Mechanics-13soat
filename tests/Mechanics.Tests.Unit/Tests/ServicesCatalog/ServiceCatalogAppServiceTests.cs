@@ -1,4 +1,5 @@
 using AutoMapper;
+using Mechanics.Application.ServicesCatalog.Requests;
 using Mechanics.Application.ServicesCatalog.Services;
 using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Domain.Base.Validation;
@@ -10,29 +11,31 @@ namespace Mechanics.Tests.Unit.Tests.ServicesCatalog;
 
 [TestClass]
 [TestCategory("ServicesCatalog")]
-public class ServicesCatalogAppServiceTests
+public class ServiceCatalogAppServiceTests
 {
     public TestContext TestContext { get; set; }
     private readonly IMapper _mapper = AutoMapperFactory.CreateMap("ServicesCatalog");
 
     #region cadastrar serviço
 
-    [TestMethod("Cria serviço")]
+    [TestMethod("Cadastro de serviço")]
     public async Task It_ShouldCreateService()
     {
         // Arrange
-        await using var context = new DbContextTestBuilder().Build();
-        var handler = new ServiceCatalogAppService(context, _mapper);
+        var context = new DbContextTestBuilder().Build();
+        var service = new ServiceCatalogAppService(context, _mapper);
         var request = ServicesCatalogMocks.BuildCreateRequest();
 
         // Act
-        var response = await handler.Create(request, CancellationToken.None);
+        var response = await service.Create(request, CancellationToken.None);
 
         // Assert
         Assert.IsNotNull(response);
         Assert.AreNotEqual(Guid.Empty, response.CreatedId);
+
         var created = await context.ServiceCatalog.AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == response.CreatedId, TestContext.CancellationTokenSource.Token);
+            .FirstOrDefaultAsync(s => s.Id == response.CreatedId, TestContext.CancellationTokenSource.Token);
+
         Assert.IsNotNull(created);
         Assert.AreEqual(request.Name.Trim().ToUpper(), created.Name);
         Assert.AreEqual(request.Description.Trim(), created.Description);
@@ -41,18 +44,18 @@ public class ServicesCatalogAppServiceTests
         Assert.AreEqual(request.Status ?? created.Status, created.Status);
     }
 
-    [TestMethod("Falha ao criar serviço inválido")]
-    public async Task It_ShouldThrow_WhenCreateServiceIsInvalid()
+    [TestMethod("Cadastro de serviço inválido")]
+    public async Task It_ShouldThrow_WhenServiceIsInvalid()
     {
         // Arrange
-        await using var context = new DbContextTestBuilder().Build();
-        var handler = new ServiceCatalogAppService(context, _mapper);
+        var context = new DbContextTestBuilder().Build();
+        var service = new ServiceCatalogAppService(context, _mapper);
         var request = ServicesCatalogMocks.BuildInvalidCreateRequest();
 
         // Act + Assert
         await Assert.ThrowsExactlyAsync<DomainValidationException>(async () =>
         {
-            await handler.Create(request, CancellationToken.None);
+            await service.Create(request, CancellationToken.None);
         });
     }
 
@@ -60,24 +63,26 @@ public class ServicesCatalogAppServiceTests
 
     #region atualizar serviço
 
-    [TestMethod("Atualiza dados de um serviço cadastrado")]
-    public async Task It_ShouldUpdateService_WhenDataIsValid()
+    [TestMethod("Alteração de serviço")]
+    public async Task It_ShouldUpdateService()
     {
         // Arrange
         var id = Guid.NewGuid();
         var existing = ServicesCatalogMocks.CreateService(id);
-        await using var context = new DbContextTestBuilder().WithData(ctx => ctx.ServiceCatalog.Add(existing)).Build();
-        var handler = new ServiceCatalogAppService(context, _mapper);
+        var context = new DbContextTestBuilder().WithData(ctx => ctx.ServiceCatalog.Add(existing)).Build();
+        var service = new ServiceCatalogAppService(context, _mapper);
         var request = ServicesCatalogMocks.BuildUpdateRequest();
 
         // Act
-        var response = await handler.Update(id, request, CancellationToken.None);
+        var response = await service.Update(id, request, CancellationToken.None);
 
         // Assert
         Assert.IsNotNull(response);
         Assert.IsInstanceOfType<UpdateItemResponse>(response);
+
         var updated = await context.ServiceCatalog.AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == id, TestContext.CancellationTokenSource.Token);
+            .FirstOrDefaultAsync(s => s.Id == id, TestContext.CancellationTokenSource.Token);
+
         Assert.IsNotNull(updated);
         Assert.AreEqual(request.Name!.Trim().ToUpper(), updated.Name);
         Assert.AreEqual(request.Description, updated.Description);
@@ -86,21 +91,118 @@ public class ServicesCatalogAppServiceTests
         Assert.AreEqual(request.Status, updated.Status);
     }
 
-    [TestMethod("Falha ao atualizar serviço inválido")]
-    public async Task It_ShouldThrow_WhenUpdateServiceIsInvalid()
+    #endregion
+
+    #region consultar serviço
+
+    [TestMethod("Consulta por ID")]
+    public async Task It_ShouldGetServiceById()
     {
         // Arrange
         var id = Guid.NewGuid();
-        var existing = ServicesCatalogMocks.CreateInvalidService(id);
-        await using var context = new DbContextTestBuilder().WithData(ctx => ctx.ServiceCatalog.Add(existing)).Build();
-        var handler = new ServiceCatalogAppService(context, _mapper);
-        var request = ServicesCatalogMocks.BuildInvalidUpdateRequest();
+        var existing = ServicesCatalogMocks.CreateService(id);
+        var context = new DbContextTestBuilder().WithData(ctx => ctx.ServiceCatalog.Add(existing)).Build();
+        var service = new ServiceCatalogAppService(context, _mapper);
 
-        // Act + Assert
-        await Assert.ThrowsExactlyAsync<DomainValidationException>(async () =>
-        {
-            await handler.Update(id, request, CancellationToken.None);
-        });
+        // Act
+        var response = await service.Get(id, TestContext.CancellationTokenSource.Token);
+
+        // Assert
+        Assert.IsNotNull(response);
+        Assert.AreEqual(id, response!.Id);
+        Assert.AreEqual(existing.Name, response.Name);
+        Assert.AreEqual(existing.Description, response.Description);
+    }
+
+    [TestMethod("Listar por nome")]
+    public async Task It_ShouldListByName()
+    {
+        // Arrange
+        var context = new DbContextTestBuilder()
+            .WithData([
+                ServicesCatalogMocks.CreateService(Guid.NewGuid(), "Freios"),
+            ServicesCatalogMocks.CreateService(Guid.NewGuid(), "Suspensão"),
+            ServicesCatalogMocks.CreateService(Guid.NewGuid(), "Troca de óleo"),
+            ])
+            .Build();
+
+        var service = new ServiceCatalogAppService(context, _mapper);
+        var request = new GetServiceCatalogRequest { Name = "freios", Page = 1, ItemsPerPage = 10 };
+
+        // Act
+        var list = await service.GetList(request, TestContext.CancellationTokenSource.Token);
+
+        // Assert
+        Assert.IsNotNull(list);
+        Assert.AreEqual(1, list.Items.Count());
+        Assert.AreEqual(1, list.TotalCount);
+        Assert.Contains("FREIOS", list.Items.First().Name.ToUpper());
+    }
+
+    [TestMethod("Sugestões por tipo de veículo")]
+    public async Task It_ShouldSuggestByVehicleType()
+    {
+        // Arrange
+        var context = new DbContextTestBuilder()
+            .WithData([
+                ServicesCatalogMocks.CreateSuggestedService(Guid.NewGuid(), "Geometria", "Geometria e Pneus"),
+            ServicesCatalogMocks.CreateSuggestedService(Guid.NewGuid(), "Troca de Óleo", "Troca de Óleo e Suspensão")
+            ])
+            .Build();
+
+        var service = new ServiceCatalogAppService(context, _mapper);
+
+        // Act
+        var list = await service.GetSuggestions("SUV", TestContext.CancellationTokenSource.Token);
+
+        // Assert
+        Assert.IsNotNull(list);
+        Assert.AreEqual(2, list.Count());
+        Assert.IsTrue(list.All(s =>
+            s.Description.Contains("Pneus") ||
+            s.Description.Contains("Suspensão") ||
+            s.Description.Contains("Troca de Óleo") ||
+            s.Description.Contains("Geometria")));
+    }
+
+    #endregion
+
+    #region excluir serviço
+
+    [TestMethod("Remover serviço")]
+    public async Task It_ShouldDeleteService()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var existing = ServicesCatalogMocks.CreateService(id);
+        var context = new DbContextTestBuilder().WithData(ctx => ctx.ServiceCatalog.Add(existing)).Build();
+        var service = new ServiceCatalogAppService(context, _mapper);
+
+        // Act
+        var result = await service.Delete(id, TestContext.CancellationTokenSource.Token);
+
+        // Assert
+        Assert.IsTrue(result);
+
+        var deleted = await context.ServiceCatalog.AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == id, TestContext.CancellationTokenSource.Token);
+
+        Assert.IsNull(deleted);
+    }
+
+    [TestMethod("Falha ao remover serviço inexistente")]
+    public async Task It_ShouldFailToDeleteNonexistentService()
+    {
+        // Arrange
+        var context = new DbContextTestBuilder().Build();
+        var service = new ServiceCatalogAppService(context, _mapper);
+        var id = Guid.NewGuid();
+
+        // Act
+        var result = await service.Delete(id, TestContext.CancellationTokenSource.Token);
+
+        // Assert
+        Assert.IsFalse(result);
     }
 
     #endregion

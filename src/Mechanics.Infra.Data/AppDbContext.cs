@@ -1,7 +1,8 @@
-﻿using Mechanics.Domain.Auth;
+using Mechanics.Domain.Auth;
 using Mechanics.Domain.Base;
 using Mechanics.Domain.Customers;
 using Mechanics.Domain.Products;
+using Mechanics.Domain.ServicesCatalog;
 using Mechanics.Domain.Vehicles;
 using Mechanics.Domain.WorkOrders;
 using Mechanics.Infra.Data.Interceptors;
@@ -15,6 +16,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     public DbSet<Customer> Customers { get; set; }
     public DbSet<Product> Products { get; set; }
+    public DbSet<ServiceCatalog> ServiceCatalog { get; set; }
     public DbSet<Vehicle> Vehicles { get; set; }
     public DbSet<WorkOrder> WorkOrders { get; set; }
     public DbSet<User> Users { get; set; }

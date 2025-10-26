@@ -4,6 +4,7 @@ using Mechanics.Infra.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Mechanics.Infra.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251025205326_ServiceCatalogAdd")]
+    partial class ServiceCatalogAdd
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -80,28 +83,13 @@ namespace Mechanics.Infra.Data.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("SYSDATETIME()");
 
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
                     b.Property<Guid>("RoleId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("SecurityStamp")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("nvarchar(64)");
 
                     b.Property<string>("UserName")
                         .IsRequired()
@@ -109,9 +97,6 @@ namespace Mechanics.Infra.Data.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Email")
-                        .IsUnique();
 
                     b.HasIndex("FullName");
 
@@ -121,41 +106,6 @@ namespace Mechanics.Infra.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("Users", "Mechanics");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("db27b85d-b0f3-4300-bb45-7841f0d11617"),
-                            CreationDate = new DateTime(2025, 10, 12, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Email = "administrator@mechanics.com",
-                            FullName = "Administrator User",
-                            PasswordHash = "AQAAAAIAAYagAAAAEPGF9Xsz+ARiCopDgQbQ8gbGubN6bhvNhpKiy8XK2BORE5eV95VywrM9rVE48i2m8w==",
-                            RoleId = new Guid("2afde195-550b-498e-a63d-7a6d556b25ba"),
-                            SecurityStamp = "efcaaf76-0535-45fc-a79c-06ab92c064bb",
-                            UserName = "administrator"
-                        },
-                        new
-                        {
-                            Id = new Guid("c2a83e5a-27c7-440a-97e3-86234eebb3c7"),
-                            CreationDate = new DateTime(2025, 10, 12, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Email = "attendant@mechanics.com",
-                            FullName = "Attendant User",
-                            PasswordHash = "AQAAAAIAAYagAAAAEEo/VptbCYVPiVkoEVHthpWAZUvV/KJ0WJkg+wKbtXJkmMHmSfnpFT4JTLofugBwyQ==",
-                            RoleId = new Guid("a1097867-aa3e-416c-8685-190516b62a12"),
-                            SecurityStamp = "370c4d16-8e11-46ca-9004-e1fb9311e49e",
-                            UserName = "attendant"
-                        },
-                        new
-                        {
-                            Id = new Guid("4c3b8777-6c4a-4bf3-8ad5-aad48981f7f2"),
-                            CreationDate = new DateTime(2025, 10, 12, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Email = "mechanic@mechanics.com",
-                            FullName = "Mechanic User",
-                            PasswordHash = "AQAAAAIAAYagAAAAEKSeHdHtCfN38pakeil4oyEL0d07GBEySe6csY8jmXIKT3oEZVcZR7Jngd9qxFgmkQ==",
-                            RoleId = new Guid("f6027484-89a4-49f6-a9cb-4d1733c2bab7"),
-                            SecurityStamp = "0a3bc211-1220-4d20-80e9-bd850d0dc200",
-                            UserName = "mechanic"
-                        });
                 });
 
             modelBuilder.Entity("Mechanics.Domain.Customers.Customer", b =>

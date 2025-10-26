@@ -1,10 +1,14 @@
-﻿using Mechanics.Domain.Base;
+using Mechanics.Domain.Base;
 using Mechanics.Domain.Customers;
 using Mechanics.Domain.Products;
 using Mechanics.Domain.Vehicles;
+using Mechanics.Domain.ServicesCatalog;
 
 namespace Mechanics.Domain.WorkOrders;
 
+/// <summary>
+///     Representa uma ordem de serviço vinculada a um cliente e veículo.
+/// </summary>
 public class WorkOrder : AbstractEntity
 {
     public required Guid CustomerId { get; init; }
@@ -17,12 +21,23 @@ public class WorkOrder : AbstractEntity
 
     public required Guid VehicleId { get; init; }
     public Vehicle? Vehicle { get; init; }
+
     public WorkOrderStatus Status { get; init; }
     public DateTime LastUpdate { get; init; }
+
+    /// <summary>
+    ///     Produtos utilizados na ordem.
+    /// </summary>
     public ICollection<Product>? Products { get; init; }
 
     /// <summary>
-    ///     Gera uma nova chave de acesso.
+    ///     Serviços executados na ordem.
+    /// </summary>
+    public ICollection<ServiceCatalog>? ServiceCatalog { get; init; }
+
+    /// <summary>
+    ///     Gera uma nova chave de acesso única por cliente.
+    ///     
     /// </summary>
     /// <param name="existingOrders">As ordens de serviço do cliente.</param>
     /// <remarks>A chave é composta por 8 dígitos e deve ser única por cliente.</remarks>

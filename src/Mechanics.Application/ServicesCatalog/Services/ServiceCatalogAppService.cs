@@ -80,15 +80,10 @@ public class ServiceCatalogAppService(AppDbContext dbContext, IMapper mapper) : 
     public async Task<CreateItemResponse> Create(CreateServiceCatalogRequest request, CancellationToken cancellationToken)
     {
         var entity = mapper.Map<ServiceCatalog>(request);
-        entity.Name = entity.Name.Trim().ToUpper();
 
+        if (!entity.IsNormalized())
+            entity.Normalize();
         Validator.ValidateAndThrow(entity);
-
-        var exists = await dbContext.ServiceCatalog
-            .AnyAsync(s => s.Name == entity.Name, cancellationToken);
-
-        if (exists)
-            throw new InvalidOperationException("There is already a service with that name.");
 
         await dbContext.ServiceCatalog.AddAsync(entity, cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);

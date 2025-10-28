@@ -12,6 +12,7 @@ public class ServiceCatalogConfiguration : IEntityTypeConfiguration<ServiceCatal
         builder.Property(entity => entity.Name)
                .HasMaxLength(100)
                .IsRequired();
+        builder.HasIndex(entity => entity.Name).IsUnique();
 
         // Descrição do serviço
         builder.Property(entity => entity.Description)

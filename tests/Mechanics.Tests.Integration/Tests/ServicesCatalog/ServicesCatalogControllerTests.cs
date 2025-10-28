@@ -2,7 +2,6 @@ using Mechanics.Application.ServicesCatalog.Requests;
 using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Domain.Auth;
 using Mechanics.Domain.Base;
-using Mechanics.Domain.ServicesCatalog;
 using Mechanics.Tests.Integration.Helpers;
 using System.Net;
 using System.Net.Http.Json;
@@ -86,14 +85,16 @@ public class ServiceCatalogControllerTests
             Status = ServiceCatalogStatusType.Active
         };
 
-        var secondResponse = await client.PostAsJsonAsync("api/service-catalog", duplicateRequest, TestContext.CancellationTokenSource.Token);
+        var secondResponse =
+            await client.PostAsJsonAsync("api/service-catalog", duplicateRequest, TestContext.CancellationTokenSource.Token);
 
         // Assert
-        var raw = await secondResponse.Content.ReadAsStringAsync();
+        var raw = await secondResponse.Content.ReadAsStringAsync(TestContext.CancellationTokenSource.Token);
         Console.WriteLine($"Status: {secondResponse.StatusCode}, Body: {raw}");
 
-        Assert.AreEqual(HttpStatusCode.BadRequest, secondResponse.StatusCode, $"Esperado BadRequest, mas veio: {secondResponse.StatusCode}");
-        Assert.IsTrue(raw.Contains("already a service with that name", StringComparison.OrdinalIgnoreCase));
+        Assert.AreEqual(HttpStatusCode.BadRequest, secondResponse.StatusCode,
+            $"Esperado BadRequest, mas veio: {secondResponse.StatusCode}");
+        Assert.IsTrue(raw.Contains("Service name must be unique.", StringComparison.OrdinalIgnoreCase));
     }
 
     [TestMethod("Sugestões com tipo de veículo vazio")]
@@ -102,7 +103,8 @@ public class ServiceCatalogControllerTests
         var factory = TestProperties.Factory;
         var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
 
-        var response = await client.GetAsync("api/service-catalog/suggestions?vehicleType=", TestContext.CancellationTokenSource.Token);
+        var response = await client.GetAsync("api/service-catalog/suggestions?vehicleType=",
+            TestContext.CancellationTokenSource.Token);
 
         Assert.AreEqual(HttpStatusCode.BadRequest, response.StatusCode);
     }

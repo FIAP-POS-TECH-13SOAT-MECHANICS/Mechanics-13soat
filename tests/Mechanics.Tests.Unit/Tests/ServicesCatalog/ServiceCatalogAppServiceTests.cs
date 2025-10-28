@@ -37,7 +37,7 @@ public class ServiceCatalogAppServiceTests
             .FirstOrDefaultAsync(s => s.Id == response.CreatedId, TestContext.CancellationTokenSource.Token);
 
         Assert.IsNotNull(created);
-        Assert.AreEqual(request.Name, created.Name);
+        Assert.AreEqual(request.Name.ToUpper(), created.Name);
         Assert.AreEqual(request.Description.Trim(), created.Description);
         Assert.AreEqual(request.BasePrice, created.BasePrice);
         Assert.AreEqual(request.AverageTime, created.AverageTime);
@@ -121,8 +121,8 @@ public class ServiceCatalogAppServiceTests
         var context = new DbContextTestBuilder()
             .WithData([
                 ServicesCatalogMocks.CreateService(Guid.NewGuid(), "Freios"),
-            ServicesCatalogMocks.CreateService(Guid.NewGuid(), "Suspensão"),
-            ServicesCatalogMocks.CreateService(Guid.NewGuid(), "Troca de óleo"),
+                ServicesCatalogMocks.CreateService(Guid.NewGuid(), "Suspensão"),
+                ServicesCatalogMocks.CreateService(Guid.NewGuid(), "Troca de óleo"),
             ])
             .Build();
 
@@ -146,7 +146,7 @@ public class ServiceCatalogAppServiceTests
         var context = new DbContextTestBuilder()
             .WithData([
                 ServicesCatalogMocks.CreateSuggestedService(Guid.NewGuid(), "Geometria", "Geometria e Pneus"),
-            ServicesCatalogMocks.CreateSuggestedService(Guid.NewGuid(), "Troca de Óleo", "Troca de Óleo e Suspensão")
+                ServicesCatalogMocks.CreateSuggestedService(Guid.NewGuid(), "Troca de Óleo", "Troca de Óleo e Suspensão")
             ])
             .Build();
 

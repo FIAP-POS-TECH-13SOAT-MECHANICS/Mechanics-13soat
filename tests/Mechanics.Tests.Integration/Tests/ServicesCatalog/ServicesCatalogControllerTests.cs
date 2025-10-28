@@ -16,6 +16,19 @@ public class ServiceCatalogControllerTests
 {
     public TestContext TestContext { get; set; }
 
+    [TestMethod("Verifica se rota está acessível")]
+    public async Task It_ShouldReachServiceCatalogEndpoint()
+    {
+        var factory = TestProperties.Factory;
+        var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
+
+        var response = await client.GetAsync("api/service-catalog");
+
+        Console.WriteLine($"Status: {response.StatusCode}");
+        Assert.AreNotEqual(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+
     [TestMethod("Cadastro de serviço")]
     public async Task It_ShouldCreateServiceCatalog()
     {

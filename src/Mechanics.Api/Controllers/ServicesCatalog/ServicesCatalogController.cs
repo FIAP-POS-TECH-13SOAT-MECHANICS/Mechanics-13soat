@@ -16,7 +16,7 @@ namespace Mechanics.Api.Controllers.ServicesCatalog;
 [ApiExplorerSettings(GroupName = "v1")]
 [Route("api/[controller]")]
 [Authorize]
-public class ServicesCatalogController(ServiceCatalogAppService service) : ControllerBase
+public class ServiceCatalogController(ServiceCatalogAppService service) : ControllerBase
 {
     /// <summary>
     ///     Listar os serviços oferecidos pelos filtros informados.

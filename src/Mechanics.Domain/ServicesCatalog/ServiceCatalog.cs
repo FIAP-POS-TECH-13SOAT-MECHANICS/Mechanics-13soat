@@ -7,7 +7,7 @@ namespace Mechanics.Domain.ServicesCatalog;
 /// <summary>
 ///     Entidade que representa um serviço oferecido pela oficina.
 /// </summary>
-public class ServiceCatalog : AbstractEntity, IValidatable
+public class ServiceCatalog : AbstractEntity, IValidatable, INormalizable
 {
     /// <summary>
     ///     Nome do serviço.
@@ -44,4 +44,8 @@ public class ServiceCatalog : AbstractEntity, IValidatable
         builder.AddValidation(BasePrice >= 0, nameof(BasePrice), "The base price cannot be negative.");
         builder.AddValidation(AverageTime > 0, nameof(AverageTime), "The average time must be greater than zero.");
     }
+
+    public bool IsNormalized() => Name.IsTrimmedUpperCase();
+
+    public void Normalize() => Name = Name.Trim().ToUpper();
 }

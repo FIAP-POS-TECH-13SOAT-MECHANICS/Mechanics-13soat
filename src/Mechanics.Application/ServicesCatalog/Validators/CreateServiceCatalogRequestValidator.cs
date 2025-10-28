@@ -13,10 +13,12 @@ public class CreateServiceCatalogRequestValidator : AbstractValidator<CreateServ
     public CreateServiceCatalogRequestValidator(AppDbContext dbContext)
     {
         RuleFor(r => r.Name).NotEmpty()
-            .MustAsync((roleName, cancellationToken) => dbContext.Roles.AnyAsync(r => r.Name == roleName, cancellationToken))
-            .WithMessage("Invalid roleName.");
+            .MaximumLength(100)
+            .MustAsync((serviceName, cancellationToken) =>
+                dbContext.ServiceCatalog.AllAsync(s => s.Name != serviceName, cancellationToken))
+            .WithMessage("Service name must be unique.");
 
-        RuleFor(r => r.Description).NotEmpty();
+        RuleFor(r => r.Description).NotEmpty().MaximumLength(255);
 
         RuleFor(r => r.BasePrice).GreaterThanOrEqualTo(0);
 

@@ -81,6 +81,8 @@ public class ServiceCatalogAppService(AppDbContext dbContext, IMapper mapper) : 
     {
         var entity = mapper.Map<ServiceCatalog>(request);
 
+        if (!entity.IsNormalized())
+            entity.Normalize();
         Validator.ValidateAndThrow(entity);
 
         await dbContext.ServiceCatalog.AddAsync(entity, cancellationToken);

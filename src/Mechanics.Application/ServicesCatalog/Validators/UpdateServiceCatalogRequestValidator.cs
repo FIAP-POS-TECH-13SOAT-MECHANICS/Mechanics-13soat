@@ -13,8 +13,8 @@ public class UpdateServiceCatalogRequestValidator : AbstractValidator<UpdateServ
         {
             RuleFor(r => r.Name)
                 .MaximumLength(100)
-                .MustAsync((serviceName, cancellationToken) =>
-                    dbContext.ServiceCatalog.AllAsync(s => s.Name != serviceName, cancellationToken))
+                .MustAsync((req, serviceName, cancellationToken) =>
+                    dbContext.ServiceCatalog.AllAsync(s => s.Id == req.Id || s.Name != serviceName, cancellationToken))
                 .WithMessage("Service name must be unique.");
         });
 

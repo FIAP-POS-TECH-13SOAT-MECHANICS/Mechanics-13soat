@@ -7,6 +7,8 @@ namespace Mechanics.Application.ServicesCatalog.Requests;
 /// </summary>
 public class UpdateServiceCatalogRequest
 {
+    public Guid Id { get; set; }
+
     /// <summary>
     ///     Nome do serviço. Opcional para atualização.
     /// </summary>

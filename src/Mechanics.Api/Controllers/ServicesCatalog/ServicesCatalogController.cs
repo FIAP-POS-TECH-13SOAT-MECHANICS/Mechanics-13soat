@@ -27,7 +27,8 @@ public class ServiceCatalogController(ServiceCatalogAppService service) : Contro
     [Produces("application/json", Type = typeof(GetServiceCatalogResponse))]
     [ProducesResponseType(typeof(GetServiceCatalogResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetServiceCatalog([FromQuery] GetServiceCatalogRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetServiceCatalog([FromQuery] GetServiceCatalogRequest request,
+        CancellationToken cancellationToken = default)
     {
         var response = await service.GetList(request, cancellationToken);
         return Ok(response);
@@ -62,7 +63,8 @@ public class ServiceCatalogController(ServiceCatalogAppService service) : Contro
     [Produces("application/json", Type = typeof(IEnumerable<GetServicesCatalogResponse>))]
     [ProducesResponseType(typeof(IEnumerable<GetServicesCatalogResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetSuggestedServices([FromQuery] string vehicleType, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetSuggestedServices([FromQuery] string vehicleType,
+        CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(vehicleType))
             return BadRequest("O tipo de veículo é obrigatório.");
@@ -82,7 +84,8 @@ public class ServiceCatalogController(ServiceCatalogAppService service) : Contro
     [Produces("application/json", Type = typeof(CreateItemResponse))]
     [ProducesResponseType(typeof(CreateItemResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> CreateServiceCatalog([FromBody] CreateServiceCatalogRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> CreateServiceCatalog([FromBody] CreateServiceCatalogRequest request,
+        CancellationToken cancellationToken = default)
     {
         try
         {
@@ -110,8 +113,10 @@ public class ServiceCatalogController(ServiceCatalogAppService service) : Contro
     [Produces("application/json", Type = typeof(CreateItemResponse))]
     [ProducesResponseType(typeof(CreateItemResponse), StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UpdateServiceCatalog(Guid id, UpdateServiceCatalogRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> UpdateServiceCatalog(Guid id, UpdateServiceCatalogRequest request,
+        CancellationToken cancellationToken = default)
     {
+        request.Id = id;
         var response = await service.Update(id, request, cancellationToken);
         return response is null ? NotFound() : NoContent();
     }

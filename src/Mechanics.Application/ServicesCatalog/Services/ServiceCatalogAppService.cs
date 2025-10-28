@@ -5,7 +5,6 @@ using Mechanics.Application.Utils;
 using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Application.Utils.PagedList;
 using Mechanics.Domain.Base.Validation;
-using Mechanics.Domain.Customers;
 using Mechanics.Domain.ServicesCatalog;
 using Mechanics.Infra.Data;
 using Microsoft.EntityFrameworkCore;

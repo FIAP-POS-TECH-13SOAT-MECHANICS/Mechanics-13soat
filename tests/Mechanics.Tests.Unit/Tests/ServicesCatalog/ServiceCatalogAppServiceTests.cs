@@ -37,7 +37,7 @@ public class ServiceCatalogAppServiceTests
             .FirstOrDefaultAsync(s => s.Id == response.CreatedId, TestContext.CancellationTokenSource.Token);
 
         Assert.IsNotNull(created);
-        Assert.AreEqual(request.Name.Trim().ToUpper(), created.Name);
+        Assert.AreEqual(request.Name, created.Name);
         Assert.AreEqual(request.Description.Trim(), created.Description);
         Assert.AreEqual(request.BasePrice, created.BasePrice);
         Assert.AreEqual(request.AverageTime, created.AverageTime);

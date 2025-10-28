@@ -16,7 +16,7 @@ namespace Mechanics.Api.Controllers.ServicesCatalog;
 [ApiExplorerSettings(GroupName = "v1")]
 [Route("api/[controller]")]
 [Authorize]
-public class ServiceCatalogController(ServiceCatalogAppService service) : ControllerBase
+public class ServicesCatalogController(ServiceCatalogAppService service) : ControllerBase
 {
     /// <summary>
     ///     Listar os serviços oferecidos pelos filtros informados.
@@ -77,7 +77,7 @@ public class ServiceCatalogController(ServiceCatalogAppService service) : Contro
     /// <response code="201">Registro cadastrado.</response>
     /// <response code="400">Registro inválido.</response>
     [HttpPost]
-    //[Authorize(Roles = $"{RoleNames.Administrator},{RoleNames.Attendant}")]
+    [Authorize(Roles = $"{RoleNames.Administrator},{RoleNames.Attendant}")]
     [Consumes(typeof(CreateServiceCatalogRequest), "application/json")]
     [Produces("application/json", Type = typeof(CreateItemResponse))]
     [ProducesResponseType(typeof(CreateItemResponse), StatusCodes.Status201Created)]

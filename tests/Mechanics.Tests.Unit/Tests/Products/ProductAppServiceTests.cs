@@ -1,7 +1,9 @@
 using AutoMapper;
+using Mechanics.Application.Products.Requests;
 using Mechanics.Application.Products.Services;
 using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Domain.Base.Validation;
+using Mechanics.Domain.Products;
 using Mechanics.Tests.Unit.Helpers;
 using Mechanics.Tests.Unit.Mocks;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +16,54 @@ public class ProductAppServiceTests
 {
     public TestContext TestContext { get; set; }
     private readonly IMapper _mapper = AutoMapperFactory.CreateMap("Products");
+
+    #region consultar produto
+
+    [TestMethod("Consulta produto por Id")]
+    public async Task It_ShouldGetProductById()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var existing = ProductMocks.CreateProduct(id);
+        await using var context = new DbContextTestBuilder().WithData(ctx => ctx.Products.Add(existing)).Build();
+        var handler = new ProductAppService(context, _mapper);
+
+        // Act
+        var response = await handler.Get(id, TestContext.CancellationTokenSource.Token);
+
+        // Assert
+        Assert.IsNotNull(response);
+        Assert.AreEqual(id, response.Id);
+        Assert.AreEqual(existing.Name, response.Name);
+        Assert.AreEqual(existing.Description, response.Description);
+        Assert.AreEqual(existing.Quantity, response.Quantity);
+        Assert.AreEqual(existing.Status, response.Status);
+        Assert.AreEqual(existing.Type, response.Type);
+    }
+
+    [TestMethod("Lista de produtos")]
+    public async Task It_ShouldListProducts()
+    {
+        // Arrange
+        var products = new List<Product>
+        {
+            ProductMocks.CreateProduct(Guid.NewGuid()),
+            ProductMocks.CreateProduct(Guid.NewGuid()),
+        };
+        await using var context = new DbContextTestBuilder().WithData(products).Build();
+        var handler = new ProductAppService(context, _mapper);
+        var request = new GetProductsRequest() { Page = 1, ItemsPerPage = 10 };
+
+        // Act
+        var response = await handler.GetList(request, TestContext.CancellationTokenSource.Token);
+
+        // Assert
+        Assert.IsNotNull(response);
+        Assert.AreEqual(products.Count, response.Items.Count());
+        Assert.AreEqual(products.Count, response.TotalCount);
+    }
+
+    #endregion
 
     #region cadastrar produto
 
@@ -100,6 +150,43 @@ public class ProductAppServiceTests
         {
             await handler.Update(id, request, CancellationToken.None);
         });
+    }
+
+    #endregion
+
+    #region deletar produto
+
+    [TestMethod("Deleta um produto por id")]
+    public async Task It_ShouldDeleteProductById()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var existing = ProductMocks.CreateProduct(id);
+        await using var context = new DbContextTestBuilder().WithData(ctx => ctx.Products.Add(existing)).Build();
+        var handler = new ProductAppService(context, _mapper);
+
+        // Act
+        var response = await handler.Delete(id, CancellationToken.None);
+
+        // Assert
+        Assert.IsTrue(response);
+    }
+
+    [TestMethod("Falha ao deletar um pedido")]
+    public async Task It_ShouldThrow_WhenDeleteIdIsInvalid()
+    {
+        // Arrange
+        var id = Guid.NewGuid();
+        var nonExistingId = Guid.NewGuid();
+        var existing = ProductMocks.CreateProduct(id);
+        await using var context = new DbContextTestBuilder().WithData(ctx => ctx.Products.Add(existing)).Build();
+        var handler = new ProductAppService(context, _mapper);
+
+        // Act
+        var response = await handler.Delete(nonExistingId, CancellationToken.None);
+
+        // Assert
+        Assert.IsFalse(response);
     }
 
     #endregion

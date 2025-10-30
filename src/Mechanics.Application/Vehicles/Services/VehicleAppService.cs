@@ -76,6 +76,6 @@ public class VehicleAppService(AppDbContext dbContext, IMapper mapper) : IAppSer
         Validator.ValidateAndThrow(entity);
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        return new UpdateItemResponse();
+        return new UpdateItemResponse { UpdatedItemId = id };
     }
 }

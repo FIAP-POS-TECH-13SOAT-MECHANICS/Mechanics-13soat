@@ -67,6 +67,6 @@ public class CustomerAppService(AppDbContext dbContext, IMapper mapper) : IAppSe
         Validator.ValidateAndThrow(entity);
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        return new UpdateItemResponse();
+        return new UpdateItemResponse { UpdatedItemId = id };
     }
 }

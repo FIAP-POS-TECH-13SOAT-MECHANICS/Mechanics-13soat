@@ -19,7 +19,7 @@ public static class UserSeeds
                 RoleId = GetRoleId(RoleNames.Administrator),
                 SecurityStamp = new Guid("efcaaf76-0535-45fc-a79c-06ab92c064bb").ToString(),
                 PasswordHash = "AQAAAAIAAYagAAAAEPGF9Xsz+ARiCopDgQbQ8gbGubN6bhvNhpKiy8XK2BORE5eV95VywrM9rVE48i2m8w==",
-                CreationDate = new DateTime(2025, 10, 12),
+                CreationDate = new DateTime(2025, 10, 12, 12, 0, 0, DateTimeKind.Utc),
             },
             new User
             {
@@ -30,7 +30,7 @@ public static class UserSeeds
                 RoleId = GetRoleId(RoleNames.Attendant),
                 SecurityStamp = new Guid("370c4d16-8e11-46ca-9004-e1fb9311e49e").ToString(),
                 PasswordHash = "AQAAAAIAAYagAAAAEEo/VptbCYVPiVkoEVHthpWAZUvV/KJ0WJkg+wKbtXJkmMHmSfnpFT4JTLofugBwyQ==",
-                CreationDate = new DateTime(2025, 10, 12),
+                CreationDate = new DateTime(2025, 10, 12, 12, 0, 0, DateTimeKind.Utc),
             },
             new User
             {
@@ -41,7 +41,7 @@ public static class UserSeeds
                 RoleId = GetRoleId(RoleNames.Mechanic),
                 SecurityStamp = new Guid("0a3bc211-1220-4d20-80e9-bd850d0dc200").ToString(),
                 PasswordHash = "AQAAAAIAAYagAAAAEKSeHdHtCfN38pakeil4oyEL0d07GBEySe6csY8jmXIKT3oEZVcZR7Jngd9qxFgmkQ==",
-                CreationDate = new DateTime(2025, 10, 12),
+                CreationDate = new DateTime(2025, 10, 12, 12, 0, 0, DateTimeKind.Utc),
             },
         ];
 

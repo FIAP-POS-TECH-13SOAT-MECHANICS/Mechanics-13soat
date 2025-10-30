@@ -43,7 +43,8 @@ public class ServiceCatalogAppService(AppDbContext dbContext, IMapper mapper) : 
         return entity is null ? null : mapper.Map<GetServiceCatalogResponse>(entity);
     }
 
-    public async Task<IEnumerable<GetServiceCatalogResponse>> GetSuggestions(string vehicleType, CancellationToken cancellationToken)
+    public async Task<IEnumerable<GetServiceCatalogResponse>> GetSuggestions(string vehicleType,
+        CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(vehicleType))
             return Enumerable.Empty<GetServiceCatalogResponse>();
@@ -108,7 +109,7 @@ public class ServiceCatalogAppService(AppDbContext dbContext, IMapper mapper) : 
         Validator.ValidateAndThrow(entity);
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        return new UpdateItemResponse();
+        return new UpdateItemResponse { UpdatedItemId = id };
     }
 
     public async Task<bool> Delete(Guid id, CancellationToken cancellationToken)

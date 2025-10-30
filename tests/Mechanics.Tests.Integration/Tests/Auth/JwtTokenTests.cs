@@ -37,7 +37,7 @@ public class JwtTokenTests(TestContext testContext)
     {
         var factory = TestProperties.Factory;
         var client = factory.CreateClient();
-        var expiredToken = GetToken(new DateTime(2021, 4, 7));
+        var expiredToken = GetToken(new DateTime(2021, 4, 7, 12, 0, 0, DateTimeKind.Utc));
         client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", expiredToken.AccessToken);
 
         var response = await client.GetAsync(TestUrl, testContext.CancellationTokenSource.Token);
@@ -50,7 +50,7 @@ public class JwtTokenTests(TestContext testContext)
     {
         var factory = TestProperties.Factory;
         var client = factory.CreateClient();
-        var expiredToken = GetToken(new DateTime(2021, 4, 7));
+        var expiredToken = GetToken(new DateTime(2021, 4, 7, 12, 0, 0, DateTimeKind.Utc));
 
         var request = new RefreshTokenRequest { RefreshToken = expiredToken.RefreshToken };
         var response = await client.PostAsJsonAsync("api/auth/refresh", request, testContext.CancellationTokenSource.Token);

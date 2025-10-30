@@ -9,29 +9,14 @@ public class RequestValidationFilter(ILogger<RequestValidationFilter> logger, IS
 {
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
+        var cancellationToken = context.HttpContext.RequestAborted;
+
         logger.LogDebug("Validating request for action: {Action}", context.ActionDescriptor.DisplayName);
         var errors = new Dictionary<string, string>();
 
         foreach (var argument in context.ActionArguments.Values)
         {
-            if (argument is null)
-                continue;
-
-            var argumentType = argument.GetType();
-            if (argumentType.IsPrimitive || argumentType == typeof(string))
-                return;
-
-            var validatorType = typeof(IValidator<>).MakeGenericType(argumentType);
-            var validator = serviceProvider.GetService(validatorType);
-            if (validator is null)
-                continue;
-
-            var cancellationToken = context.HttpContext.RequestAborted;
-            var validateMethod = validatorType.GetMethod("ValidateAsync", [argumentType, cancellationToken.GetType()]);
-            if (validateMethod?.Invoke(validator, [argument, cancellationToken]) is not Task<ValidationResult> validationResultTask)
-                return;
-
-            var validationResult = await validationResultTask;
+            var validationResult = await Validate(argument, cancellationToken);
             if (validationResult is not { IsValid: false })
                 continue;
 
@@ -63,5 +48,26 @@ public class RequestValidationFilter(ILogger<RequestValidationFilter> logger, IS
             Extensions = new Dictionary<string, object?> { { "errors", errors } },
         };
         context.Result = new BadRequestObjectResult(response);
+    }
+
+    private async Task<ValidationResult?> Validate(object? argument, CancellationToken cancellationToken)
+    {
+        if (argument is null)
+            return null;
+
+        var argumentType = argument.GetType();
+        if (argumentType.IsPrimitive || argumentType == typeof(string))
+            return null;
+
+        var validatorType = typeof(IValidator<>).MakeGenericType(argumentType);
+        var validator = serviceProvider.GetService(validatorType);
+        if (validator is null)
+            return null;
+
+        var validateMethod = validatorType.GetMethod("ValidateAsync", [argumentType, cancellationToken.GetType()]);
+        if (validateMethod?.Invoke(validator, [argument, cancellationToken]) is not Task<ValidationResult> validationResultTask)
+            return null;
+
+        return await validationResultTask;
     }
 }

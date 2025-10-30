@@ -188,7 +188,7 @@ public class UserAppServiceTests
                 ctx.Roles.Add(administratorRole);
             })
             .Build();
-        var userId = context.Users.First().Id;
+        var userId = (await context.Users.FirstAsync(TestContext.CancellationTokenSource.Token)).Id;
         var handler = new UserAppService(context, _mapper, _mailService);
         var request = UserMocks.BuildUpdateRequest(administratorRole.Id);
 

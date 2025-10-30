@@ -4,8 +4,8 @@ using Mechanics.Application.Products.Responses;
 using Mechanics.Application.Utils;
 using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Application.Utils.PagedList;
-using Mechanics.Domain.Products;
 using Mechanics.Domain.Base.Validation;
+using Mechanics.Domain.Products;
 using Mechanics.Infra.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,7 +13,6 @@ namespace Mechanics.Application.Products.Services;
 
 public class ProductAppService(AppDbContext dbContext, IMapper mapper) : IAppService
 {
-
     public async Task<GetProductsResponse> GetList(GetProductsRequest request, CancellationToken cancellationToken)
     {
         var normalizedName = request.Name.Trim().ToUpper();
@@ -63,7 +62,7 @@ public class ProductAppService(AppDbContext dbContext, IMapper mapper) : IAppSer
         Validator.ValidateAndThrow(entity);
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        return new UpdateItemResponse();
+        return new UpdateItemResponse { UpdatedItemId = id };
     }
 
     public async Task<bool> Delete(Guid id, CancellationToken cancellationToken)

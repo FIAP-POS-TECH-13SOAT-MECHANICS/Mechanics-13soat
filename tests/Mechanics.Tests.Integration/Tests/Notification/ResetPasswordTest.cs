@@ -33,7 +33,7 @@ public class ResetPasswordTest(TestContext testContext)
         return (await response.Content.ReadFromJsonAsync<EmailClientInfoResponse>(cancellationToken: cancellationToken))!.Messages;
     }
 
-    private class EmailClientInfoResponse
+    public class EmailClientInfoResponse
     {
         public required int Messages { get; init; }
     }

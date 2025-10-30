@@ -4,7 +4,7 @@ using Mechanics.Domain.Products;
 
 namespace Mechanics.Tests.Unit.Mocks;
 
-public class ProductMocks
+public static class ProductMocks
 {
     public static CreateProductRequest BuildCreateRequest() => new()
     {

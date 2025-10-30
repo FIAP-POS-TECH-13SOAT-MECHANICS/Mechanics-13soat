@@ -52,7 +52,7 @@ public class AuthAppService(AppDbContext dbContext, IEmailService emailService, 
 
         await emailService.UserPasswordChanged(user, cancellationToken);
 
-        return new UpdateItemResponse();
+        return new UpdateItemResponse { UpdatedItemId = user.Id };
     }
 
     public async Task ResetPassword(ResetPasswordRequest request, CancellationToken cancellationToken)
@@ -68,8 +68,7 @@ public class AuthAppService(AppDbContext dbContext, IEmailService emailService, 
     public async Task ChangePassword(Guid userId, ChangePasswordRequest request, CancellationToken cancellationToken)
     {
         var user = await dbContext.Users.FindAsync([userId], cancellationToken: cancellationToken);
-        if (user is null)
-            throw new ApplicationException("User not found.");
+        ArgumentNullException.ThrowIfNull(user);
 
         var verificationResult = new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.CurrentPassword);
         Validator.BuildAndThrow(builder =>

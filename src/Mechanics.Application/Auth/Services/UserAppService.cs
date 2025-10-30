@@ -70,6 +70,6 @@ public class UserAppService(AppDbContext dbContext, IMapper mapper, IEmailServic
         Validator.ValidateAndThrow(entity);
 
         await dbContext.SaveChangesAsync(cancellationToken);
-        return new UpdateItemResponse();
+        return new UpdateItemResponse { UpdatedItemId = id };
     }
 }

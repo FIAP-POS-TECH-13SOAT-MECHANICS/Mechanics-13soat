@@ -45,17 +45,18 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     /// </summary>
     private static void ConfigureAbstractEntities(ModelBuilder modelBuilder)
     {
-        var entityTypes = modelBuilder.Model.GetEntityTypes()
-            .Where(type => typeof(AbstractEntity).IsAssignableFrom(type.ClrType));
+        var types = modelBuilder.Model.GetEntityTypes()
+            .Where(type => typeof(AbstractEntity).IsAssignableFrom(type.ClrType))
+            .Select(type => type.ClrType);
 
-        foreach (var entityType in entityTypes)
+        foreach (var type in types)
         {
-            modelBuilder.Entity(entityType.ClrType)
+            modelBuilder.Entity(type)
                 .Property(nameof(AbstractEntity.Id))
                 .HasDefaultValueSql("NEWID()")
                 .ValueGeneratedOnAdd();
 
-            modelBuilder.Entity(entityType.ClrType)
+            modelBuilder.Entity(type)
                 .Property(nameof(AbstractEntity.CreationDate))
                 .IsRequired()
                 .HasDefaultValueSql("SYSDATETIME()")

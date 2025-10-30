@@ -1,4 +1,5 @@
-﻿using Mechanics.Tests.Integration.Helpers;
+using Mechanics.Tests.Integration.Helpers;
+using System.Net;
 
 namespace Mechanics.Tests.Integration.Tests;
 
@@ -14,6 +15,6 @@ public class HealthCheckTest(TestContext testContext)
 
         var response = await client.GetAsync("/health", testContext.CancellationTokenSource.Token);
 
-        response.EnsureSuccessStatusCode();
+        Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
     }
 }

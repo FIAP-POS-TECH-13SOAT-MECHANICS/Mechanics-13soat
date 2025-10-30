@@ -9,7 +9,7 @@ namespace Mechanics.Application.Notification.Services;
 
 public class EmailService(ILogger<EmailService> logger, IEmailSenderService senderService) : IEmailService
 {
-    public async Task SendWorkOrderCreated(Customer customer, WorkOrder wordOrder, CancellationToken cancellationToken)
+    public async Task SendWorkOrderCreated(Customer customer, WorkOrder wordOrder, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Sending work order created notification to '{EmailAddress}'", customer.Email);
 

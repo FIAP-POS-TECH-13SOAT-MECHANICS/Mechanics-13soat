@@ -51,7 +51,6 @@ public class ProductsController(ProductAppService service) : ControllerBase
         return Ok(response);
     }
 
-
     /// <summary>
     ///     Cria um novo produto.
     /// </summary>
@@ -101,8 +100,6 @@ public class ProductsController(ProductAppService service) : ControllerBase
     {
         var response = await service.Delete(id, cancellationToken);
 
-        return response is false ? NotFound() : NoContent();
+        return !response ? NotFound() : NoContent();
     }
-
-
 }

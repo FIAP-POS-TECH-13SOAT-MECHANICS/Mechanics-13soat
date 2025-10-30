@@ -136,6 +136,6 @@ public class ServiceCatalogController(ServiceCatalogAppService service) : Contro
     {
         var response = await service.Delete(id, cancellationToken);
 
-        return response is false ? NotFound() : NoContent();
+        return !response ? NotFound() : NoContent();
     }
 }

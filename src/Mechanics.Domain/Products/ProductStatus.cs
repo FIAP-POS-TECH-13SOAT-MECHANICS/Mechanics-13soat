@@ -4,5 +4,5 @@ public enum ProductStatusType
 {
     Active,
     OutOfStock,
-    Inactive
+    Inactive,
 }

@@ -146,7 +146,7 @@ public class ServiceCatalogAppServiceTests
         var context = new DbContextTestBuilder()
             .WithData([
                 ServicesCatalogMocks.CreateSuggestedService(Guid.NewGuid(), "Geometria", "Geometria e Pneus"),
-                ServicesCatalogMocks.CreateSuggestedService(Guid.NewGuid(), "Troca de Óleo", "Troca de Óleo e Suspensão")
+                ServicesCatalogMocks.CreateSuggestedService(Guid.NewGuid(), "Troca de Óleo", "Troca de Óleo e Suspensão"),
             ])
             .Build();
 

@@ -1,12 +1,12 @@
-﻿using System.Net;
-using System.Net.Http.Json;
-using Mechanics.Application.Customers.Requests;
+﻿using Mechanics.Application.Customers.Requests;
 using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Application.Vehicles.Requests;
 using Mechanics.Domain.Auth;
 using Mechanics.Domain.Customers;
 using Mechanics.Domain.Vehicles;
 using Mechanics.Tests.Integration.Helpers;
+using System.Net;
+using System.Net.Http.Json;
 
 namespace Mechanics.Tests.Integration.Tests.Vehicles;
 
@@ -16,27 +16,6 @@ namespace Mechanics.Tests.Integration.Tests.Vehicles;
 public class VehiclesControllerTests
 {
     public TestContext TestContext { get; set; }
-
-    private async Task<(HttpClient client, Guid ownerId)> GetClientAndOwner()
-    {
-        var factory = TestProperties.Factory;
-        var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
-
-        var customerRequest = new CreateCustomerRequest
-        {
-            Name = "Owner Test",
-            Email = $"owner_{Guid.NewGuid():N}@example.com",
-            Document = new PersonalDocumentRequest
-            {
-                Type = DocumentType.Cpf,
-                Number = "67273958026",
-            },
-        };
-
-        var createdCustomer = await client.PostAsJsonAsync("api/customers", customerRequest, TestContext.CancellationTokenSource.Token);
-        var customerResponse = await createdCustomer.Content.ReadFromJsonAsync<CreateItemResponse>(TestContext.CancellationTokenSource.Token);
-        return (client, customerResponse!.CreatedId);
-    }
 
     [TestMethod("Cadastro de veículo")]
     public async Task It_ShouldCreateVehicle()
@@ -62,5 +41,28 @@ public class VehiclesControllerTests
         var content = await httpResponse.Content.ReadFromJsonAsync<CreateItemResponse>(TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(content);
         Assert.AreNotEqual(Guid.Empty, content!.CreatedId);
+    }
+
+    private async Task<(HttpClient client, Guid ownerId)> GetClientAndOwner()
+    {
+        var factory = TestProperties.Factory;
+        var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
+
+        var customerRequest = new CreateCustomerRequest
+        {
+            Name = "Owner Test",
+            Email = $"owner_{Guid.NewGuid():N}@example.com",
+            Document = new PersonalDocumentRequest
+            {
+                Type = DocumentType.Cpf,
+                Number = "67273958026",
+            },
+        };
+
+        var createdCustomer =
+            await client.PostAsJsonAsync("api/customers", customerRequest, TestContext.CancellationTokenSource.Token);
+        var customerResponse =
+            await createdCustomer.Content.ReadFromJsonAsync<CreateItemResponse>(TestContext.CancellationTokenSource.Token);
+        return (client, customerResponse!.CreatedId);
     }
 }

@@ -45,7 +45,7 @@ public class ServiceCatalogAppService(AppDbContext dbContext, IMapper mapper) : 
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(vehicleType))
-            return Enumerable.Empty<GetServiceCatalogResponse>();
+            return [];
 
         var normalizedType = vehicleType.Trim().ToLower();
         var query = dbContext.ServiceCatalog.AsNoTracking();
@@ -69,7 +69,7 @@ public class ServiceCatalogAppService(AppDbContext dbContext, IMapper mapper) : 
                 EF.Functions.Like(s.Description, "%Freios e Embreagem%")),
 
             _ => query.Where(s =>
-                EF.Functions.Like(s.Description, $"%{normalizedType}%"))
+                EF.Functions.Like(s.Description, $"%{normalizedType}%")),
         };
 
         var suggestions = await filtered.ToListAsync(cancellationToken);

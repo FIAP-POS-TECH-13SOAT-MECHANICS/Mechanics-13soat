@@ -12,7 +12,7 @@ public static class ServicesCatalogMocks
         Description = "Troca de óleo sintético com filtro",
         BasePrice = 199.90m,
         AverageTime = 45,
-        Status = ServiceCatalogStatusType.Active
+        Status = ServiceCatalogStatusType.Active,
     };
 
     public static CreateServiceCatalogRequest BuildInvalidCreateRequest() => new()
@@ -21,7 +21,7 @@ public static class ServicesCatalogMocks
         Description = "",
         BasePrice = -50,
         AverageTime = 0,
-        Status = ServiceCatalogStatusType.Active
+        Status = ServiceCatalogStatusType.Active,
     };
 
     public static UpdateServiceCatalogRequest BuildUpdateRequest() => new()
@@ -30,7 +30,7 @@ public static class ServicesCatalogMocks
         Description = "Alinhamento e balanceamento completo",
         BasePrice = 149.90m,
         AverageTime = 30,
-        Status = ServiceCatalogStatusType.Active
+        Status = ServiceCatalogStatusType.Active,
     };
 
     public static UpdateServiceCatalogRequest BuildInvalidUpdateRequest() => new()
@@ -39,7 +39,7 @@ public static class ServicesCatalogMocks
         Description = "",
         BasePrice = -10,
         AverageTime = 0,
-        Status = ServiceCatalogStatusType.Active
+        Status = ServiceCatalogStatusType.Active,
     };
 
     public static ServiceCatalog CreateService(Guid id, string? name = null) => new()
@@ -49,7 +49,7 @@ public static class ServicesCatalogMocks
         Description = "Revisão completa dos freios",
         BasePrice = 299.90m,
         AverageTime = 60,
-        Status = ServiceCatalogStatusType.Active
+        Status = ServiceCatalogStatusType.Active,
     };
 
     public static ServiceCatalog CreateSuggestedService(Guid id, string name, string description) => new()
@@ -59,7 +59,7 @@ public static class ServicesCatalogMocks
         Description = description,
         BasePrice = 149.90m,
         AverageTime = 40,
-        Status = ServiceCatalogStatusType.Active
+        Status = ServiceCatalogStatusType.Active,
     };
 
 
@@ -70,6 +70,6 @@ public static class ServicesCatalogMocks
         Description = "",
         BasePrice = -100,
         AverageTime = 0,
-        Status = ServiceCatalogStatusType.Active
+        Status = ServiceCatalogStatusType.Active,
     };
 }

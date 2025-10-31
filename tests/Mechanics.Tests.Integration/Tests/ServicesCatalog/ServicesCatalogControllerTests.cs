@@ -41,7 +41,7 @@ public class ServiceCatalogControllerTests
             Description = "Serviço de alinhamento de rodas",
             BasePrice = 150.00m,
             AverageTime = 40,
-            Status = ServiceCatalogStatusType.Active
+            Status = ServiceCatalogStatusType.Active,
         };
 
         // Act
@@ -68,7 +68,7 @@ public class ServiceCatalogControllerTests
             Description = "Balanceamento de rodas dianteiras",
             BasePrice = 199.90m,
             AverageTime = 45,
-            Status = ServiceCatalogStatusType.Active
+            Status = ServiceCatalogStatusType.Active,
         };
 
         // Act - primeiro cadastro (deve funcionar)
@@ -82,7 +82,7 @@ public class ServiceCatalogControllerTests
             Description = "Outro serviço com nome repetido",
             BasePrice = 149.90m,
             AverageTime = 30,
-            Status = ServiceCatalogStatusType.Active
+            Status = ServiceCatalogStatusType.Active,
         };
 
         var secondResponse =

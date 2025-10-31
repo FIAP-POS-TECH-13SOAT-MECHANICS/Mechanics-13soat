@@ -20,13 +20,11 @@ public class ServiceCatalogAppService(AppDbContext dbContext, IMapper mapper) : 
         if (!string.IsNullOrWhiteSpace(request.Name))
         {
             var normalizedName = request.Name.Trim().ToUpperInvariant();
-            query = query.Where(c => c.Name.ToUpper().Contains(normalizedName));
+            query = query.Where(c => c.Name.Contains(normalizedName));
         }
 
         if (request.Status.HasValue)
-        {
             query = query.Where(c => c.Status == request.Status);
-        }
 
         var (items, count) = await query.GetPaginatedList(request, cancellationToken);
         var mapped = mapper.Map<IEnumerable<GetServiceCatalogResponse>>(items);

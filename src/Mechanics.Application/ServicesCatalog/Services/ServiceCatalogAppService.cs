@@ -44,9 +44,6 @@ public class ServiceCatalogAppService(AppDbContext dbContext, IMapper mapper) : 
     public async Task<IEnumerable<GetServiceCatalogResponse>> GetSuggestions(string vehicleType,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(vehicleType))
-            return [];
-
         var normalizedType = vehicleType.Trim().ToLower();
         var query = dbContext.ServiceCatalog.AsNoTracking();
 

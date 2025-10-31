@@ -1,12 +1,15 @@
 ﻿using Mechanics.Application.Customers.Requests;
 using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Application.Vehicles.Requests;
+using Mechanics.Application.Vehicles.Responses;
 using Mechanics.Domain.Auth;
 using Mechanics.Domain.Customers;
 using Mechanics.Domain.Vehicles;
 using Mechanics.Tests.Integration.Helpers;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Mechanics.Tests.Integration.Tests.Vehicles;
 
@@ -17,11 +20,14 @@ public class VehiclesControllerTests
 {
     public TestContext TestContext { get; set; }
 
+    private readonly JsonSerializerOptions _serializarOptions = new(JsonSerializerDefaults.Web)
+        { Converters = { new JsonStringEnumConverter() } };
+
     [TestMethod("Cadastro de veículo")]
     public async Task It_ShouldCreateVehicle()
     {
         // Arrange
-        var (client, ownerId) = await GetClientAndOwner();
+        var (client, ownerId) = await GetClientAndOwner("67273958026");
         var request = new CreateVehicleRequest
         {
             Manufacturer = "Ford",
@@ -43,7 +49,49 @@ public class VehiclesControllerTests
         Assert.AreNotEqual(Guid.Empty, content!.CreatedId);
     }
 
-    private async Task<(HttpClient client, Guid ownerId)> GetClientAndOwner()
+    [TestMethod("Atualização de veículo")]
+    public async Task It_ShouldUpdateVehicle()
+    {
+        var (client, ownerId) = await GetClientAndOwner("30925409057");
+        var createRequest = new CreateVehicleRequest
+        {
+            Manufacturer = "FORD",
+            Model = "FIESTA",
+            Color = VehicleColor.Black,
+            Year = "2020",
+            LicensePlate = "ABC1F25",
+            Chassis = "9BW9Z7877VT004251",
+            OwnerId = ownerId,
+        };
+        var createResponse = await client.PostAsJsonAsync("api/vehicles", createRequest, TestContext.CancellationTokenSource.Token);
+        var created = await createResponse.Content.ReadFromJsonAsync<CreateItemResponse>(TestContext.CancellationTokenSource.Token);
+        var vehicleId = created!.CreatedId;
+
+        var updateRequest = new UpdateVehicleRequest
+        {
+            Model = "FIESTA TITANIUM",
+            Color = VehicleColor.White,
+            Year = "2021",
+        };
+        var updateUri = $"api/vehicles/{vehicleId}";
+        var updateResponse = await client.PutAsJsonAsync(updateUri, updateRequest, TestContext.CancellationTokenSource.Token);
+
+        Assert.AreEqual(HttpStatusCode.NoContent, updateResponse.StatusCode);
+        var getResponse = await client.GetAsync($"api/vehicles/{vehicleId}", TestContext.CancellationTokenSource.Token);
+        var vehicle = await getResponse.Content.ReadFromJsonAsync<GetVehicleResponse>(
+            _serializarOptions, TestContext.CancellationTokenSource.Token);
+        Assert.IsNotNull(vehicle);
+        Assert.AreEqual(vehicleId, vehicle.Id);
+        Assert.AreEqual(createRequest.Manufacturer, vehicle.Manufacturer);
+        Assert.AreEqual(updateRequest.Model, vehicle.Model);
+        Assert.AreEqual(updateRequest.Color, vehicle.Color);
+        Assert.AreEqual(updateRequest.Year, vehicle.Year);
+        Assert.AreEqual(createRequest.LicensePlate, vehicle.LicensePlate);
+        Assert.AreEqual(createRequest.Chassis, vehicle.Chassis);
+        Assert.AreEqual(ownerId, vehicle.OwnerId);
+    }
+
+    private async Task<(HttpClient client, Guid ownerId)> GetClientAndOwner(string document)
     {
         var factory = TestProperties.Factory;
         var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
@@ -55,7 +103,7 @@ public class VehiclesControllerTests
             Document = new PersonalDocumentRequest
             {
                 Type = DocumentType.Cpf,
-                Number = "67273958026",
+                Number = document,
             },
         };
 

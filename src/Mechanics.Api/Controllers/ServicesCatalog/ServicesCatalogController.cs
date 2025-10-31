@@ -5,7 +5,6 @@ using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.ComponentModel.DataAnnotations;
 
 namespace Mechanics.Api.Controllers.ServicesCatalog;
 
@@ -55,7 +54,7 @@ public class ServiceCatalogController(ServiceCatalogAppService service) : Contro
     /// <summary>
     ///     Sugerir os serviços oferecidos com base no tipo de veículo.
     /// </summary>
-    /// <param name="vehicleType">Tipo do veículo (ex: SUV, Sedan, Hatch).</param>
+    /// <param name="request">Tipo do veículo (ex: SUV, Sedan, Hatch).</param>
     /// <param name="cancellationToken"></param>
     /// <response code="200">Sugestões geradas com sucesso.</response>
     /// <response code="400">Parâmetros inválidos.</response>
@@ -63,13 +62,10 @@ public class ServiceCatalogController(ServiceCatalogAppService service) : Contro
     [Produces("application/json", Type = typeof(IEnumerable<GetServicesCatalogResponse>))]
     [ProducesResponseType(typeof(IEnumerable<GetServicesCatalogResponse>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetSuggestedServices([FromQuery] string vehicleType,
+    public async Task<IActionResult> GetSuggestedServices([FromQuery] GetSuggestedServiceRequest request,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(vehicleType))
-            return BadRequest("O tipo de veículo é obrigatório.");
-
-        var suggestions = await service.GetSuggestions(vehicleType, cancellationToken);
+        var suggestions = await service.GetSuggestions(request.VehicleType, cancellationToken);
         return Ok(suggestions);
     }
 
@@ -84,22 +80,11 @@ public class ServiceCatalogController(ServiceCatalogAppService service) : Contro
     [Produces("application/json", Type = typeof(CreateItemResponse))]
     [ProducesResponseType(typeof(CreateItemResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> CreateServiceCatalog([FromBody] CreateServiceCatalogRequest request,
+    public async Task<IActionResult> CreateServiceCatalog(CreateServiceCatalogRequest request,
         CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var response = await service.Create(request, cancellationToken);
-            return CreatedAtAction(nameof(GetServiceCatalog), new { id = response.CreatedId }, response);
-        }
-        catch (ValidationException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new { error = ex.Message });
-        }
+        var response = await service.Create(request, cancellationToken);
+        return CreatedAtAction(nameof(GetServiceCatalog), new { id = response.CreatedId }, response);
     }
 
     /// <summary>

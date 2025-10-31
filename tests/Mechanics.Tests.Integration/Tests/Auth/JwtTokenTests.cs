@@ -71,6 +71,21 @@ public class JwtTokenTests(TestContext testContext)
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
     }
 
+    [TestMethod("Deve tratar exceção")]
+    public async Task It_ShouldReturnInternalServerError_WhenThrowsException()
+    {
+        var factory = TestProperties.Factory;
+        var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
+
+        var message = new HttpRequestMessage(HttpMethod.Post, "/api/auth/refresh");
+        message.Content = new StringContent("""{"refreshToken":""}""");
+        message.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+        var httpResponse = await client.SendAsync(message, testContext.CancellationTokenSource.Token);
+
+        Assert.AreEqual(HttpStatusCode.InternalServerError, httpResponse.StatusCode);
+        Assert.IsNotNull(await httpResponse.Content.ReadAsStringAsync(testContext.CancellationTokenSource.Token));
+    }
+
     private static TokenResponse GetToken(DateTime expirationDate)
     {
         var options = TestProperties.Factory.Server.Services.GetRequiredService<IOptions<JwtOptions>>();

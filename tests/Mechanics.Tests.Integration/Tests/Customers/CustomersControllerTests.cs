@@ -43,7 +43,7 @@ public class CustomersControllerTests
         Assert.AreNotEqual(Guid.Empty, content.CreatedId);
     }
 
-    [TestMethod("Cadastro de cliente PJ com erro")]
+    [TestMethod("Cadastro de cliente PJ com CNPJ inválido")]
     public async Task It_ShouldReturnBadRequest_WhenCnpjIsInvalid()
     {
         // Arrange

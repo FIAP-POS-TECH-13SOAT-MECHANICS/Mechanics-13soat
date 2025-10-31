@@ -7,6 +7,7 @@ public class TestDatabaseContainer : IAsyncDisposable
     public MsSqlContainer Container { get; } = new MsSqlBuilder()
         .WithImage("mcr.microsoft.com/mssql/server:2025-latest")
         .WithPassword("b0I6h9G%1zJo")
+        .WithEnvironment("MSSQL_PID", "Express")
         .WithCleanUp(true)
         .Build();
 

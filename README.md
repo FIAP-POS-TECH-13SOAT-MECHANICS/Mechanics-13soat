@@ -32,3 +32,4 @@ Os seguintes logins podem ser utilizados para testes:
 - [Configuração do ambiente](/docs/configuration.md)
 - [Diretrizes de design do projeto](/docs/design-guidelines.md)
 - [Migrações do banco de dados](/docs/migrations.md)
+- [Objetivos](/docs/objectives.md)

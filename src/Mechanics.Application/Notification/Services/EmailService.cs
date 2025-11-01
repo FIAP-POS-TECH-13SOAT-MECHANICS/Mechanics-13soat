@@ -1,4 +1,4 @@
-﻿using Mechanics.Application.Notification.Templates;
+using Mechanics.Application.Notification.Templates;
 using Mechanics.Domain.Auth;
 using Mechanics.Domain.Customers;
 using Mechanics.Domain.WorkOrders;
@@ -9,14 +9,54 @@ namespace Mechanics.Application.Notification.Services;
 
 public class EmailService(ILogger<EmailService> logger, IEmailSenderService senderService) : IEmailService
 {
-    public async Task SendWorkOrderCreated(Customer customer, WorkOrder wordOrder, CancellationToken cancellationToken = default)
+    public async Task SendWorkOrderCreated(Customer customer, WorkOrder workOrder, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Sending work order created notification to '{EmailAddress}'", customer.Email);
 
-        var message = WorkOrderEmailTemplates.WorkOrderCreated(customer, wordOrder);
+        var message = WorkOrderEmailTemplates.WorkOrderCreated(customer, workOrder);
         await senderService.SendAsync(message, cancellationToken);
 
         logger.LogInformation("Work order created notification sent to '{EmailAddress}'", customer.Email);
+    }
+
+    public async Task SendWorkOrderPendingApproval(Customer customer, WorkOrder workOrder, decimal estimatedTotal, CancellationToken cancellationToken = default)
+    {
+        logger.LogInformation("Sending work order pending approval to '{EmailAddress}'", customer.Email);
+
+        var message = WorkOrderEmailTemplates.WorkOrderPendingApproval(customer, workOrder, estimatedTotal);
+        await senderService.SendAsync(message, cancellationToken);
+
+        logger.LogInformation("Work order pending approval sent to '{EmailAddress}'", customer.Email);
+    }
+
+    public async Task SendWorkOrderStatusChanged(Customer customer, WorkOrder workOrder, string previousStatus, string newStatus, CancellationToken cancellationToken = default)
+    {
+        logger.LogInformation("Sending work order status changed to '{EmailAddress}'", customer.Email);
+
+        var message = WorkOrderEmailTemplates.WorkOrderStatusChanged(customer, workOrder, previousStatus, newStatus);
+        await senderService.SendAsync(message, cancellationToken);
+
+        logger.LogInformation("Work order status changed sent to '{EmailAddress}'", customer.Email);
+    }
+
+    public async Task SendWorkOrderCancelled(Customer customer, WorkOrder workOrder, CancellationToken cancellationToken = default)
+    {
+        logger.LogInformation("Sending work order cancelled to '{EmailAddress}'", customer.Email);
+
+        var message = WorkOrderEmailTemplates.WorkOrderCancelled(customer, workOrder);
+        await senderService.SendAsync(message, cancellationToken);
+
+        logger.LogInformation("Work order cancelled sent to '{EmailAddress}'", customer.Email);
+    }
+
+    public async Task SendWorkOrderDeliveredSurvey(Customer customer, WorkOrder workOrder, CancellationToken cancellationToken = default)
+    {
+        logger.LogInformation("Sending work order delivered survey to '{EmailAddress}'", customer.Email);
+
+        var message = WorkOrderEmailTemplates.WorkOrderDeliveredSurvey(customer, workOrder);
+        await senderService.SendAsync(message, cancellationToken);
+
+        logger.LogInformation("Work order delivered survey sent to '{EmailAddress}'", customer.Email);
     }
 
     public async Task SendUserPasswordCreationCode(User user, string passwordCreationCode,

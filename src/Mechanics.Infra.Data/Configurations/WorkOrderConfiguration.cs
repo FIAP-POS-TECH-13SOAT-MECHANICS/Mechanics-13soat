@@ -1,4 +1,4 @@
-﻿using Mechanics.Domain.WorkOrders;
+using Mechanics.Domain.WorkOrders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -32,5 +32,10 @@ public class WorkOrderConfiguration : IEntityTypeConfiguration<WorkOrder>
         builder.HasMany(entity => entity.Products)
             .WithMany(entity => entity.WorkOrders)
             .UsingEntity("WorkOrderProducts");
+
+        builder.Property(e => e.ReportedProblem).HasMaxLength(1000);
+        builder.Property(e => e.Observations).HasMaxLength(2000);
+        builder.Property(e => e.IsCancelled).HasDefaultValue(false);
+        builder.Property(e => e.LastStatusChangeBy).HasColumnType("uniqueidentifier");
     }
 }

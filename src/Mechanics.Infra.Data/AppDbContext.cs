@@ -19,6 +19,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<ServiceCatalog> ServiceCatalog { get; set; }
     public DbSet<Vehicle> Vehicles { get; set; }
     public DbSet<WorkOrder> WorkOrders { get; set; }
+    public DbSet<WorkOrderHistory> WorkOrderHistories { get; set; }
     public DbSet<User> Users { get; set; }
     public DbSet<Role> Roles { get; set; }
 

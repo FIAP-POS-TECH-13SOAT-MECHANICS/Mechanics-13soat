@@ -25,6 +25,14 @@ Os seguintes logins podem ser utilizados para testes:
 | `attendant`     | `5eCre+Key` | Atendente     |
 | `mechanic`      | `5eCre+Key` | Mecânico      |
 
+## Análises de Qualidade e Segurança
+
+As análises de qualidade de código, vulnerabilidades e conformidade de segurança do projeto são mantidas em um repositório dedicado.
+
+➡️ Acesse o repositório: [Mechanics Sonar](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/Mechanics-Sonar)
+
+Esse repositório contém instruções para execução local das análises com **SonarQube**, **OWASP Dependency Check** e **OWASP ZAP**.
+
 ## Links úteis
 
 <!-- Mantenha a lista em ordem alfabética -->

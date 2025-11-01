@@ -80,9 +80,12 @@ public class WorkOrderAppService(AppDbContext dbContext, IMapper mapper,
 
     public async Task<GetWorkOrderResponse?> TrackByDocumentAndAccessKey(string document, string accessKey, CancellationToken cancellationToken = default)
     {
+        var normalizedDocument = new string(document.Where(char.IsDigit).ToArray());
+        var normalizedAccessKey = accessKey?.Replace(" ", "") ?? string.Empty;
+
         var customer = await dbContext.Customers
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Document == document, cancellationToken);
+            .FirstOrDefaultAsync(c => c.Document.Number == normalizedDocument, cancellationToken);
 
         if (customer is null) return null;
 
@@ -90,7 +93,7 @@ public class WorkOrderAppService(AppDbContext dbContext, IMapper mapper,
             .Include(w => w.Products)
             .Include(w => w.ServiceCatalog)
             .AsNoTracking()
-            .FirstOrDefaultAsync(w => w.CustomerId == customer.Id && w.AccessKey == accessKey, cancellationToken);
+            .FirstOrDefaultAsync(w => w.CustomerId == customer.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
 
         if (wo is null) return null;
 

@@ -4,6 +4,8 @@ namespace Mechanics.Application.Vehicles.Requests;
 
 public class UpdateVehicleRequest
 {
+    public Guid Id { get; set; }
+
     /// <summary>
     ///     Fabricante do veículo. Opcional para atualização.
     /// </summary>

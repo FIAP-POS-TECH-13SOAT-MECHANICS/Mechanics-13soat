@@ -13,6 +13,8 @@ public static class TestProperties
     [AssemblyInitialize]
     public static async Task Setup(TestContext context)
     {
+        Environment.SetEnvironmentVariable("JwtOptions__AccessTokenLifetime", "60");
+
         await Task.WhenAll(
             SetupDatabase(context),
             SetupSmtpServer(context)
@@ -29,7 +31,6 @@ public static class TestProperties
         _msSqlContainer = new TestDatabaseContainer().Container;
         await _msSqlContainer.StartAsync(context.CancellationTokenSource.Token);
 
-        Environment.SetEnvironmentVariable("JwtOptions__AccessTokenLifetime", "60");
         Environment.SetEnvironmentVariable("ConnectionStrings__Default", _msSqlContainer.GetConnectionString());
     }
 
@@ -38,9 +39,9 @@ public static class TestProperties
         _smtpServerContainer = new TestSmtpServerContainer().Container;
         await _smtpServerContainer.StartAsync(context.CancellationTokenSource.Token);
 
+        var smtpPort = _smtpServerContainer.GetMappedPublicPort(1025).ToString();
         Environment.SetEnvironmentVariable("EmailSenderOptions__SmtpServer", _smtpServerContainer.Hostname);
-        Environment.SetEnvironmentVariable("EmailSenderOptions__SmtpPort",
-            _smtpServerContainer.GetMappedPublicPort(1025).ToString());
+        Environment.SetEnvironmentVariable("EmailSenderOptions__SmtpPort", smtpPort);
         Environment.SetEnvironmentVariable("EmailSenderOptions__SslRequired", "false");
         Environment.SetEnvironmentVariable("EmailSenderOptions__UserName", TestSmtpServerContainer.UserName);
         Environment.SetEnvironmentVariable("EmailSenderOptions__Password", TestSmtpServerContainer.Password);
@@ -51,5 +52,6 @@ public static class TestProperties
     {
         await Factory.DisposeAsync();
         await _msSqlContainer.DisposeAsync();
+        await _smtpServerContainer.DisposeAsync();
     }
 }

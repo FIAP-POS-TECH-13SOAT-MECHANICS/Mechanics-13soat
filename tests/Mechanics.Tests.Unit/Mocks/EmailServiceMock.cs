@@ -19,7 +19,10 @@ namespace Mechanics.Tests.Unit.Mocks
         public bool SendWorkOrderCancelledCalled { get; private set; }
         public bool SendWorkOrderDeliveredSurveyCalled { get; private set; }
 
-        public decimal? LastEstimatedTotal { get; private set; }
+        public Budget? LastBudget { get; private set; }
+        public Guid? LastBudgetId => LastBudget?.Id;
+        public decimal? LastBudgetTotal => LastBudget?.Total;
+
         public string? LastPreviousStatus { get; private set; }
         public string? LastNewStatus { get; private set; }
 
@@ -29,10 +32,10 @@ namespace Mechanics.Tests.Unit.Mocks
             return Task.CompletedTask;
         }
 
-        public Task SendWorkOrderPendingApproval(Customer customer, WorkOrder workOrder, decimal estimatedTotal, CancellationToken cancellationToken = default)
+        public Task SendWorkOrderPendingApproval(Customer customer, WorkOrder workOrder, Budget budget, CancellationToken cancellationToken = default)
         {
             SendWorkOrderPendingApprovalCalled = true;
-            LastEstimatedTotal = estimatedTotal;
+            LastBudget = budget;
             return Task.CompletedTask;
         }
 

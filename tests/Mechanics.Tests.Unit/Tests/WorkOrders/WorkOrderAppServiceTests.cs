@@ -1,5 +1,6 @@
 using AutoMapper;
 using Mechanics.Application.WorkOrders.Requests;
+using Mechanics.Application.WorkOrders.Services;
 using Mechanics.Domain.Customers;
 using Mechanics.Domain.ServicesCatalog;
 using Mechanics.Domain.Vehicles;
@@ -12,6 +13,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Mechanics.Tests.Unit.Tests.WorkOrders;
@@ -57,9 +59,26 @@ public class WorkOrderAppServiceTests
             })
             .Build();
 
-        var service = new Mechanics.Application.WorkOrders.Services.WorkOrderAppService(context, _mapper, _emailMock, _loggerFactory.CreateLogger<Mechanics.Application.WorkOrders.Services.WorkOrderAppService>());
+        var budgetService = new BudgetAppService(
+            context,
+            _emailMock,
+            _loggerFactory.CreateLogger<BudgetAppService>());
 
-        var request = WorkOrderMocks.BuildCreateRequest(customerId, vehicleId);
+        var service = new WorkOrderAppService(
+            context,
+            _mapper,
+            _emailMock,
+            _loggerFactory.CreateLogger<WorkOrderAppService>(),
+            budgetService);
+
+        var request = new CreateWorkOrderRequest
+        {
+            CustomerId = customerId,
+            VehicleId = vehicleId,
+            ProductIds = Array.Empty<Guid>(),
+            ServiceCatalogIds = Array.Empty<Guid>(),
+            ReportedProblem = "Test problem"
+        };
 
         var id = await service.Create(request, TestContext.CancellationTokenSource.Token);
 
@@ -91,7 +110,17 @@ public class WorkOrderAppServiceTests
         context.WorkOrders.Add(wo);
         await context.SaveChangesAsync();
 
-        var service = new Mechanics.Application.WorkOrders.Services.WorkOrderAppService(context, _mapper, _emailMock, _loggerFactory.CreateLogger<Mechanics.Application.WorkOrders.Services.WorkOrderAppService>());
+        var budgetService = new BudgetAppService(
+            context,
+            _emailMock,
+            _loggerFactory.CreateLogger<BudgetAppService>());
+
+        var service = new WorkOrderAppService(
+            context,
+            _mapper,
+            _emailMock,
+            _loggerFactory.CreateLogger<WorkOrderAppService>(),
+            budgetService);
 
         await service.RequestApproval(wo.Id, Guid.NewGuid(), TestContext.CancellationTokenSource.Token);
 
@@ -100,7 +129,8 @@ public class WorkOrderAppServiceTests
         Assert.AreEqual(WorkOrderStatus.PendingApproval, reloaded!.Status);
         Assert.IsNotNull(reloaded.ApprovalRequestedAt);
         Assert.IsTrue(_emailMock.SendWorkOrderPendingApprovalCalled);
-        Assert.AreEqual(100m, _emailMock.LastEstimatedTotal);
+
+        Assert.AreEqual(100m, _emailMock.LastBudgetTotal);
     }
 
     [TestMethod("ChangeStatus should require approval before InProgress and should record history")]
@@ -122,11 +152,21 @@ public class WorkOrderAppServiceTests
         context.WorkOrders.Add(wo);
         await context.SaveChangesAsync();
 
-        var service = new Mechanics.Application.WorkOrders.Services.WorkOrderAppService(context, _mapper, _emailMock, _loggerFactory.CreateLogger<Mechanics.Application.WorkOrders.Services.WorkOrderAppService>());
+        var budgetService = new BudgetAppService(
+            context,
+            _emailMock,
+            _loggerFactory.CreateLogger<BudgetAppService>());
+
+        var service = new WorkOrderAppService(
+            context,
+            _mapper,
+            _emailMock,
+            _loggerFactory.CreateLogger<WorkOrderAppService>(),
+            budgetService);
 
         await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => service.ChangeStatus(wo.Id, WorkOrderStatus.InProgress, Guid.NewGuid(), TestContext.CancellationTokenSource.Token));
 
-        wo.ApprovedAt = DateTime.UtcNow;
+        wo.ApprovedAt = DateTime.Now;
         context.WorkOrders.Update(wo);
         await context.SaveChangesAsync();
 

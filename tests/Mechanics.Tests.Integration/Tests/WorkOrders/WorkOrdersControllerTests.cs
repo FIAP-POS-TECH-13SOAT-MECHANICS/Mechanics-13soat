@@ -99,9 +99,9 @@ public class WorkOrdersControllerTests
             await db.SaveChangesAsync();
         }
 
-        var performedBy = new Guid("c2a83e5a-27c7-440a-97e3-86234eebb3c7");
+        var attendantUserId = new Guid("c2a83e5a-27c7-440a-97e3-86234eebb3c7");
 
-        var reqApprovalResp = await client.PostAsync($"/api/work-orders/{woId}/request-approval?performedBy={performedBy}", null);
+        var reqApprovalResp = await client.PostAsync($"/api/work-orders/{woId}/request-approval", null);
         Assert.AreEqual(HttpStatusCode.NoContent, reqApprovalResp.StatusCode);
 
         using (var scope = TestProperties.Factory.Services.CreateScope())
@@ -111,6 +111,7 @@ public class WorkOrdersControllerTests
             Assert.IsNotNull(wo);
             Assert.AreEqual(Mechanics.Domain.WorkOrders.WorkOrderStatus.PendingApproval, wo!.Status);
             Assert.IsNotNull(wo.ApprovalRequestedAt);
+            Assert.AreEqual(attendantUserId, wo.LastStatusChangeBy);
         }
     }
 

@@ -5,7 +5,7 @@ using Mechanics.Application.WorkOrders.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
-
+using System.Security.Claims;
 namespace Mechanics.Api.Controllers.WorkOrders;
 
 /// <summary>
@@ -65,16 +65,19 @@ public class WorkOrdersController : ControllerBase
     ///     Solicita aprovação do orçamento para a ordem.
     /// </summary>
     /// <param name="id">Identificador da ordem.</param>
-    /// /// <param name="performedBy">User que solicitou aprovação.</param>
     /// <param name="cancellationToken">Token para cancelamento da operação.</param>
     /// <response code="204">Solicitação realizada.</response>
     /// <response code="400">Requisição inválida.</response>
     [HttpPost("{id:guid}/request-approval")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> RequestApproval(Guid id, [FromQuery] Guid performedBy, CancellationToken cancellationToken)
+    public async Task<IActionResult> RequestApproval(Guid id, CancellationToken cancellationToken)
     {
-        await budgetService.CreateAndSendBudget(id, cancellationToken);
+        var userId = GetCurrentUserId();
+        if (userId is null)
+            return Unauthorized();
+
+        await workOrderService.RequestApproval(id, userId.Value, cancellationToken);
         return NoContent();
     }
 
@@ -100,7 +103,7 @@ public class WorkOrdersController : ControllerBase
     ///     Altera o status de uma ordem de serviço.
     /// </summary>
     /// <param name="id">Identificador da ordem.</param>
-    /// <param name="request">Novo status e usuário que executou a ação.</param>
+    /// <param name="request">Novo status solicitado</param>
     /// <param name="cancellationToken">Token para cancelamento da operação.</param>
     /// <response code="204">Status alterado com sucesso.</response>
     /// <response code="400">Requisição inválida.</response>
@@ -110,7 +113,11 @@ public class WorkOrdersController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ChangeStatus(Guid id, [FromBody] ChangeStatusRequest request, CancellationToken cancellationToken)
     {
-        await workOrderService.ChangeStatus(id, request.NewStatus, request.PerformedBy, cancellationToken);
+        var userId = GetCurrentUserId();
+        if (userId is null)
+            return Unauthorized();
+
+        await workOrderService.ChangeStatus(id, request.NewStatus, userId.Value, cancellationToken);
         return NoContent();
     }
 
@@ -132,5 +139,11 @@ public class WorkOrdersController : ControllerBase
         var resp = await workOrderService.TrackByDocumentAndAccessKey(document, accessKey, cancellationToken);
         if (resp is null) return NotFound();
         return Ok(resp);
+    }
+
+    private Guid? GetCurrentUserId()
+    {
+        var identifier = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return Guid.TryParse(identifier, out var userId) ? userId : null;
     }
 }

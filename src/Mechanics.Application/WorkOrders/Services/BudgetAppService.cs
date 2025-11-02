@@ -1,5 +1,7 @@
 using Mechanics.Application.Notification.Services;
 using Mechanics.Application.Utils;
+using Mechanics.Domain.Base.Exceptions;
+using Mechanics.Domain.Customers;
 using Mechanics.Domain.Products;
 using Mechanics.Domain.ServicesCatalog;
 using Mechanics.Domain.WorkOrders;
@@ -28,19 +30,23 @@ public class BudgetAppService : IAppService
     /// <summary>
     ///     Cria um budget a partir dos produtos/serviços atualmente associados à WorkOrder,
     ///     persiste snapshot de preços e itens, define ExpiresAt = CreatedAt + 3 dias,
-    ///     atualiza WorkOrder.Status para PendingApproval e envia e-mail ao cliente.
+    ///     atualiza WorkOrder.Status para PendingApproval e registra o usuário responsável.
     /// </summary>
-    public async Task<Guid> CreateAndSendBudget(Guid workOrderId, CancellationToken cancellationToken = default)
+    public async Task<Guid> CreateAndSendBudget(Guid workOrderId, Guid performedByUserId, CancellationToken cancellationToken = default)
     {
+        if (performedByUserId == Guid.Empty)
+            throw new BusinessException("PerformedByUserId must be informed.");
+
         var wo = await dbContext.WorkOrders
             .Include(w => w.Products)
             .Include(w => w.ServiceCatalog)
             .FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
 
-        if (wo is null) throw new InvalidOperationException("Work order not found.");
+        if (wo is null)
+            throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
 
         if ((wo.Products == null || !wo.Products.Any()) && (wo.ServiceCatalog == null || !wo.ServiceCatalog.Any()))
-            throw new InvalidOperationException("Order must contain at least one product or service to create a budget.");
+            throw new BusinessException("Order must contain at least one product or service to create a budget.");
 
         var now = DateTime.Now;
         var budget = new Budget
@@ -106,7 +112,7 @@ public class BudgetAppService : IAppService
 
         wo.ApprovalRequestedAt = now;
         wo.Status = WorkOrderStatus.PendingApproval;
-        wo.LastStatusChangeBy ??= Guid.Empty;
+        wo.LastStatusChangeBy ??= performedByUserId;
         wo.LastUpdate = now;
 
         var hist = new WorkOrderHistory
@@ -115,7 +121,7 @@ public class BudgetAppService : IAppService
             OccurredAt = now,
             Action = "BudgetSent",
             Details = $"Budget {budget.Id} sent. Total: {budget.Total:C}",
-            PerformedByUserId = null
+            PerformedByUserId = performedByUserId
         };
         await dbContext.WorkOrderHistories.AddAsync(hist, cancellationToken);
 
@@ -149,28 +155,32 @@ public class BudgetAppService : IAppService
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Document.Number == normalizedDocument, cancellationToken);
 
-        if (customer is null) throw new InvalidOperationException("Customer not found.");
+        if (customer is null)
+            throw new EntityNotFoundException(nameof(Customer), normalizedDocument);
 
         var wo = await dbContext.WorkOrders
             .FirstOrDefaultAsync(w => w.Id == workOrderId && w.CustomerId == customer.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
 
-        if (wo is null) throw new InvalidOperationException("Work order not found or access key invalid.");
+        if (wo is null)
+            throw new BusinessException("Work order not found or access key invalid.");
 
-        // Find the most recent SENT budget for this work order
         var budget = await dbContext.Budgets
             .Where(b => b.WorkOrderId == wo.Id && b.Status == BudgetStatus.Sent)
             .OrderByDescending(b => b.CreatedAt)
             .Include(b => b.Items)
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (budget is null) throw new InvalidOperationException("No pending budget found for this work order.");
+        if (budget is null)
+            throw new BusinessException("No pending budget found for this work order.");
 
-        if (budget.ApprovedAt != null) throw new InvalidOperationException("Budget already approved.");
+        if (budget.ApprovedAt != null)
+            throw new BusinessException("Budget already approved.");
+
         if (budget.ExpiresAt.HasValue && DateTime.Now > budget.ExpiresAt.Value)
         {
             budget.Status = BudgetStatus.Expired;
             await dbContext.SaveChangesAsync(cancellationToken);
-            throw new InvalidOperationException("Budget expired.");
+            throw new BusinessException("Budget expired.");
         }
 
         // Approve

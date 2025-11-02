@@ -8,6 +8,5 @@ public class ChangeStatusRequestValidator : AbstractValidator<ChangeStatusReques
     public ChangeStatusRequestValidator()
     {
         RuleFor(r => r.NewStatus).IsInEnum().WithMessage("Invalid status value.");
-        RuleFor(r => r.PerformedBy).NotEmpty().WithMessage("PerformedBy is required.");
     }
 }

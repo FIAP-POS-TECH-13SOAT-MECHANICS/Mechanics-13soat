@@ -3,8 +3,11 @@ using Mechanics.Application.Utils;
 using Mechanics.Application.WorkOrders.Requests;
 using Mechanics.Application.WorkOrders.Responses;
 using Mechanics.Application.Notification.Services;
+using Mechanics.Domain.Base.Exceptions;
+using Mechanics.Domain.Customers;
 using Mechanics.Domain.Products;
 using Mechanics.Domain.ServicesCatalog;
+using Mechanics.Domain.Vehicles;
 using Mechanics.Domain.WorkOrders;
 using Mechanics.Infra.Data;
 using Microsoft.EntityFrameworkCore;
@@ -40,10 +43,12 @@ namespace Mechanics.Application.WorkOrders.Services
         public async Task<Guid> Create(CreateWorkOrderRequest request, CancellationToken cancellationToken = default)
         {
             var customer = await _db.Customers.FindAsync(new object[] { request.CustomerId }, cancellationToken);
-            if (customer is null) throw new InvalidOperationException("Customer not found.");
+            if (customer is null)
+                throw new EntityNotFoundException(nameof(Customer), request.CustomerId.ToString());
 
             var vehicle = await _db.Vehicles.FindAsync(new object[] { request.VehicleId }, cancellationToken);
-            if (vehicle is null) throw new InvalidOperationException("Vehicle not found.");
+            if (vehicle is null)
+                throw new EntityNotFoundException(nameof(Vehicle), request.VehicleId.ToString());
 
             var existing = await _db.WorkOrders.Where(w => w.CustomerId == request.CustomerId).ToListAsync(cancellationToken);
             var accessKey = WorkOrder.GenerateNewAccessKey(existing);
@@ -136,11 +141,11 @@ namespace Mechanics.Application.WorkOrders.Services
         /// </summary>
         public async Task RequestApproval(Guid workOrderId, Guid performedByUserId, CancellationToken cancellationToken = default)
         {
-            // valida existência da ordem antes de delegar
             var woExists = await _db.WorkOrders.AnyAsync(w => w.Id == workOrderId, cancellationToken);
-            if (!woExists) throw new InvalidOperationException("Work order not found.");
+            if (!woExists)
+                throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
 
-            await _budgetService.CreateAndSendBudget(workOrderId, cancellationToken);
+            await _budgetService.CreateAndSendBudget(workOrderId, performedByUserId, cancellationToken);
         }
 
         /// <summary>
@@ -150,12 +155,13 @@ namespace Mechanics.Application.WorkOrders.Services
         public async Task ChangeStatus(Guid workOrderId, WorkOrderStatus newStatus, Guid performedByUserId, CancellationToken cancellationToken = default)
         {
             var wo = await _db.WorkOrders.FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
-            if (wo is null) throw new InvalidOperationException("Work order not found.");
+            if (wo is null)
+                throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
 
             var previous = wo.Status;
 
             if (!IsTransitionAllowed(previous, newStatus))
-                throw new InvalidOperationException($"Invalid status transition from {previous} to {newStatus}.");
+                throw new BusinessException($"Invalid status transition from {previous} to {newStatus}.");
 
             if (newStatus == WorkOrderStatus.InProgress)
             {
@@ -163,7 +169,7 @@ namespace Mechanics.Application.WorkOrders.Services
                     || await _db.Budgets.AnyAsync(b => b.WorkOrderId == workOrderId && b.Status == BudgetStatus.Approved, cancellationToken);
 
                 if (!approved)
-                    throw new InvalidOperationException("Order must be approved before starting.");
+                    throw new BusinessException("Order must be approved before starting.");
             }
             wo.Status = newStatus;
             wo.LastStatusChangeBy = performedByUserId;
@@ -210,7 +216,8 @@ namespace Mechanics.Application.WorkOrders.Services
                 .Include(w => w.Products)
                 .FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
 
-            if (wo is null) throw new InvalidOperationException("Work order not found.");
+            if (wo is null)
+                throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
 
             var products = await _db.Products.Where(p => productIds.Contains(p.Id)).ToListAsync(cancellationToken);
             if (!products.Any()) return;
@@ -247,7 +254,8 @@ namespace Mechanics.Application.WorkOrders.Services
                 .Include(w => w.ServiceCatalog)
                 .FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
 
-            if (wo is null) throw new InvalidOperationException("Work order not found.");
+            if (wo is null)
+                throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
 
             var services = await _db.ServiceCatalog.Where(s => serviceIds.Contains(s.Id)).ToListAsync(cancellationToken);
             if (!services.Any()) return;

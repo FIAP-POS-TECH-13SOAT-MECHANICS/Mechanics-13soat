@@ -1,6 +1,7 @@
 using AutoMapper;
 using Mechanics.Application.WorkOrders.Requests;
 using Mechanics.Application.WorkOrders.Services;
+using Mechanics.Domain.Base.Exceptions;
 using Mechanics.Domain.Customers;
 using Mechanics.Domain.ServicesCatalog;
 using Mechanics.Domain.Vehicles;
@@ -122,12 +123,14 @@ public class WorkOrderAppServiceTests
             _loggerFactory.CreateLogger<WorkOrderAppService>(),
             budgetService);
 
-        await service.RequestApproval(wo.Id, Guid.NewGuid(), TestContext.CancellationTokenSource.Token);
+        var performedBy = Guid.NewGuid();
+        await service.RequestApproval(wo.Id, performedBy, TestContext.CancellationTokenSource.Token);
 
         var reloaded = await context.WorkOrders.FindAsync(wo.Id);
         Assert.IsNotNull(reloaded);
         Assert.AreEqual(WorkOrderStatus.PendingApproval, reloaded!.Status);
         Assert.IsNotNull(reloaded.ApprovalRequestedAt);
+        Assert.AreEqual(performedBy, reloaded.LastStatusChangeBy);
         Assert.IsTrue(_emailMock.SendWorkOrderPendingApprovalCalled);
 
         Assert.AreEqual(100m, _emailMock.LastBudgetTotal);
@@ -164,17 +167,19 @@ public class WorkOrderAppServiceTests
             _loggerFactory.CreateLogger<WorkOrderAppService>(),
             budgetService);
 
-        await Assert.ThrowsExactlyAsync<InvalidOperationException>(() => service.ChangeStatus(wo.Id, WorkOrderStatus.InProgress, Guid.NewGuid(), TestContext.CancellationTokenSource.Token));
+        await Assert.ThrowsExactlyAsync<BusinessException>(() => service.ChangeStatus(wo.Id, WorkOrderStatus.InProgress, Guid.NewGuid(), TestContext.CancellationTokenSource.Token));
 
         wo.ApprovedAt = DateTime.Now;
         context.WorkOrders.Update(wo);
         await context.SaveChangesAsync();
 
-        await service.ChangeStatus(wo.Id, WorkOrderStatus.InProgress, Guid.NewGuid(), TestContext.CancellationTokenSource.Token);
+        var statusChangedBy = Guid.NewGuid();
+        await service.ChangeStatus(wo.Id, WorkOrderStatus.InProgress, statusChangedBy, TestContext.CancellationTokenSource.Token);
 
         var reloaded = await context.WorkOrders.FindAsync(wo.Id);
         Assert.IsNotNull(reloaded);
         Assert.AreEqual(WorkOrderStatus.InProgress, reloaded!.Status);
+        Assert.AreEqual(statusChangedBy, reloaded.LastStatusChangeBy);
         Assert.IsTrue(context.WorkOrderHistories.Any(h => h.WorkOrderId == wo.Id && h.Action == "StatusChanged"));
         Assert.IsTrue(_emailMock.SendWorkOrderStatusChangedCalled);
     }

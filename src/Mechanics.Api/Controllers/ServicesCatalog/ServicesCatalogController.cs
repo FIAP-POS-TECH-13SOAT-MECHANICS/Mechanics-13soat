@@ -54,7 +54,7 @@ public class ServiceCatalogController(ServiceCatalogAppService service) : Contro
     ///     Buscar serviços por termo textual.
     /// </summary>
     /// <param name="term">Termo de busca (nome ou descrição).</param>
-    /// <param name="cancellationToken"></param>
+    /// <remarks>Retorna no máximo 10 itens que contenham o termo no nome ou descrição.</remarks>
     /// <response code="200">Resultados encontrados.</response>
     /// <response code="400">Parâmetros inválidos.</response>
     [HttpGet("search")]

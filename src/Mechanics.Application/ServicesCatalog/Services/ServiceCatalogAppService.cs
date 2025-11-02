@@ -46,25 +46,15 @@ public class ServiceCatalogAppService(AppDbContext dbContext, IMapper mapper) : 
         var query = dbContext.ServiceCatalog
             .AsNoTracking()
             .Where(s =>
-                s.Name.ToUpper().Contains(normalizedTerm) ||
-                s.Description.ToUpper().Contains(normalizedTerm));
+                s.Name.Contains(normalizedTerm) ||
+                EF.Functions.Like(s.Description, $"%{normalizedTerm}%"))
+            .OrderBy(s => s.Name)
+            .Take(10); 
 
-        //var query = dbContext.ServiceCatalog
-        //    .AsNoTracking()
-        //    .Where(s =>
-        //EF.Functions.Like(s.Name, $"%{normalizedTerm}%") ||
-        //EF.Functions.Like(s.Description, $"%{normalizedTerm}%"));
-
-        var request = new GetServiceCatalogRequest
-        {
-            Name = normalizedTerm,
-            Page = 1,
-            ItemsPerPage = 10
-        };
-
-        var (items, count) = await query.GetPaginatedList(request, cancellationToken);
-        return new GetServicesCatalogResponse(mapper.Map<IEnumerable<GetServiceCatalogResponse>>(items), count);
+        var items = await query.ToListAsync(cancellationToken);
+        return new GetServicesCatalogResponse(mapper.Map<IEnumerable<GetServiceCatalogResponse>>(items), items.Count);
     }
+
 
     public async Task<CreateItemResponse> Create(CreateServiceCatalogRequest request, CancellationToken cancellationToken)
     {

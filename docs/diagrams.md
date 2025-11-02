@@ -1,4 +1,3 @@
-
 # Diagramas
 
 - [Domain Storytelling](#domain-storytelling)
@@ -12,9 +11,9 @@ Abaixo está o link para cada projeto no Miro, e logo abaixo algumas imagens que
 
 ---
 
-# Domain Storytelling
+## Domain Storytelling
 
-Criação da Ordem de Serviço (OS)
+### Criação da Ordem de Serviço (OS)
 
 Atores: Cliente, Atendentes, Sistema
 Objetos de trabalho: CPF/CNPJ, Veículo, Serviços, Orçamento
@@ -27,13 +26,13 @@ Objetos de trabalho: CPF/CNPJ, Veículo, Serviços, Orçamento
 4.	Atendente → adiciona serviços solicitados → Sistema
 5.	Sistema → gera orçamento (com peças/insumos) → Atendente
 6.	Sistema → envia orçamento → Cliente
-7.	Cliente → aprova/rejeita → Sistema 
+7.	Cliente → aprova/rejeita → Sistema
 
 ![WorkOrderCreation](./images/a.png)
 
 ---
 
-Acompanhamento da OS
+### Acompanhamento da OS
 
 Atores: Cliente, Mecânico, Atendentes, Sistema
 Objetos de trabalho: Ordem de Serviço, Status
@@ -50,7 +49,7 @@ História pictográfica:
 
 ---
 
-Gestão Administrativa
+### Gestão Administrativa
 
 Atores: Administrador, Atendentes, Sistema
 Objetos de trabalho: Cadastros (clientes, veículos, serviços, peças), Estoque, Relatórios

@@ -60,7 +60,7 @@ public class VehiclesControllerTests
             Color = VehicleColor.Black,
             Year = "2020",
             LicensePlate = "ABC1F25",
-            Chassis = "9BW9Z7877VT004251",
+            Chassis = "9BW9ZZ377VT004252",
             OwnerId = ownerId,
         };
         var createResponse = await client.PostAsJsonAsync("api/vehicles", createRequest, TestContext.CancellationTokenSource.Token);

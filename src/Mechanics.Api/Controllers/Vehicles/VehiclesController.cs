@@ -43,7 +43,8 @@ public class VehiclesController(VehicleAppService service) : ControllerBase
     [Produces("application/json", Type = typeof(GetVehiclesResponse))]
     [ProducesResponseType(typeof(GetVehiclesResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetVehicles([FromQuery] GetVehiclesRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetVehicles([FromQuery] GetVehiclesRequest request,
+        CancellationToken cancellationToken = default)
     {
         var response = await service.GetList(request, cancellationToken);
         return Ok(response);
@@ -80,8 +81,10 @@ public class VehiclesController(VehicleAppService service) : ControllerBase
     [ProducesResponseType(typeof(UpdateItemResponse), StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateVehicle(Guid id, UpdateVehicleRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> UpdateVehicle(Guid id, UpdateVehicleRequest request,
+        CancellationToken cancellationToken = default)
     {
+        request.Id = id;
         var response = await service.Update(id, request, cancellationToken);
         return response is null ? NotFound() : NoContent();
     }

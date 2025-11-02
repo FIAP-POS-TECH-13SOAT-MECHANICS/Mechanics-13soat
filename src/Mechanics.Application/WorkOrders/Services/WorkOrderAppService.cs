@@ -53,17 +53,16 @@ namespace Mechanics.Application.WorkOrders.Services
             var existing = await _db.WorkOrders.Where(w => w.CustomerId == request.CustomerId).ToListAsync(cancellationToken);
             var accessKey = WorkOrder.GenerateNewAccessKey(existing);
 
-            var Now = DateTime.Now;
+            var now = DateTime.Now;
 
             var wo = new WorkOrder
             {
-                Id = Guid.NewGuid(),
                 CustomerId = request.CustomerId,
                 VehicleId = request.VehicleId,
                 AccessKey = accessKey,
                 Status = WorkOrderStatus.Received,
-                CreatedAt = Now,
-                LastUpdate = Now,
+                CreationDate = now,
+                LastUpdate = now,
                 ReportedProblem = request.ReportedProblem,
             };
 

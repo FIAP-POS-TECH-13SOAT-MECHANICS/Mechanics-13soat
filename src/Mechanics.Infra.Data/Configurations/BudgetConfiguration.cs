@@ -12,7 +12,7 @@ public class BudgetConfiguration : IEntityTypeConfiguration<Budget>
 
         builder.HasKey(b => b.Id);
         builder.Property(b => b.WorkOrderId).IsRequired();
-        builder.Property(b => b.CreatedAt)
+        builder.Property(b => b.CreationDate)
             .IsRequired()
             .HasColumnType("datetime2")
             .HasDefaultValueSql("SYSDATETIME()");

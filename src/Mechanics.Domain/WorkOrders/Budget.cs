@@ -12,13 +12,8 @@ public class Budget : AbstractEntity
     public WorkOrder? WorkOrder { get; init; }
 
     /// <summary>
-    /// Momento em que o budget foi criado e enviado.
-    /// </summary>
-    public required DateTime CreatedAt { get; set; }
-
-    /// <summary>
     /// Data de expiração, 
-    /// Definimos CreatedAt + 3 dias.
+    /// Definimos CreationDate + 3 dias.
     /// </summary>
     public DateTime? ExpiresAt { get; set; }
 

@@ -18,7 +18,7 @@ public static class WorkOrderEmailTemplates
 
                 <ul>
                 <li><b>Veículo</b>: {workOrder.Vehicle}</li>
-                <li><b>Data de criação</b>: {workOrder.CreatedAt:G}</li>
+                <li><b>Data de criação</b>: {workOrder.CreationDate:G}</li>
                 <li><b>Problema relatado</b>: {workOrder.ReportedProblem ?? "—"}</li>
                 </ul>
 

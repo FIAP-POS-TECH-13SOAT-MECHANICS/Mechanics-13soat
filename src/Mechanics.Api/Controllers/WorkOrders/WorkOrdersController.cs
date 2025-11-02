@@ -85,17 +85,16 @@ public class WorkOrdersController : ControllerBase
     ///     Aprova publicamente um budget associado à ordem de serviço.
     ///     Rota pública que o cliente utiliza com seu documento e o código de acesso.
     /// </summary>
-    /// <param name="workOrderId">Identificador da WorkOrder.</param>
     /// <param name="request">Documento e accessKey do cliente.</param>
     /// <param name="cancellationToken">Token para cancelamento.</param>
     [AllowAnonymous]
-    [HttpPost("{workOrderId:guid}/approve-budget")]
+    [HttpPost("/approve-budget")]
     [Consumes(typeof(ApproveBudgetPublicRequest), "application/json")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ApproveBudget(Guid workOrderId, [FromBody] ApproveBudgetPublicRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> ApproveBudget([FromBody] ApproveBudgetPublicRequest request, CancellationToken cancellationToken)
     {
-        await budgetService.PublicApproveBudget(request.Document, request.AccessKey, workOrderId, cancellationToken);
+        await budgetService.PublicApproveBudget(request.Document, request.AccessKey, cancellationToken);
         return NoContent();
     }
 

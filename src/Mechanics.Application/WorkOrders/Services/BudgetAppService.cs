@@ -29,7 +29,7 @@ public class BudgetAppService : IAppService
 
     /// <summary>
     ///     Cria um budget a partir dos produtos/serviços atualmente associados à WorkOrder,
-    ///     persiste snapshot de preços e itens, define ExpiresAt = CreatedAt + 3 dias,
+    ///     persiste snapshot de preços e itens, define ExpiresAt = CreationDate + 3 dias,
     ///     atualiza WorkOrder.Status para PendingApproval e registra o usuário responsável.
     /// </summary>
     public async Task<Guid> CreateAndSendBudget(Guid workOrderId, Guid performedByUserId, CancellationToken cancellationToken = default)
@@ -51,9 +51,8 @@ public class BudgetAppService : IAppService
         var now = DateTime.Now;
         var budget = new Budget
         {
-            Id = Guid.NewGuid(),
             WorkOrderId = wo.Id,
-            CreatedAt = now,
+            CreationDate = now,
             ExpiresAt = now.AddDays(3),
             Status = BudgetStatus.Sent,
             Items = new List<BudgetItem>()
@@ -70,7 +69,6 @@ public class BudgetAppService : IAppService
                 var unitPrice = GetProductUnitPrice(p);
                 var item = new BudgetItem
                 {
-                    Id = Guid.NewGuid(),
                     BudgetId = budget.Id,
                     ProductId = p.Id,
                     NameSnapshot = p.Name,
@@ -93,7 +91,6 @@ public class BudgetAppService : IAppService
             {
                 var item = new BudgetItem
                 {
-                    Id = Guid.NewGuid(),
                     BudgetId = budget.Id,
                     ServiceCatalogId = s.Id,
                     NameSnapshot = s.Name,
@@ -114,6 +111,8 @@ public class BudgetAppService : IAppService
         wo.Status = WorkOrderStatus.PendingApproval;
         wo.LastStatusChangeBy ??= performedByUserId;
         wo.LastUpdate = now;
+
+        await dbContext.SaveChangesAsync(cancellationToken);
 
         var hist = new WorkOrderHistory
         {
@@ -144,9 +143,9 @@ public class BudgetAppService : IAppService
     }
 
     /// <summary>
-    ///     Aprova um budget publicamente via documento + accessKey + budgetId.
+    ///     Aprova um budget publicamente via documento + accessKey
     /// </summary>
-    public async Task PublicApproveBudget(string document, string accessKey, Guid workOrderId, CancellationToken cancellationToken = default)
+    public async Task PublicApproveBudget(string document, string accessKey, CancellationToken cancellationToken = default)
     {
         var normalizedDocument = new string(document.Where(char.IsDigit).ToArray());
         var normalizedAccessKey = accessKey?.Replace(" ", "") ?? string.Empty;
@@ -159,14 +158,14 @@ public class BudgetAppService : IAppService
             throw new EntityNotFoundException(nameof(Customer), normalizedDocument);
 
         var wo = await dbContext.WorkOrders
-            .FirstOrDefaultAsync(w => w.Id == workOrderId && w.CustomerId == customer.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
+            .FirstOrDefaultAsync(w =>  w.CustomerId == customer.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
 
         if (wo is null)
             throw new BusinessException("Work order not found or access key invalid.");
 
         var budget = await dbContext.Budgets
             .Where(b => b.WorkOrderId == wo.Id && b.Status == BudgetStatus.Sent)
-            .OrderByDescending(b => b.CreatedAt)
+            .OrderByDescending(b => b.CreationDate)
             .Include(b => b.Items)
             .FirstOrDefaultAsync(cancellationToken);
 

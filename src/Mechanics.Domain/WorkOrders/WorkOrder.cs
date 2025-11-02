@@ -26,11 +26,6 @@ public class WorkOrder : AbstractEntity
     public DateTime LastUpdate { get; set; }
 
     /// <summary>
-    ///     Data de criação da OS.
-    /// </summary>
-    public required DateTime CreatedAt { get; set; }
-
-    /// <summary>
     ///     Produtos utilizados na ordem.
     /// </summary>
     public ICollection<Product>? Products { get; set; }

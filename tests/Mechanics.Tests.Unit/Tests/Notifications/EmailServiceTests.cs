@@ -37,7 +37,7 @@ public class EmailServiceTests
             CustomerId = customer.Id,
             AccessKey = WorkOrder.GenerateNewAccessKey(Enumerable.Empty<WorkOrder>()),
             VehicleId = Guid.NewGuid(),
-            CreatedAt = DateTime.Now,
+            CreationDate = DateTime.Now,
             LastUpdate = DateTime.Now
         };
 

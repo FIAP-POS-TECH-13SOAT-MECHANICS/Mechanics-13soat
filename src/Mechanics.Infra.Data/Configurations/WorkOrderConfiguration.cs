@@ -47,7 +47,7 @@ public class WorkOrderConfiguration : IEntityTypeConfiguration<WorkOrder>
         builder.Property(e => e.IsCancelled).HasDefaultValue(false);
         builder.Property(e => e.LastStatusChangeBy).HasColumnType("uniqueidentifier");
 
-        builder.Property(e => e.CreatedAt)
+        builder.Property(e => e.CreationDate)
             .IsRequired()
             .HasColumnType("datetime2")
             .HasDefaultValueSql("SYSDATETIME()");

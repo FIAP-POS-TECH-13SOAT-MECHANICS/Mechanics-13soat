@@ -16,7 +16,7 @@ public static class WorkOrderMocks
             VehicleId = vehicleId,
             AccessKey = WorkOrder.GenerateNewAccessKey(Array.Empty<WorkOrder>()),
             Status = WorkOrderStatus.Received,
-            CreatedAt = now,
+            CreationDate = now,
             LastUpdate = now,
         };
     }
@@ -31,7 +31,7 @@ public static class WorkOrderMocks
             VehicleId = vehicleId,
             AccessKey = WorkOrder.GenerateNewAccessKey(Array.Empty<WorkOrder>()),
             Status = WorkOrderStatus.Received,
-            CreatedAt = now,
+            CreationDate = now,
             LastUpdate = now,
             ServiceCatalog = new List<ServiceCatalog> { service },
         };

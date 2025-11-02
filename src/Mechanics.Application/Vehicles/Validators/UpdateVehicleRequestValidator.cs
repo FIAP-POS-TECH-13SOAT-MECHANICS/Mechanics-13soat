@@ -13,6 +13,7 @@ public class UpdateVehicleRequestValidator : AbstractValidator<UpdateVehicleRequ
         {
             RuleFor(r => r.Color!.Value).IsInEnum();
         });
+
         When(r => r.OwnerId.HasValue, () =>
         {
             RuleFor(r => r.OwnerId!.Value)
@@ -35,9 +36,5 @@ public class UpdateVehicleRequestValidator : AbstractValidator<UpdateVehicleRequ
                     dbContext.Vehicles.AllAsync(c => c.Id == req.Id || c.Chassis != chassis, ct))
                 .WithMessage("Chassis must be unique.");
         });
-
-        RuleFor(r => r.Chassis).NotEmpty().MaximumLength(17)
-            .MustAsync(async (chassis, ct) => await dbContext.Vehicles.AllAsync(c => c.Chassis != chassis, ct))
-            .WithMessage("Chassis must be unique.");
     }
 }

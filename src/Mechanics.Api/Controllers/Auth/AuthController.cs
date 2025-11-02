@@ -20,7 +20,6 @@ public class AuthController(AuthAppService service) : ControllerBase
     ///     Gera um token JWT para o usuário fornecido.
     /// </summary>
     /// <returns>Um <see cref="TokenResponse"/> contendo o token JWT.</returns>
-    /// <remarks>A senha deve ser <c>5eCre+Key</c>.</remarks>
     /// <response code="200">Usuário autenticado com sucesso.</response>
     /// <response code="401">Usuário ou senha inválidos.</response>
     [AllowAnonymous]

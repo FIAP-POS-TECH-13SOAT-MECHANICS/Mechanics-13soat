@@ -17,6 +17,10 @@ Repositório do projeto destinado aos Tech Challenges da Oficina Mecânica da FI
 
 ## Usuários padrão
 
+Utilize o endpoint `/api/auth/login` para gerar um token.
+O token possui validade de poucos minutos, mas pode ser renovado.
+Veja as instruções em [Autenticação e autorização](./docs/auth.md).
+
 Os seguintes logins podem ser utilizados para testes:
 
 | Usuário         | Senha       | Perfil        | Permissões                    |
@@ -29,9 +33,11 @@ Qualquer usuário autenticado pode criar e atualizar ordens de serviço.
 
 ## Análises de Qualidade e Segurança
 
-As análises de qualidade de código, vulnerabilidades e conformidade de segurança do projeto são mantidas em um repositório dedicado.
+Os scripts para gerar análises de qualidade de código, vulnerabilidades e conformidade de segurança do projeto são
+mantidas em um repositório dedicado.
+Acesse o repositório pelo link abaixo.
 
-➡️ Acesse o repositório: [Mechanics Sonar](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/Mechanics-Sonar)
+[Mechanics Sonar](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/Mechanics-Sonar)
 
 Esse repositório contém instruções para execução local das análises com **SonarQube**, **OWASP Dependency Check** e **OWASP ZAP**.
 
@@ -39,6 +45,7 @@ Esse repositório contém instruções para execução local das análises com *
 
 <!-- Mantenha a lista em ordem alfabética -->
 
+- [Autenticação e autorização](/docs/auth.md)
 - [Configuração do ambiente](/docs/configuration.md)
 - [Diagramas](/docs/diagrams.md)
 - [Diretrizes de design do projeto](/docs/design-guidelines.md)

@@ -24,10 +24,17 @@ public class ExceptionHandlerMiddleware(RequestDelegate next)
                 Type = e.GetType().FullName,
                 Title = $"Application error: {e.Message}",
 #if DEBUG
-                Detail = e.StackTrace,
+                Detail = JsonSerializer.Serialize(new ExceptionDetails(e), SerializerOptions),
 #endif
             };
             await context.Response.WriteAsync(JsonSerializer.Serialize(response, SerializerOptions));
         }
+    }
+
+    public class ExceptionDetails(Exception e)
+    {
+        public string Name { get; } = e.GetType().Name;
+        public string Message { get; } = e.Message;
+        public ExceptionDetails? InnerException { get; } = e.InnerException != null ? new ExceptionDetails(e.InnerException) : null;
     }
 }

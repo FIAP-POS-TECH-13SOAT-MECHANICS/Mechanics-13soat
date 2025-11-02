@@ -139,30 +139,76 @@ public class ServiceCatalogAppServiceTests
         Assert.Contains("FREIOS", list.Items.First().Name.ToUpper());
     }
 
-    [TestMethod("Sugestões por tipo de veículo")]
-    public async Task It_ShouldSuggestByVehicleType()
+    [TestMethod("Busca por termo relacionado ao tipo de veículo")]
+    public async Task It_ShouldSearchByVehicleTypeTerm()
     {
         // Arrange
         var context = new DbContextTestBuilder()
             .WithData([
-                ServicesCatalogMocks.CreateSuggestedService(Guid.NewGuid(), "Geometria", "Geometria e Pneus"),
-                ServicesCatalogMocks.CreateSuggestedService(Guid.NewGuid(), "Troca de Óleo", "Troca de Óleo e Suspensão"),
+                ServicesCatalogMocks.CreateSearchableService(Guid.NewGuid(), "Geometria", "Geometria para SUV e pneus"),
+                ServicesCatalogMocks.CreateSearchableService(Guid.NewGuid(), "Troca de Óleo", "Óleo sintético para SUV"),
             ])
             .Build();
 
         var service = new ServiceCatalogAppService(context, _mapper);
 
         // Act
-        var list = await service.GetSuggestions("SUV", TestContext.CancellationTokenSource.Token);
+        var result = await service.GetSearch("SUV", TestContext.CancellationTokenSource.Token);
 
         // Assert
-        Assert.IsNotNull(list);
-        Assert.AreEqual(2, list.Count());
-        Assert.IsTrue(list.All(s =>
-            s.Description.Contains("Pneus") ||
-            s.Description.Contains("Suspensão") ||
-            s.Description.Contains("Troca de Óleo") ||
-            s.Description.Contains("Geometria")));
+        Assert.IsNotNull(result);
+        Assert.IsTrue(result.Items.Any());
+        Assert.IsTrue(result.Items.All(s =>
+            s.Name.Contains("SUV", StringComparison.OrdinalIgnoreCase) ||
+            s.Description.Contains("SUV", StringComparison.OrdinalIgnoreCase)));
+    }
+
+    [TestMethod("Busca textual por nome ou descrição")]
+    public async Task It_ShouldSearchByTerm()
+    {
+        // Arrange
+        var context = new DbContextTestBuilder()
+            .WithData([
+                ServicesCatalogMocks.CreateSearchableService(Guid.NewGuid(), "Freios", "Serviço de freios e pastilhas"),
+                ServicesCatalogMocks.CreateSearchableService(Guid.NewGuid(), "Suspensão", "Revisão completa da suspensão"),
+            ])
+            .Build();
+
+        var service = new ServiceCatalogAppService(context, _mapper);
+
+        // Act
+        var result = await service.GetSearch("freios", TestContext.CancellationTokenSource.Token);
+
+        // Assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(1, result.Items.Count());
+        Assert.IsTrue(result.Items.All(s =>
+            s.Name.Contains("freios", StringComparison.OrdinalIgnoreCase) ||
+            s.Description.Contains("freios", StringComparison.OrdinalIgnoreCase))); 
+    }
+
+    [TestMethod("Paginação de serviços")]
+    public async Task It_ShouldPaginateServiceCatalog()
+    {
+        // Arrange
+        var context = new DbContextTestBuilder()
+            .WithData(ServicesCatalogMocks.BuildManyServices(20))
+            .Build();
+
+        var service = new ServiceCatalogAppService(context, _mapper);
+        var request = new GetServiceCatalogRequest
+        {
+            Page = 2,
+            ItemsPerPage = 10
+        };
+
+        // Act
+        var result = await service.GetList(request, TestContext.CancellationTokenSource.Token);
+
+        // Assert
+        Assert.IsNotNull(result);
+        Assert.AreEqual(10, result.Items.Count());   
+        Assert.AreEqual(20, result.TotalCount);      
     }
 
     #endregion

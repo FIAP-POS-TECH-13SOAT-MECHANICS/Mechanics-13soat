@@ -26,8 +26,7 @@ public class ServiceCatalogController(ServiceCatalogAppService service) : Contro
     [Produces("application/json", Type = typeof(GetServiceCatalogResponse))]
     [ProducesResponseType(typeof(GetServiceCatalogResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetServiceCatalog([FromQuery] GetServiceCatalogRequest request,
-        CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetServiceCatalog([FromQuery] GetServiceCatalogRequest request, CancellationToken cancellationToken = default)
     {
         var response = await service.GetList(request, cancellationToken);
         return Ok(response);
@@ -52,21 +51,20 @@ public class ServiceCatalogController(ServiceCatalogAppService service) : Contro
     }
 
     /// <summary>
-    ///     Sugerir os serviços oferecidos com base no tipo de veículo.
+    ///     Buscar serviços por termo textual.
     /// </summary>
-    /// <param name="request">Tipo do veículo (ex: SUV, Sedan, Hatch).</param>
-    /// <param name="cancellationToken"></param>
-    /// <response code="200">Sugestões geradas com sucesso.</response>
+    /// <param name="term">Termo de busca (nome ou descrição).</param>
+    /// <remarks>Retorna no máximo 10 itens que contenham o termo no nome ou descrição.</remarks>
+    /// <response code="200">Resultados encontrados.</response>
     /// <response code="400">Parâmetros inválidos.</response>
-    [HttpGet("suggestions")]
-    [Produces("application/json", Type = typeof(IEnumerable<GetServicesCatalogResponse>))]
-    [ProducesResponseType(typeof(IEnumerable<GetServicesCatalogResponse>), StatusCodes.Status200OK)]
+    [HttpGet("search")]
+    [Produces("application/json", Type = typeof(GetServicesCatalogResponse))]
+    [ProducesResponseType(typeof(GetServicesCatalogResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetSuggestedServices([FromQuery] GetSuggestedServiceRequest request,
-        CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetSearchServices([FromQuery] string term, CancellationToken cancellationToken = default)
     {
-        var suggestions = await service.GetSuggestions(request.VehicleType, cancellationToken);
-        return Ok(suggestions);
+        var search = await service.GetSearch(term, cancellationToken);
+        return Ok(search);
     }
 
     /// <summary>
@@ -80,8 +78,7 @@ public class ServiceCatalogController(ServiceCatalogAppService service) : Contro
     [Produces("application/json", Type = typeof(CreateItemResponse))]
     [ProducesResponseType(typeof(CreateItemResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> CreateServiceCatalog(CreateServiceCatalogRequest request,
-        CancellationToken cancellationToken = default)
+    public async Task<IActionResult> CreateServiceCatalog(CreateServiceCatalogRequest request, CancellationToken cancellationToken = default)
     {
         var response = await service.Create(request, cancellationToken);
         return CreatedAtAction(nameof(GetServiceCatalog), new { id = response.CreatedId }, response);
@@ -98,8 +95,7 @@ public class ServiceCatalogController(ServiceCatalogAppService service) : Contro
     [Produces("application/json", Type = typeof(CreateItemResponse))]
     [ProducesResponseType(typeof(CreateItemResponse), StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UpdateServiceCatalog(Guid id, UpdateServiceCatalogRequest request,
-        CancellationToken cancellationToken = default)
+    public async Task<IActionResult> UpdateServiceCatalog(Guid id, UpdateServiceCatalogRequest request, CancellationToken cancellationToken = default)
     {
         request.Id = id;
         var response = await service.Update(id, request, cancellationToken);

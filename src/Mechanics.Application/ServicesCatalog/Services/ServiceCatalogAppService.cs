@@ -27,9 +27,7 @@ public class ServiceCatalogAppService(AppDbContext dbContext, IMapper mapper) : 
             query = query.Where(c => c.Status == request.Status);
 
         var (items, count) = await query.GetPaginatedList(request, cancellationToken);
-        var mapped = mapper.Map<IEnumerable<GetServiceCatalogResponse>>(items);
-
-        return new GetServicesCatalogResponse(mapped, count);
+        return new GetServicesCatalogResponse(mapper.Map<IEnumerable<GetServiceCatalogResponse>>(items), count);
     }
 
     public async Task<GetServiceCatalogResponse?> Get(Guid id, CancellationToken cancellationToken)
@@ -41,37 +39,22 @@ public class ServiceCatalogAppService(AppDbContext dbContext, IMapper mapper) : 
         return entity is null ? null : mapper.Map<GetServiceCatalogResponse>(entity);
     }
 
-    public async Task<IEnumerable<GetServiceCatalogResponse>> GetSuggestions(string vehicleType,
-        CancellationToken cancellationToken)
+    public async Task<GetServicesCatalogResponse> GetSearch(string term, CancellationToken cancellationToken)
     {
-        var normalizedType = vehicleType.Trim().ToLower();
-        var query = dbContext.ServiceCatalog.AsNoTracking();
+        var normalizedTerm = term.Trim().ToUpper();
 
-        var filtered = normalizedType switch
-        {
-            "suv" => query.Where(s =>
-                EF.Functions.Like(s.Description, "%Pneus%") ||
-                EF.Functions.Like(s.Description, "%Troca de Óleo%") ||
-                EF.Functions.Like(s.Description, "%Suspensão%") ||
-                EF.Functions.Like(s.Description, "%Geometria/Alinhamento%")),
+        var query = dbContext.ServiceCatalog
+            .AsNoTracking()
+            .Where(s =>
+                s.Name.Contains(normalizedTerm) ||
+                EF.Functions.Like(s.Description, $"%{normalizedTerm}%"))
+            .OrderBy(s => s.Name)
+            .Take(10); 
 
-            "sedan" => query.Where(s =>
-                EF.Functions.Like(s.Description, "%Pneus%") ||
-                EF.Functions.Like(s.Description, "%Troca de Óleo%") ||
-                EF.Functions.Like(s.Description, "%Manutenção de Embreagem/Câmbio%")),
-
-            "hatch" => query.Where(s =>
-                EF.Functions.Like(s.Description, "%Pneus%") ||
-                EF.Functions.Like(s.Description, "%Troca de Óleo%") ||
-                EF.Functions.Like(s.Description, "%Freios e Embreagem%")),
-
-            _ => query.Where(s =>
-                EF.Functions.Like(s.Description, $"%{normalizedType}%")),
-        };
-
-        var suggestions = await filtered.ToListAsync(cancellationToken);
-        return mapper.Map<IEnumerable<GetServiceCatalogResponse>>(suggestions);
+        var items = await query.ToListAsync(cancellationToken);
+        return new GetServicesCatalogResponse(mapper.Map<IEnumerable<GetServiceCatalogResponse>>(items), items.Count);
     }
+
 
     public async Task<CreateItemResponse> Create(CreateServiceCatalogRequest request, CancellationToken cancellationToken)
     {

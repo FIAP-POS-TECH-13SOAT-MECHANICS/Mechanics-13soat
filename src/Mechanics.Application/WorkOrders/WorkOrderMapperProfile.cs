@@ -12,7 +12,7 @@ public class WorkOrderMapperProfile : Profile
             .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
             .ForMember(dest => dest.AccessKey, opt => opt.MapFrom(src => src.AccessKey))
             .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
-            .ForMember(dest => dest.CreationDate, opt => opt.MapFrom(src => src.CreationDate))
+            .ForMember(dest => dest.CreationDate, opt => opt.MapFrom(src => src.CreatedAt))
             .ForMember(dest => dest.LastUpdate, opt => opt.MapFrom(src => src.LastUpdate))
             .ForMember(dest => dest.CustomerId, opt => opt.MapFrom(src => src.CustomerId))
             .ForMember(dest => dest.VehicleId, opt => opt.MapFrom(src => src.VehicleId))

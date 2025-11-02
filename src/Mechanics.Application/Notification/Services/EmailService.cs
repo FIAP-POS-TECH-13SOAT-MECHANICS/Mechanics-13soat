@@ -19,11 +19,11 @@ public class EmailService(ILogger<EmailService> logger, IEmailSenderService send
         logger.LogInformation("Work order created notification sent to '{EmailAddress}'", customer.Email);
     }
 
-    public async Task SendWorkOrderPendingApproval(Customer customer, WorkOrder workOrder, decimal estimatedTotal, CancellationToken cancellationToken = default)
+    public async Task SendWorkOrderPendingApproval(Customer customer, WorkOrder workOrder, Budget budget, CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Sending work order pending approval to '{EmailAddress}'", customer.Email);
 
-        var message = WorkOrderEmailTemplates.WorkOrderPendingApproval(customer, workOrder, estimatedTotal);
+        var message = WorkOrderEmailTemplates.WorkOrderPendingApproval(customer, workOrder, budget);
         await senderService.SendAsync(message, cancellationToken);
 
         logger.LogInformation("Work order pending approval sent to '{EmailAddress}'", customer.Email);

@@ -2,6 +2,7 @@ using Mechanics.Application.WorkOrders;
 using Mechanics.Application.WorkOrders.Requests;
 using Mechanics.Application.WorkOrders.Responses;
 using Mechanics.Application.WorkOrders.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 
@@ -15,11 +16,13 @@ namespace Mechanics.Api.Controllers.WorkOrders;
 [Route("api/[controller]")]
 public class WorkOrdersController : ControllerBase
 {
-    private readonly WorkOrderAppService service;
+    private readonly WorkOrderAppService workOrderService;
+    private readonly BudgetAppService budgetService;
 
-    public WorkOrdersController(WorkOrderAppService service)
+    public WorkOrdersController(WorkOrderAppService workOrderService, BudgetAppService budgetService)
     {
-        this.service = service;
+        this.workOrderService = workOrderService;
+        this.budgetService = budgetService;
     }
 
     /// <summary>
@@ -34,9 +37,9 @@ public class WorkOrdersController : ControllerBase
     [Produces("application/json", Type = typeof(object))]
     [ProducesResponseType(typeof(object), (int)HttpStatusCode.Created)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Create([FromBody] CreateWorkOrderRequest request, CancellationToken    cancellationToken)
+    public async Task<IActionResult> Create([FromBody] CreateWorkOrderRequest request, CancellationToken cancellationToken)
     {
-        var id = await service.Create(request, cancellationToken);
+        var id = await workOrderService.Create(request, cancellationToken);
         return CreatedAtAction(nameof(Get), new { id }, new { id });
     }
 
@@ -53,7 +56,7 @@ public class WorkOrdersController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Get(Guid id, CancellationToken cancellationToken)
     {
-        var response = await service.Get(id, cancellationToken);
+        var response = await workOrderService.Get(id, cancellationToken);
         if (response is null) return NotFound();
         return Ok(response);
     }
@@ -62,7 +65,7 @@ public class WorkOrdersController : ControllerBase
     ///     Solicita aprovação do orçamento para a ordem.
     /// </summary>
     /// <param name="id">Identificador da ordem.</param>
-    /// <param name="performedBy">Id do usuário que está solicitando a aprovação (User.Id).</param>
+    /// /// <param name="performedBy">User que solicitou aprovação.</param>
     /// <param name="cancellationToken">Token para cancelamento da operação.</param>
     /// <response code="204">Solicitação realizada.</response>
     /// <response code="400">Requisição inválida.</response>
@@ -71,7 +74,25 @@ public class WorkOrdersController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> RequestApproval(Guid id, [FromQuery] Guid performedBy, CancellationToken cancellationToken)
     {
-        await service.RequestApproval(id, performedBy, cancellationToken);
+        await budgetService.CreateAndSendBudget(id, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>
+    ///     Aprova publicamente um budget associado à ordem de serviço.
+    ///     Rota pública que o cliente utiliza com seu documento e o código de acesso.
+    /// </summary>
+    /// <param name="workOrderId">Identificador da WorkOrder.</param>
+    /// <param name="request">Documento e accessKey do cliente.</param>
+    /// <param name="cancellationToken">Token para cancelamento.</param>
+    [AllowAnonymous]
+    [HttpPost("{workOrderId:guid}/approve-budget")]
+    [Consumes(typeof(ApproveBudgetPublicRequest), "application/json")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ApproveBudget(Guid workOrderId, [FromBody] ApproveBudgetPublicRequest request, CancellationToken cancellationToken)
+    {
+        await budgetService.PublicApproveBudget(request.Document, request.AccessKey, workOrderId, cancellationToken);
         return NoContent();
     }
 
@@ -89,7 +110,7 @@ public class WorkOrdersController : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ChangeStatus(Guid id, [FromBody] ChangeStatusRequest request, CancellationToken cancellationToken)
     {
-        await service.ChangeStatus(id, request.NewStatus, request.PerformedBy, cancellationToken);
+        await workOrderService.ChangeStatus(id, request.NewStatus, request.PerformedBy, cancellationToken);
         return NoContent();
     }
 
@@ -101,13 +122,14 @@ public class WorkOrdersController : ControllerBase
     /// <param name="cancellationToken">Token para cancelamento da operação.</param>
     /// <response code="200">Resultado encontrado.</response>
     /// <response code="404">Não encontrado.</response>
+    [AllowAnonymous]
     [HttpGet("track")]
     [Produces("application/json", Type = typeof(GetWorkOrderResponse))]
     [ProducesResponseType(typeof(GetWorkOrderResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Track([FromQuery] string document, [FromQuery] string accessKey, CancellationToken cancellationToken)
     {
-        var resp = await service.TrackByDocumentAndAccessKey(document, accessKey, cancellationToken);
+        var resp = await workOrderService.TrackByDocumentAndAccessKey(document, accessKey, cancellationToken);
         if (resp is null) return NotFound();
         return Ok(resp);
     }

@@ -12,9 +12,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-      <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.4"/>
-      <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="8.1.4"/>
-      <PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="8.0.3"/>
+      <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.4" />
+      <PackageReference Include="Swashbuckle.AspNetCore.Annotations" Version="8.1.4" />
+      <PackageReference Include="Swashbuckle.AspNetCore.Filters" Version="8.0.3" />
   </ItemGroup>
 
   <ItemGroup>

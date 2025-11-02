@@ -22,22 +22,56 @@ public class WorkOrder : AbstractEntity
     public required Guid VehicleId { get; init; }
     public Vehicle? Vehicle { get; init; }
 
-    public WorkOrderStatus Status { get; init; }
-    public DateTime LastUpdate { get; init; }
+    public WorkOrderStatus Status { get; set; }
+    public DateTime LastUpdate { get; set; }
 
     /// <summary>
     ///     Produtos utilizados na ordem.
     /// </summary>
-    public ICollection<Product>? Products { get; init; }
+    public ICollection<Product>? Products { get; set; }
 
     /// <summary>
     ///     Serviços executados na ordem.
     /// </summary>
-    public ICollection<ServiceCatalog>? ServiceCatalog { get; init; }
+    public ICollection<ServiceCatalog>? ServiceCatalog { get; set; }
+
+    /// <summary>
+    ///     Problema relatado pelo cliente.
+    /// </summary>
+    public string? ReportedProblem { get; set; }
+
+    /// <summary>
+    ///     Observações internas da oficina.
+    /// </summary>
+    public string? Observations { get; set; }
+
+    /// <summary>
+    ///     Data em que a ordem foi colocada em aguardando aprovação.
+    /// </summary>
+    public DateTime? ApprovalRequestedAt { get; set; }
+
+    /// <summary>
+    ///     Data em que o cliente aprovou a ordem.
+    /// </summary>
+    public DateTime? ApprovedAt { get; set; }
+
+    /// <summary>
+    ///     Data da entrega/retirada do veículo.
+    /// </summary>
+    public DateTime? DeliveredAt { get; set; }
+
+    /// <summary>
+    ///     Indica se a ordem foi cancelada.
+    /// </summary>
+    public bool IsCancelled { get; set; }
+
+    /// <summary>
+    ///     Usuário que realizou a última alteração de status.
+    /// </summary>
+    public Guid? LastStatusChangeBy { get; set; }
 
     /// <summary>
     ///     Gera uma nova chave de acesso única por cliente.
-    ///     
     /// </summary>
     /// <param name="existingOrders">As ordens de serviço do cliente.</param>
     /// <remarks>A chave é composta por 8 dígitos e deve ser única por cliente.</remarks>

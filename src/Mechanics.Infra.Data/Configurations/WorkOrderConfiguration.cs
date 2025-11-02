@@ -1,4 +1,4 @@
-﻿using Mechanics.Domain.WorkOrders;
+using Mechanics.Domain.WorkOrders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -32,5 +32,24 @@ public class WorkOrderConfiguration : IEntityTypeConfiguration<WorkOrder>
         builder.HasMany(entity => entity.Products)
             .WithMany(entity => entity.WorkOrders)
             .UsingEntity("WorkOrderProducts");
+
+        builder.HasMany(entity => entity.ServiceCatalog)
+            .WithMany(entity => entity.WorkOrders)
+            .UsingEntity("ServiceCatalogWorkOrder");
+
+        builder.Property(e => e.ReportedProblem).HasMaxLength(1000);
+        builder.Property(e => e.Observations).HasMaxLength(2000);
+
+        builder.Property(e => e.ApprovalRequestedAt).HasColumnType("datetime2");
+        builder.Property(e => e.ApprovedAt).HasColumnType("datetime2");
+        builder.Property(e => e.DeliveredAt).HasColumnType("datetime2");
+
+        builder.Property(e => e.IsCancelled).HasDefaultValue(false);
+        builder.Property(e => e.LastStatusChangeBy).HasColumnType("uniqueidentifier");
+
+        builder.Property(e => e.CreationDate)
+            .IsRequired()
+            .HasColumnType("datetime2")
+            .HasDefaultValueSql("SYSDATETIME()");
     }
 }

@@ -4,6 +4,7 @@ using Mechanics.Infra.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Mechanics.Infra.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251101171801_AddWorkOrderFieldsAndHistory")]
+    partial class AddWorkOrderFieldsAndHistory
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -315,86 +318,6 @@ namespace Mechanics.Infra.Data.Migrations
                     b.ToTable("Vehicles", "Mechanics");
                 });
 
-            modelBuilder.Entity("Mechanics.Domain.WorkOrders.Budget", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("NEWID()");
-
-                    b.Property<DateTime?>("ApprovedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ApprovedByCustomerDocument")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<DateTime>("CreationDate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("SYSDATETIME()");
-
-                    b.Property<DateTime?>("ExpiresAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("Total")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<Guid>("WorkOrderId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("WorkOrderId");
-
-                    b.ToTable("Budgets", "Mechanics");
-                });
-
-            modelBuilder.Entity("Mechanics.Domain.WorkOrders.BudgetItem", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier")
-                        .HasDefaultValueSql("NEWID()");
-
-                    b.Property<Guid>("BudgetId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreationDate")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("SYSDATETIME()");
-
-                    b.Property<string>("NameSnapshot")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<Guid?>("ProductId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<Guid?>("ServiceCatalogId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("Subtotal")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("UnitPriceSnapshot")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BudgetId");
-
-                    b.ToTable("BudgetItems", "Mechanics");
-                });
-
             modelBuilder.Entity("Mechanics.Domain.WorkOrders.WorkOrder", b =>
                 {
                     b.Property<Guid>("Id")
@@ -613,28 +536,6 @@ namespace Mechanics.Infra.Data.Migrations
                     b.Navigation("Owner");
                 });
 
-            modelBuilder.Entity("Mechanics.Domain.WorkOrders.Budget", b =>
-                {
-                    b.HasOne("Mechanics.Domain.WorkOrders.WorkOrder", "WorkOrder")
-                        .WithMany()
-                        .HasForeignKey("WorkOrderId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("WorkOrder");
-                });
-
-            modelBuilder.Entity("Mechanics.Domain.WorkOrders.BudgetItem", b =>
-                {
-                    b.HasOne("Mechanics.Domain.WorkOrders.Budget", "Budget")
-                        .WithMany("Items")
-                        .HasForeignKey("BudgetId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Budget");
-                });
-
             modelBuilder.Entity("Mechanics.Domain.WorkOrders.WorkOrder", b =>
                 {
                     b.HasOne("Mechanics.Domain.Customers.Customer", "Customer")
@@ -698,11 +599,6 @@ namespace Mechanics.Infra.Data.Migrations
             modelBuilder.Entity("Mechanics.Domain.Customers.Customer", b =>
                 {
                     b.Navigation("Vehicles");
-                });
-
-            modelBuilder.Entity("Mechanics.Domain.WorkOrders.Budget", b =>
-                {
-                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }

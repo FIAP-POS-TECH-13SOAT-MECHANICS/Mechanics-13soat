@@ -5,10 +5,6 @@ using Mechanics.Tests.Unit.Mocks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Mechanics.Tests.Unit.Tests.Notifications;
 
@@ -35,10 +31,10 @@ public class EmailServiceTests
         {
             Customer = customer,
             CustomerId = customer.Id,
-            AccessKey = WorkOrder.GenerateNewAccessKey(Enumerable.Empty<WorkOrder>()),
+            AccessKey = WorkOrder.GenerateNewAccessKey([]),
             VehicleId = Guid.NewGuid(),
             CreationDate = DateTime.Now,
-            LastUpdate = DateTime.Now
+            LastUpdate = DateTime.Now,
         };
 
         // Act

@@ -69,7 +69,7 @@ public static class ServicesCatalogMocks
         Description = "Serviço temporariamente indisponível",
         BasePrice = 120.00m,
         AverageTime = 40,
-        Status = ServiceCatalogStatusType.Inactive
+        Status = ServiceCatalogStatusType.Inactive,
     };
 
     public static ServiceCatalog CreateSearchableService(Guid id, string name, string description) => new()
@@ -91,7 +91,7 @@ public static class ServicesCatalogMocks
 
     public static IEnumerable<ServiceCatalog> BuildManyServices(int count)
     {
-        for (int i = 1; i <= count; i++)
+        for (var i = 1; i <= count; i++)
         {
             yield return new ServiceCatalog
             {
@@ -100,7 +100,7 @@ public static class ServicesCatalogMocks
                 Description = $"Descrição do serviço {i}",
                 BasePrice = 100 + i,
                 AverageTime = 30 + i,
-                Status = ServiceCatalogStatusType.Active
+                Status = ServiceCatalogStatusType.Active,
             };
         }
     }

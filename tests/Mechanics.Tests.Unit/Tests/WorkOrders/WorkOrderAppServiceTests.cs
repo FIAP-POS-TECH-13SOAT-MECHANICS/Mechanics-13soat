@@ -1,21 +1,16 @@
 using AutoMapper;
 using Mechanics.Application.WorkOrders.Requests;
 using Mechanics.Application.WorkOrders.Services;
+using Mechanics.Domain.Base;
 using Mechanics.Domain.Base.Exceptions;
 using Mechanics.Domain.Customers;
 using Mechanics.Domain.ServicesCatalog;
 using Mechanics.Domain.Vehicles;
 using Mechanics.Domain.WorkOrders;
-using Mechanics.Infra.Data;
 using Mechanics.Tests.Unit.Helpers;
 using Mechanics.Tests.Unit.Mocks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Mechanics.Tests.Unit.Tests.WorkOrders;
 
@@ -32,15 +27,7 @@ public class WorkOrderAppServiceTests
     [TestInitialize]
     public void Initialize()
     {
-        try
-        {
-            _mapper = Mechanics.Tests.Unit.Helpers.AutoMapperFactory.CreateMap("WorkOrders");
-        }
-        catch
-        {
-            var cfg = new MapperConfiguration(c => { try { c.AddProfile(new Mechanics.Application.WorkOrders.WorkOrderMapperProfile()); } catch { } }, new NullLoggerFactory());
-            _mapper = cfg.CreateMapper();
-        }
+        _mapper = AutoMapperFactory.CreateMap("WorkOrders");
 
         _emailMock = new EmailServiceMock();
         _loggerFactory = new NullLoggerFactory();
@@ -55,8 +42,16 @@ public class WorkOrderAppServiceTests
         await using var context = new DbContextTestBuilder()
             .WithData(ctx =>
             {
-                ctx.Customers.Add(new Customer { Id = customerId, Name = "John", Email = "john@example.com", Document = new Mechanics.Domain.Customers.PersonalDocument(Mechanics.Domain.Customers.DocumentType.Cpf, "12345678909") });
-                ctx.Vehicles.Add(new Vehicle { Id = vehicleId, Manufacturer = "Make", Model = "Model", Color = Mechanics.Domain.Vehicles.VehicleColor.White, Year = "2020", LicensePlate = new Mechanics.Domain.Vehicles.LicensePlate("ABC1234"), Chassis = "CH", OwnerId = customerId });
+                ctx.Customers.Add(new Customer
+                {
+                    Id = customerId, Name = "John", Email = "john@example.com",
+                    Document = new PersonalDocument(DocumentType.Cpf, "12345678909")
+                });
+                ctx.Vehicles.Add(new Vehicle
+                {
+                    Id = vehicleId, Manufacturer = "Make", Model = "Model", Color = VehicleColor.White, Year = "2020",
+                    LicensePlate = new LicensePlate("ABC1234"), Chassis = "CH", OwnerId = customerId
+                });
             })
             .Build();
 
@@ -76,14 +71,14 @@ public class WorkOrderAppServiceTests
         {
             CustomerId = customerId,
             VehicleId = vehicleId,
-            ProductIds = Array.Empty<Guid>(),
-            ServiceCatalogIds = Array.Empty<Guid>(),
-            ReportedProblem = "Test problem"
+            ProductIds = [],
+            ServiceCatalogIds = [],
+            ReportedProblem = "Test problem",
         };
 
         var id = await service.Create(request, TestContext.CancellationTokenSource.Token);
 
-        var wo = await context.WorkOrders.FindAsync(id);
+        var wo = await context.WorkOrders.FindAsync(id, TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(wo, "Work order should be persisted");
         Assert.AreEqual(customerId, wo!.CustomerId, "CustomerId persisted");
         Assert.IsTrue(_emailMock.SendWorkOrderCreatedCalled, "SendWorkOrderCreated should be called");
@@ -99,17 +94,29 @@ public class WorkOrderAppServiceTests
         await using var context = new DbContextTestBuilder()
             .WithData(ctx =>
             {
-                ctx.Customers.Add(new Customer { Id = customerId, Name = "Mary", Email = "mary@example.com", Document = new Mechanics.Domain.Customers.PersonalDocument(Mechanics.Domain.Customers.DocumentType.Cpf, "98765432100") });
-                ctx.Vehicles.Add(new Vehicle { Id = vehicleId, Manufacturer = "Make", Model = "Model", Color = Mechanics.Domain.Vehicles.VehicleColor.Black, Year = "2021", LicensePlate = new Mechanics.Domain.Vehicles.LicensePlate("DEF5678"), Chassis = "CH2", OwnerId = customerId });
-                ctx.ServiceCatalog.Add(new ServiceCatalog { Id = svcId, Name = "Oil change", Description = "Change oil", BasePrice = 100m, AverageTime = 30, Status = Mechanics.Domain.Base.ServiceCatalogStatusType.Active });
+                ctx.Customers.Add(new Customer
+                {
+                    Id = customerId, Name = "Mary", Email = "mary@example.com",
+                    Document = new PersonalDocument(DocumentType.Cpf, "98765432100")
+                });
+                ctx.Vehicles.Add(new Vehicle
+                {
+                    Id = vehicleId, Manufacturer = "Make", Model = "Model", Color = VehicleColor.Black, Year = "2021",
+                    LicensePlate = new LicensePlate("DEF5678"), Chassis = "CH2", OwnerId = customerId
+                });
+                ctx.ServiceCatalog.Add(new ServiceCatalog
+                {
+                    Id = svcId, Name = "Oil change", Description = "Change oil", BasePrice = 100m, AverageTime = 30,
+                    Status = ServiceCatalogStatusType.Active
+                });
             })
             .Build();
 
-        var svc = await context.ServiceCatalog.FindAsync(svcId);
+        var svc = await context.ServiceCatalog.FindAsync(svcId, TestContext.CancellationTokenSource.Token);
         var wo = WorkOrderMocks.CreateWorkOrderWithServices(Guid.NewGuid(), customerId, vehicleId, svc!);
 
         context.WorkOrders.Add(wo);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
 
         var budgetService = new BudgetAppService(
             context,
@@ -126,7 +133,7 @@ public class WorkOrderAppServiceTests
         var performedBy = Guid.NewGuid();
         await service.RequestApproval(wo.Id, performedBy, TestContext.CancellationTokenSource.Token);
 
-        var reloaded = await context.WorkOrders.FindAsync(wo.Id);
+        var reloaded = await context.WorkOrders.FindAsync(wo.Id, TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(reloaded);
         Assert.AreEqual(WorkOrderStatus.PendingApproval, reloaded!.Status);
         Assert.IsNotNull(reloaded.ApprovalRequestedAt);
@@ -145,15 +152,23 @@ public class WorkOrderAppServiceTests
         await using var context = new DbContextTestBuilder()
             .WithData(ctx =>
             {
-                ctx.Customers.Add(new Customer { Id = customerId, Name = "Pedro", Email = "pedro@example.com", Document = new Mechanics.Domain.Customers.PersonalDocument(Mechanics.Domain.Customers.DocumentType.Cpf, "11122233344") });
-                ctx.Vehicles.Add(new Vehicle { Id = vehicleId, Manufacturer = "Make", Model = "Model", Color = Mechanics.Domain.Vehicles.VehicleColor.Gray, Year = "2019", LicensePlate = new Mechanics.Domain.Vehicles.LicensePlate("GHI9012"), Chassis = "CH3", OwnerId = customerId });
+                ctx.Customers.Add(new Customer
+                {
+                    Id = customerId, Name = "Pedro", Email = "pedro@example.com",
+                    Document = new PersonalDocument(DocumentType.Cpf, "11122233344")
+                });
+                ctx.Vehicles.Add(new Vehicle
+                {
+                    Id = vehicleId, Manufacturer = "Make", Model = "Model", Color = VehicleColor.Gray, Year = "2019",
+                    LicensePlate = new LicensePlate("GHI9012"), Chassis = "CH3", OwnerId = customerId
+                });
             })
             .Build();
 
         var wo = WorkOrderMocks.CreateWorkOrderEntity(Guid.NewGuid(), customerId, vehicleId);
         wo.Status = WorkOrderStatus.PendingApproval;
         context.WorkOrders.Add(wo);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
 
         var budgetService = new BudgetAppService(
             context,
@@ -167,16 +182,17 @@ public class WorkOrderAppServiceTests
             _loggerFactory.CreateLogger<WorkOrderAppService>(),
             budgetService);
 
-        await Assert.ThrowsExactlyAsync<BusinessException>(() => service.ChangeStatus(wo.Id, WorkOrderStatus.InProgress, Guid.NewGuid(), TestContext.CancellationTokenSource.Token));
+        await Assert.ThrowsExactlyAsync<BusinessException>(() =>
+            service.ChangeStatus(wo.Id, WorkOrderStatus.InProgress, Guid.NewGuid(), TestContext.CancellationTokenSource.Token));
 
         wo.ApprovedAt = DateTime.Now;
         context.WorkOrders.Update(wo);
-        await context.SaveChangesAsync();
+        await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
 
         var statusChangedBy = Guid.NewGuid();
         await service.ChangeStatus(wo.Id, WorkOrderStatus.InProgress, statusChangedBy, TestContext.CancellationTokenSource.Token);
 
-        var reloaded = await context.WorkOrders.FindAsync(wo.Id);
+        var reloaded = await context.WorkOrders.FindAsync(wo.Id, TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(reloaded);
         Assert.AreEqual(WorkOrderStatus.InProgress, reloaded!.Status);
         Assert.AreEqual(statusChangedBy, reloaded.LastStatusChangeBy);

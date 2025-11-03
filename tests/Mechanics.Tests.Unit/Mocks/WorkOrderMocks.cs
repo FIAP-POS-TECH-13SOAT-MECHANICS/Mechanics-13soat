@@ -1,8 +1,7 @@
-using Mechanics.Domain.WorkOrders;
-using Mechanics.Domain.Products;
 using Mechanics.Domain.ServicesCatalog;
-using System;
-using System.Collections.Generic;
+using Mechanics.Domain.WorkOrders;
+
+namespace Mechanics.Tests.Unit.Mocks;
 
 public static class WorkOrderMocks
 {
@@ -14,7 +13,7 @@ public static class WorkOrderMocks
             Id = id,
             CustomerId = customerId,
             VehicleId = vehicleId,
-            AccessKey = WorkOrder.GenerateNewAccessKey(Array.Empty<WorkOrder>()),
+            AccessKey = WorkOrder.GenerateNewAccessKey([]),
             Status = WorkOrderStatus.Received,
             CreationDate = now,
             LastUpdate = now,
@@ -29,12 +28,11 @@ public static class WorkOrderMocks
             Id = id,
             CustomerId = customerId,
             VehicleId = vehicleId,
-            AccessKey = WorkOrder.GenerateNewAccessKey(Array.Empty<WorkOrder>()),
+            AccessKey = WorkOrder.GenerateNewAccessKey([]),
             Status = WorkOrderStatus.Received,
             CreationDate = now,
             LastUpdate = now,
             ServiceCatalog = new List<ServiceCatalog> { service },
         };
     }
-
 }

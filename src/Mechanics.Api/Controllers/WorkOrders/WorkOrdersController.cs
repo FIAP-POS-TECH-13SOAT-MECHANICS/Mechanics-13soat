@@ -1,4 +1,3 @@
-using Mechanics.Application.WorkOrders;
 using Mechanics.Application.WorkOrders.Requests;
 using Mechanics.Application.WorkOrders.Responses;
 using Mechanics.Application.WorkOrders.Services;
@@ -6,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Security.Claims;
+
 namespace Mechanics.Api.Controllers.WorkOrders;
 
 /// <summary>
@@ -14,17 +14,9 @@ namespace Mechanics.Api.Controllers.WorkOrders;
 [ApiController]
 [ApiExplorerSettings(GroupName = "v1")]
 [Route("api/[controller]")]
-public class WorkOrdersController : ControllerBase
+public class WorkOrdersController(WorkOrderAppService workOrderService)
+    : ControllerBase
 {
-    private readonly WorkOrderAppService workOrderService;
-    private readonly BudgetAppService budgetService;
-
-    public WorkOrdersController(WorkOrderAppService workOrderService, BudgetAppService budgetService)
-    {
-        this.workOrderService = workOrderService;
-        this.budgetService = budgetService;
-    }
-
     /// <summary>
     ///     Cria uma nova ordem de serviço.
     /// </summary>
@@ -82,23 +74,6 @@ public class WorkOrdersController : ControllerBase
     }
 
     /// <summary>
-    ///     Aprova publicamente um budget associado à ordem de serviço.
-    ///     Rota pública que o cliente utiliza com seu documento e o código de acesso.
-    /// </summary>
-    /// <param name="request">Documento e accessKey do cliente.</param>
-    /// <param name="cancellationToken">Token para cancelamento.</param>
-    [AllowAnonymous]
-    [HttpPost("/approve-budget")]
-    [Consumes(typeof(ApproveBudgetPublicRequest), "application/json")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ApproveBudget([FromBody] ApproveBudgetPublicRequest request, CancellationToken cancellationToken)
-    {
-        await budgetService.PublicApproveBudget(request.Document, request.AccessKey, cancellationToken);
-        return NoContent();
-    }
-
-    /// <summary>
     ///     Altera o status de uma ordem de serviço.
     /// </summary>
     /// <param name="id">Identificador da ordem.</param>
@@ -110,7 +85,8 @@ public class WorkOrdersController : ControllerBase
     [Consumes(typeof(ChangeStatusRequest), "application/json")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ChangeStatus(Guid id, [FromBody] ChangeStatusRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> ChangeStatus(Guid id, [FromBody] ChangeStatusRequest request,
+        CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
         if (userId is null)
@@ -133,7 +109,8 @@ public class WorkOrdersController : ControllerBase
     [Produces("application/json", Type = typeof(GetWorkOrderResponse))]
     [ProducesResponseType(typeof(GetWorkOrderResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Track([FromQuery] string document, [FromQuery] string accessKey, CancellationToken cancellationToken)
+    public async Task<IActionResult> Track([FromQuery] string document, [FromQuery] string accessKey,
+        CancellationToken cancellationToken)
     {
         var resp = await workOrderService.TrackByDocumentAndAccessKey(document, accessKey, cancellationToken);
         if (resp is null) return NotFound();

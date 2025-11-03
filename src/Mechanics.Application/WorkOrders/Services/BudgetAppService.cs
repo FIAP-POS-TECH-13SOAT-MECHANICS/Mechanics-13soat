@@ -3,7 +3,6 @@ using Mechanics.Application.Utils;
 using Mechanics.Domain.Base.Exceptions;
 using Mechanics.Domain.Customers;
 using Mechanics.Domain.Products;
-using Mechanics.Domain.ServicesCatalog;
 using Mechanics.Domain.WorkOrders;
 using Mechanics.Infra.Data;
 using Microsoft.EntityFrameworkCore;
@@ -14,25 +13,15 @@ namespace Mechanics.Application.WorkOrders.Services;
 /// <summary>
 ///     Serviço para criação, envio e aprovação pública de budgets.
 /// </summary>
-public class BudgetAppService : IAppService
+public class BudgetAppService(AppDbContext dbContext, IEmailService emailService, ILogger<BudgetAppService> logger)
+    : IAppService
 {
-    private readonly AppDbContext dbContext;
-    private readonly IEmailService emailService;
-    private readonly ILogger<BudgetAppService> logger;
-
-    public BudgetAppService(AppDbContext dbContext, IEmailService emailService, ILogger<BudgetAppService> logger)
-    {
-        this.dbContext = dbContext;
-        this.emailService = emailService;
-        this.logger = logger;
-    }
-
     /// <summary>
-    ///     Cria um budget a partir dos produtos/serviços atualmente associados à WorkOrder,
+    ///     Cria um <see cref="Budget"/> a partir dos produtos/serviços atualmente associados à WorkOrder,
     ///     persiste snapshot de preços e itens, define ExpiresAt = CreationDate + 3 dias,
-    ///     atualiza WorkOrder.Status para PendingApproval e registra o usuário responsável.
+    ///     atualiza <see cref="WorkOrder.Status"/> para PendingApproval e registra o usuário responsável.
     /// </summary>
-    public async Task<Guid> CreateAndSendBudget(Guid workOrderId, Guid performedByUserId, CancellationToken cancellationToken = default)
+    public async Task CreateAndSendBudget(Guid workOrderId, Guid performedByUserId, CancellationToken cancellationToken = default)
     {
         if (performedByUserId == Guid.Empty)
             throw new BusinessException("PerformedByUserId must be informed.");
@@ -45,7 +34,7 @@ public class BudgetAppService : IAppService
         if (wo is null)
             throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
 
-        if ((wo.Products == null || !wo.Products.Any()) && (wo.ServiceCatalog == null || !wo.ServiceCatalog.Any()))
+        if ((wo.Products == null || wo.Products.Count == 0) && (wo.ServiceCatalog == null || wo.ServiceCatalog.Count == 0))
             throw new BusinessException("Order must contain at least one product or service to create a budget.");
 
         var now = DateTime.Now;
@@ -55,11 +44,11 @@ public class BudgetAppService : IAppService
             CreationDate = now,
             ExpiresAt = now.AddDays(3),
             Status = BudgetStatus.Sent,
-            Items = new List<BudgetItem>()
+            Items = new List<BudgetItem>(),
         };
 
-        decimal partsTotal = 0m;
-        if (wo.Products?.Any() == true)
+        var partsTotal = 0m;
+        if (wo.Products?.Count > 0)
         {
             var productIds = wo.Products.Select(p => p.Id).ToList();
             var products = await dbContext.Products.Where(p => productIds.Contains(p.Id)).ToListAsync(cancellationToken);
@@ -74,15 +63,15 @@ public class BudgetAppService : IAppService
                     NameSnapshot = p.Name,
                     UnitPriceSnapshot = unitPrice,
                     Quantity = 1,
-                    Subtotal = unitPrice * 1
+                    Subtotal = unitPrice * 1,
                 };
                 partsTotal += item.Subtotal;
                 budget.Items.Add(item);
             }
         }
 
-        decimal servicesTotal = 0m;
-        if (wo.ServiceCatalog?.Any() == true)
+        var servicesTotal = 0m;
+        if (wo.ServiceCatalog?.Count > 0)
         {
             var serviceIds = wo.ServiceCatalog.Select(s => s.Id).ToList();
             var services = await dbContext.ServiceCatalog.Where(s => serviceIds.Contains(s.Id)).ToListAsync(cancellationToken);
@@ -96,7 +85,7 @@ public class BudgetAppService : IAppService
                     NameSnapshot = s.Name,
                     UnitPriceSnapshot = s.BasePrice,
                     Quantity = 1,
-                    Subtotal = s.BasePrice * 1
+                    Subtotal = s.BasePrice * 1,
                 };
                 servicesTotal += item.Subtotal;
                 budget.Items.Add(item);
@@ -120,26 +109,24 @@ public class BudgetAppService : IAppService
             OccurredAt = now,
             Action = "BudgetSent",
             Details = $"Budget {budget.Id} sent. Total: {budget.Total:C}",
-            PerformedByUserId = performedByUserId
+            PerformedByUserId = performedByUserId,
         };
         await dbContext.WorkOrderHistories.AddAsync(hist, cancellationToken);
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var customer = await dbContext.Customers.FindAsync(new object[] { wo.CustomerId }, cancellationToken);
-        if (customer != null)
-        {
-            try
-            {
-                await emailService.SendWorkOrderPendingApproval(customer, wo, budget, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Failed to send pending approval email for WorkOrder {WorkOrderId}", wo.Id);
-            }
-        }
+        var customer = await dbContext.Customers.FindAsync([wo.CustomerId], cancellationToken);
+        if (customer == null)
+            return;
 
-        return budget.Id;
+        try
+        {
+            await emailService.SendWorkOrderPendingApproval(customer, wo, budget, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to send pending approval email for WorkOrder {WorkOrderId}", wo.Id);
+        }
     }
 
     /// <summary>
@@ -148,7 +135,7 @@ public class BudgetAppService : IAppService
     public async Task PublicApproveBudget(string document, string accessKey, CancellationToken cancellationToken = default)
     {
         var normalizedDocument = new string(document.Where(char.IsDigit).ToArray());
-        var normalizedAccessKey = accessKey?.Replace(" ", "") ?? string.Empty;
+        var normalizedAccessKey = accessKey.Replace(" ", "");
 
         var customer = await dbContext.Customers
             .AsNoTracking()
@@ -158,7 +145,7 @@ public class BudgetAppService : IAppService
             throw new EntityNotFoundException(nameof(Customer), normalizedDocument);
 
         var wo = await dbContext.WorkOrders
-            .FirstOrDefaultAsync(w =>  w.CustomerId == customer.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
+            .FirstOrDefaultAsync(w => w.CustomerId == customer.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
 
         if (wo is null)
             throw new BusinessException("Work order not found or access key invalid.");
@@ -198,30 +185,30 @@ public class BudgetAppService : IAppService
             OccurredAt = DateTime.Now,
             Action = "BudgetApprovedPublic",
             Details = $"Budget {budget.Id} approved by customer {normalizedDocument}.",
-            PerformedByUserId = null
+            PerformedByUserId = null,
         };
         await dbContext.WorkOrderHistories.AddAsync(hist, cancellationToken);
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var customerEntity = await dbContext.Customers.FindAsync(new object[] { wo.CustomerId }, cancellationToken);
+        var customerEntity = await dbContext.Customers.FindAsync([wo.CustomerId], cancellationToken);
         if (customerEntity != null)
         {
             try
             {
-                await emailService.SendWorkOrderStatusChanged(customerEntity, wo, WorkOrderStatus.PendingApproval.ToString(), WorkOrderStatus.InProgress.ToString(), cancellationToken);
+                await emailService.SendWorkOrderStatusChanged(customerEntity, wo, WorkOrderStatus.PendingApproval,
+                    cancellationToken);
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Failed to send status changed email after budget approval for WorkOrder {WorkOrderId}", wo.Id);
+                logger.LogWarning(ex, "Failed to send status changed email after budget approval for WorkOrder {WorkOrderId}",
+                    wo.Id);
             }
         }
     }
 
     private static decimal GetProductUnitPrice(Product p)
     {
-        if (p == null) return 0m;
-
         var unitPriceProp = p.GetType().GetProperty("UnitPrice");
         if (unitPriceProp != null && unitPriceProp.GetValue(p) is decimal up) return up;
 

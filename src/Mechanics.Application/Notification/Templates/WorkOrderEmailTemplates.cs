@@ -2,7 +2,6 @@ using Mechanics.Domain.Customers;
 using Mechanics.Domain.WorkOrders;
 using Mechanics.Infra.Integrations.EmailSender;
 using System.Text;
-using System.Text.Encodings.Web;
 
 namespace Mechanics.Application.Notification.Templates;
 
@@ -24,14 +23,14 @@ public static class WorkOrderEmailTemplates
 
                 <p>Você pode consultar o andamento do serviço informando seu documento e o código abaixo:<br/>
                 <code style="font-weight: bold;">{workOrder.AccessKey[..4]} {workOrder.AccessKey[4..]}</code></p>
-                """
+                """,
     };
 
     public static EmailMessage WorkOrderPendingApproval(Customer customer, WorkOrder workOrder, Budget budget) => new()
     {
         Recipient = customer.Email,
         Subject = "Orçamento da OS disponível - FIAP Mechanics",
-        Body = BuildPendingApprovalBody(customer, workOrder, budget)
+        Body = BuildPendingApprovalBody(customer, workOrder, budget),
     };
 
     private static string BuildPendingApprovalBody(Customer customer, WorkOrder workOrder, Budget budget)
@@ -39,18 +38,18 @@ public static class WorkOrderEmailTemplates
         var sb = new StringBuilder();
 
         sb.Append($"""
-            <p>Olá, <b>{customer.Name}</b>,</p>
-            <p>O orçamento da sua ordem de serviço está pronto e aguarda sua aprovação.</p>
-            <ul>
-                <li><b>Ordem</b>: {workOrder.AccessKey}</li>
-                <li><b>Orçamento</b>: {budget.Id}</li>
-                <li><b>Valor estimado</b>: {budget.Total:C}</li>
-            </ul>
-            <p>Para aprovar o orçamento, acesse a nossa API pública de aprovação e informe seu documento e o código de acesso.</p>
-            """);
+                   <p>Olá, <b>{customer.Name}</b>,</p>
+                   <p>O orçamento da sua ordem de serviço está pronto e aguarda sua aprovação.</p>
+                   <ul>
+                       <li><b>Ordem</b>: {workOrder.AccessKey}</li>
+                       <li><b>Orçamento</b>: {budget.Id}</li>
+                       <li><b>Valor estimado</b>: {budget.Total:C}</li>
+                   </ul>
+                   <p>Para aprovar o orçamento, acesse a nossa API pública de aprovação e informe seu documento e o código de acesso.</p>
+                   """);
 
         sb.Append("<p>Resumo dos itens:</p><ul>");
-        if (budget.Items != null && budget.Items.Any())
+        if (budget.Items != null && budget.Items.Count != 0)
         {
             foreach (var item in budget.Items)
             {
@@ -61,26 +60,41 @@ public static class WorkOrderEmailTemplates
         {
             sb.Append("<li>— Nenhum item listado —</li>");
         }
+
         sb.Append("</ul>");
 
-        sb.Append($@"<p>O orçamento expira em: {budget.ExpiresAt?.ToString("G") ?? "—"}</p>");
+        sb.Append($"<p>O orçamento expira em: {budget.ExpiresAt?.ToString("G") ?? "—"}</p>");
 
         sb.Append("<p>Obrigado,<br/>FIAP Mechanics</p>");
 
         return sb.ToString();
     }
 
-    public static EmailMessage WorkOrderStatusChanged(Customer customer, WorkOrder workOrder, string previousStatus, string newStatus) => new()
+    public static EmailMessage WorkOrderStatusChanged(Customer customer, WorkOrder workOrder, WorkOrderStatus previousStatus)
     {
-        Recipient = customer.Email,
-        Subject = $"Atualização da OS {workOrder.AccessKey} - {newStatus} - FIAP Mechanics",
-        Body = $"""
-                <p>Olá, <b>{customer.Name}</b>,</p>
-                <p>Sua ordem de serviço ({workOrder.AccessKey}) mudou de status:</p>
-                <p><b>{previousStatus}</b> → <b>{newStatus}</b></p>
-                <p>Data: {DateTime.Now:G}</p>
-                """
-    };
+        return new EmailMessage
+        {
+            Recipient = customer.Email,
+            Subject = $"Atualização da OS {workOrder.AccessKey} - {Translate(workOrder.Status)} - FIAP Mechanics",
+            Body = $"""
+                    <p>Olá, <b>{customer.Name}</b>,</p>
+                    <p>Sua ordem de serviço ({workOrder.AccessKey}) mudou de status:</p>
+                    <p><b>{Translate(previousStatus)}</b> → <b>{Translate(workOrder.Status)}</b></p>
+                    <p>Data: {DateTime.Now:G}</p>
+                    """,
+        };
+
+        string Translate(WorkOrderStatus status) => status switch
+        {
+            WorkOrderStatus.Received => "Recebida",
+            WorkOrderStatus.UnderDiagnosis => "Em diagnóstico",
+            WorkOrderStatus.PendingApproval => "Aguardando aprovação",
+            WorkOrderStatus.InProgress => "Em execução",
+            WorkOrderStatus.Completed => "Finalizada",
+            WorkOrderStatus.Delivered => "Entregue",
+            _ => throw new ArgumentOutOfRangeException(nameof(status), status, null),
+        };
+    }
 
     public static EmailMessage WorkOrderCancelled(Customer customer, WorkOrder workOrder) => new()
     {
@@ -89,7 +103,7 @@ public static class WorkOrderEmailTemplates
         Body = $"""
                 <p>Olá, <b>{customer.Name}</b>,</p>
                 <p>Sua ordem de serviço ({workOrder.AccessKey}) foi cancelada.</p>
-                """
+                """,
     };
 
     public static EmailMessage WorkOrderDeliveredSurvey(Customer customer, WorkOrder workOrder) => new()
@@ -100,6 +114,6 @@ public static class WorkOrderEmailTemplates
                 <p>Olá, <b>{customer.Name}</b>,</p>
                 <p>Seu veículo foi entregue.</p>
                 <p>Obrigado,<br/>FIAP Mechanics</p>
-                """
+                """,
     };
 }

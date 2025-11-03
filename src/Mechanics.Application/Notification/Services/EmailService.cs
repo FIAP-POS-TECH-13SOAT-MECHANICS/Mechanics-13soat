@@ -19,7 +19,8 @@ public class EmailService(ILogger<EmailService> logger, IEmailSenderService send
         logger.LogInformation("Work order created notification sent to '{EmailAddress}'", customer.Email);
     }
 
-    public async Task SendWorkOrderPendingApproval(Customer customer, WorkOrder workOrder, Budget budget, CancellationToken cancellationToken = default)
+    public async Task SendWorkOrderPendingApproval(Customer customer, WorkOrder workOrder, Budget budget,
+        CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Sending work order pending approval to '{EmailAddress}'", customer.Email);
 
@@ -29,11 +30,12 @@ public class EmailService(ILogger<EmailService> logger, IEmailSenderService send
         logger.LogInformation("Work order pending approval sent to '{EmailAddress}'", customer.Email);
     }
 
-    public async Task SendWorkOrderStatusChanged(Customer customer, WorkOrder workOrder, string previousStatus, string newStatus, CancellationToken cancellationToken = default)
+    public async Task SendWorkOrderStatusChanged(Customer customer, WorkOrder workOrder, WorkOrderStatus previousStatus,
+        CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Sending work order status changed to '{EmailAddress}'", customer.Email);
 
-        var message = WorkOrderEmailTemplates.WorkOrderStatusChanged(customer, workOrder, previousStatus, newStatus);
+        var message = WorkOrderEmailTemplates.WorkOrderStatusChanged(customer, workOrder, previousStatus);
         await senderService.SendAsync(message, cancellationToken);
 
         logger.LogInformation("Work order status changed sent to '{EmailAddress}'", customer.Email);
@@ -49,7 +51,8 @@ public class EmailService(ILogger<EmailService> logger, IEmailSenderService send
         logger.LogInformation("Work order cancelled sent to '{EmailAddress}'", customer.Email);
     }
 
-    public async Task SendWorkOrderDeliveredSurvey(Customer customer, WorkOrder workOrder, CancellationToken cancellationToken = default)
+    public async Task SendWorkOrderDeliveredSurvey(Customer customer, WorkOrder workOrder,
+        CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Sending work order delivered survey to '{EmailAddress}'", customer.Email);
 

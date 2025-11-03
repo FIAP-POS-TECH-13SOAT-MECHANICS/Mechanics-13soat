@@ -122,7 +122,7 @@ public class WorkOrderAppService(
         if (wo.Status == WorkOrderStatus.Received)
         {
             await ChangeStatus(workOrderId, WorkOrderStatus.UnderDiagnosis, performedByUserId,
-                comment: "Auto-transition to UnderDiagnosis due assignment", cancellationToken);
+                comment: "Auto-transition to UnderDiagnosis due assignment", cancellationToken: cancellationToken);
         }
     }
 

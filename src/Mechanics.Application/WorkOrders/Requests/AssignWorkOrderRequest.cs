@@ -7,5 +7,8 @@ public class AssignWorkOrderRequest
 {  
     public required Guid AssignedToUserId { get; init; }
 
-    public string? Comment { get; init; }
+    /// <summary>
+    /// Descrição opcional que será registrado no histórico da ordem.
+    /// </summary>
+    public string? Description { get; init; }
 }

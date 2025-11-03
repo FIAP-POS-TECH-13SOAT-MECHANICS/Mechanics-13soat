@@ -95,7 +95,7 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
         if (userId is null)
             return Unauthorized();
 
-        await workOrderService.Assign(id, request.AssignedToUserId, userId.Value, request.Comment, cancellationToken);
+        await workOrderService.Assign(id, request.AssignedToUserId, userId.Value, request.Description, cancellationToken);
         return NoContent();
     }
 
@@ -119,7 +119,7 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
         if (userId is null)
             return Unauthorized();
 
-        await workOrderService.ChangeStatus(id, request.NewStatus, userId.Value, request.Comment, cancellationToken);
+        await workOrderService.ChangeStatus(id, request.NewStatus, userId.Value, request.Description, cancellationToken);
         return NoContent();
     }
 

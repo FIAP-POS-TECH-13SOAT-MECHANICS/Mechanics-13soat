@@ -97,6 +97,23 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     }
 
     /// <summary>
+    ///     Atualiza produtos, serviços e observações de uma ordem.
+    /// </summary>
+    /// <param name="request">Dados de atualização.</param>
+    /// <response code="204">Ordem atualizada com sucesso.</response>
+    /// <response code="400">Requisição inválida.</response>
+    /// <response code="401">Usuário não autenticado.</response>
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateWorkOrderRequest request,
+        CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        if (userId is null)
+            return Unauthorized();
+        await workOrderService.UpdateDetails(id, request, userId.Value, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>
     ///     Consulta pública da ordem pelo documento do cliente e chave de acesso.
     /// </summary>
     /// <param name="document">CPF ou CNPJ do cliente (somente dígitos ou formato armazenado).</param>

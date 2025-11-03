@@ -4,11 +4,13 @@ using Mechanics.Application.WorkOrders.Services;
 using Mechanics.Domain.Base;
 using Mechanics.Domain.Base.Exceptions;
 using Mechanics.Domain.Customers;
+using Mechanics.Domain.Products;
 using Mechanics.Domain.ServicesCatalog;
 using Mechanics.Domain.Vehicles;
 using Mechanics.Domain.WorkOrders;
 using Mechanics.Tests.Unit.Helpers;
 using Mechanics.Tests.Unit.Mocks;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Reflection;
@@ -330,5 +332,112 @@ public class WorkOrderAppServiceTests
             Assert.IsNotNull(method, "Método IsTransitionAllowed não encontrado. Verifique a assinatura e a visibilidade.");
             return (bool)method!.Invoke(null, new object[] { from, to })!;
         }
+    }
+
+    [TestMethod("UpdateDetails should add products, services and observations and record history")]
+    public async Task UpdateDetails_ShouldAddProductsServicesAndObservations()
+    {
+        var customerId = Guid.NewGuid();
+        var vehicleId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+        var serviceId = Guid.NewGuid();
+        var mechanicUserId = Guid.NewGuid();
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(ctx =>
+            {
+                ctx.Customers.Add(new Customer
+                {
+                    Id = customerId,
+                    Name = "Client",
+                    Email = "client@example.com",
+                    Document = new PersonalDocument(DocumentType.Cpf, "12345678909")
+                });
+
+                ctx.Vehicles.Add(new Vehicle
+                {
+                    Id = vehicleId,
+                    Manufacturer = "Make",
+                    Model = "Model",
+                    Color = VehicleColor.White,
+                    Year = "2020",
+                    LicensePlate = new LicensePlate("ABC1234"),
+                    Chassis = "CH",
+                    OwnerId = customerId
+                });
+
+                ctx.Products.Add(new Product
+                {
+                    Id = productId,
+                    Name = "Filtro",
+                    Description = "Filtro de óleo",
+                    Quantity = 5,
+                    Status = ProductStatusType.Active,
+                    Type = ProductType.Part
+                });
+
+                ctx.ServiceCatalog.Add(new ServiceCatalog
+                {
+                    Id = serviceId,
+                    Name = "Troca de Filtro",
+                    Description = "Troca de filtro",
+                    BasePrice = 50m,
+                    AverageTime = 20,
+                    Status = ServiceCatalogStatusType.Active
+                });
+            })
+            .Build();
+
+        var budgetService = new BudgetAppService(
+            context,
+            _emailMock,
+            _loggerFactory.CreateLogger<BudgetAppService>());
+
+        var service = new WorkOrderAppService(
+            context,
+            _mapper,
+            _emailMock,
+            _loggerFactory.CreateLogger<WorkOrderAppService>(),
+            budgetService);
+
+        // create base work order without products/services
+        var wo = new WorkOrder
+        {
+            Id = Guid.NewGuid(),
+            CustomerId = customerId,
+            VehicleId = vehicleId,
+            AccessKey = WorkOrder.GenerateNewAccessKey([]),
+            Status = WorkOrderStatus.Received,
+            CreationDate = DateTime.Now,
+            LastUpdate = DateTime.Now
+        };
+        context.WorkOrders.Add(wo);
+        await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
+
+        var req = new UpdateWorkOrderRequest
+        {
+            ProductIds = new[] { productId },
+            ServiceIds = new[] { serviceId },
+            Observations = "Substituir filtro e testar motor"
+        };
+
+        await service.UpdateDetails(wo.Id, req, mechanicUserId, TestContext.CancellationTokenSource.Token);
+
+        var reloaded = await context.WorkOrders
+            .Include(w => w.Products)
+            .Include(w => w.ServiceCatalog)
+            .FirstOrDefaultAsync(w => w.Id == wo.Id, TestContext.CancellationTokenSource.Token);
+
+        Assert.IsNotNull(reloaded);
+        Assert.IsTrue(reloaded!.Products != null && reloaded.Products.Any(p => p.Id == productId));
+        Assert.IsTrue(reloaded.ServiceCatalog != null && reloaded.ServiceCatalog.Any(s => s.Id == serviceId));
+        Assert.AreEqual(req.Observations, reloaded.Observations);
+
+        var history = context.WorkOrderHistories.FirstOrDefault(h => h.WorkOrderId == wo.Id && h.Action == "DetailsUpdated");
+        Assert.IsNotNull(history);
+        Assert.AreEqual(mechanicUserId, history!.PerformedByUserId);
+        Assert.IsTrue(history.Details!.Contains("AddedProducts:1"));
+        Assert.IsTrue(history.Details.Contains("AddedServices:1"));
+        Assert.IsTrue(history.Details.Contains("ObservationsUpdated"));
     }
 }

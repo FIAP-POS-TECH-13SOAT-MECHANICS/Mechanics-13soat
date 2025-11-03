@@ -202,7 +202,7 @@ public class WorkOrderAppService(
     }
 
     /// <summary>
-    ///     Adiciona produtos (peças/insumos) à ordem.
+    ///     Adiciona produtos (peças/insumos) à ordem. 
     /// </summary>
     public async Task AddProducts(Guid workOrderId, IEnumerable<Guid> productIds, CancellationToken cancellationToken = default)
     {
@@ -213,13 +213,8 @@ public class WorkOrderAppService(
         if (wo is null)
             throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
 
-        var products = await db.Products.Where(p => productIds.Contains(p.Id)).ToListAsync(cancellationToken);
-        if (products.Count == 0) return;
-
-        wo.Products ??= new List<Product>();
-
-        foreach (var p in products.Where(p => wo.Products.All(x => x.Id != p.Id)))
-            wo.Products.Add(p);
+        var addedProducts = await ApplyProductsToWorkOrderAsync(wo, productIds, cancellationToken);
+        if (addedProducts == 0) return;
 
         wo.LastUpdate = DateTime.Now;
 
@@ -228,7 +223,7 @@ public class WorkOrderAppService(
             WorkOrderId = wo.Id,
             OccurredAt = DateTime.Now,
             Action = "ProductsAdded",
-            Details = $"Added {products.Count} products",
+            Details = $"Added {addedProducts} products",
             PerformedByUserId = null,
         };
         await db.WorkOrderHistories.AddAsync(hist, cancellationToken);
@@ -248,13 +243,8 @@ public class WorkOrderAppService(
         if (wo is null)
             throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
 
-        var services = await db.ServiceCatalog.Where(s => serviceIds.Contains(s.Id)).ToListAsync(cancellationToken);
-        if (services.Count == 0) return;
-
-        wo.ServiceCatalog ??= new List<ServiceCatalog>();
-
-        foreach (var s in services.Where(s => wo.ServiceCatalog.All(x => x.Id != s.Id)))
-            wo.ServiceCatalog.Add(s);
+        var addedServices = await ApplyServicesToWorkOrderAsync(wo, serviceIds, cancellationToken);
+        if (addedServices == 0) return;
 
         wo.LastUpdate = DateTime.Now;
 
@@ -263,12 +253,110 @@ public class WorkOrderAppService(
             WorkOrderId = wo.Id,
             OccurredAt = DateTime.Now,
             Action = "ServicesAdded",
-            Details = $"Added {services.Count} services",
+            Details = $"Added {addedServices} services",
             PerformedByUserId = null,
         };
         await db.WorkOrderHistories.AddAsync(hist, cancellationToken);
 
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    ///     Atualiza produtos, serviços e observações da ordem.
+    /// </summary>
+    public async Task UpdateDetails(Guid workOrderId, UpdateWorkOrderRequest request, Guid performedByUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var wo = await db.WorkOrders
+            .Include(w => w.Products)
+            .Include(w => w.ServiceCatalog)
+            .FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
+
+        if (wo is null)
+            throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
+
+        var addedProducts = await ApplyProductsToWorkOrderAsync(wo, request.ProductIds, cancellationToken);
+        var addedServices = await ApplyServicesToWorkOrderAsync(wo, request.ServiceIds, cancellationToken);
+
+        var observationChanged = false;
+        if (request.Observations is not null)
+        {
+            if (wo.Observations != request.Observations)
+            {
+                wo.Observations = request.Observations;
+                observationChanged = true;
+            }
+        }
+
+        if (addedProducts == 0 && addedServices == 0 && !observationChanged)
+            return;
+
+        wo.LastUpdate = DateTime.Now;
+
+        var detailsParts = new List<string>();
+        if (addedProducts > 0) detailsParts.Add($"AddedProducts:{addedProducts}");
+        if (addedServices > 0) detailsParts.Add($"AddedServices:{addedServices}");
+        if (observationChanged) detailsParts.Add("ObservationsUpdated");
+
+        var hist = new WorkOrderHistory
+        {
+            WorkOrderId = wo.Id,
+            OccurredAt = DateTime.Now,
+            Action = "DetailsUpdated",
+            Details = string.Join("; ", detailsParts),
+            PerformedByUserId = performedByUserId,
+        };
+        await db.WorkOrderHistories.AddAsync(hist, cancellationToken);
+
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <summary>
+    ///     Helper: aplica produtos retorna quantidade adicionada.
+    /// </summary>
+    private async Task<int> ApplyProductsToWorkOrderAsync(WorkOrder wo, IEnumerable<Guid>? productIds, CancellationToken cancellationToken)
+    {
+        if (productIds is null) return 0;
+        var ids = productIds as IList<Guid> ?? productIds.ToArray();
+        if (!ids.Any()) return 0;
+
+        var products = await db.Products.Where(p => ids.Contains(p.Id)).ToListAsync(cancellationToken);
+        if (products.Count == 0) return 0;
+
+        wo.Products ??= new List<Product>();
+
+        var added = 0;
+        foreach (var p in products.Where(p => wo.Products.All(x => x.Id != p.Id)))
+        {
+            wo.Products.Add(p);
+            added++;
+        }
+
+        return added;
+    }
+
+    /// <summary>
+    ///     Helper: aplica serviços retorna quantidade adicionada.
+    /// </summary>
+    private async Task<int> ApplyServicesToWorkOrderAsync(WorkOrder wo, IEnumerable<Guid>? serviceIds, CancellationToken cancellationToken)
+    {
+        if (serviceIds is null) return 0;
+        var ids = serviceIds as IList<Guid> ?? serviceIds.ToArray();
+        if (!ids.Any()) return 0;
+
+        var services = await db.ServiceCatalog.Where(s => ids.Contains(s.Id)).ToListAsync(cancellationToken);
+        if (services.Count == 0) return 0;
+
+        wo.ServiceCatalog ??= new List<ServiceCatalog>();
+
+        var added = 0;
+        foreach (var s in services.Where(s => wo.ServiceCatalog.All(x => x.Id != s.Id)))
+        {
+            wo.ServiceCatalog.Add(s);
+            added++;
+        }
+
+        return added;
     }
 
     private static bool IsTransitionAllowed(WorkOrderStatus from, WorkOrderStatus to)

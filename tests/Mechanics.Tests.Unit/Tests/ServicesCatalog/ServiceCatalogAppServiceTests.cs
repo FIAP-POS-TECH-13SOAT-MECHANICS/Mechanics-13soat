@@ -184,7 +184,7 @@ public class ServiceCatalogAppServiceTests
         Assert.AreEqual(1, result.Items.Count());
         Assert.IsTrue(result.Items.All(s =>
             s.Name.Contains("freios", StringComparison.OrdinalIgnoreCase) ||
-            s.Description.Contains("freios", StringComparison.OrdinalIgnoreCase))); 
+            s.Description.Contains("freios", StringComparison.OrdinalIgnoreCase)));
     }
 
     [TestMethod("Paginação de serviços")]
@@ -199,7 +199,7 @@ public class ServiceCatalogAppServiceTests
         var request = new GetServiceCatalogRequest
         {
             Page = 2,
-            ItemsPerPage = 10
+            ItemsPerPage = 10,
         };
 
         // Act
@@ -207,8 +207,8 @@ public class ServiceCatalogAppServiceTests
 
         // Assert
         Assert.IsNotNull(result);
-        Assert.AreEqual(10, result.Items.Count());   
-        Assert.AreEqual(20, result.TotalCount);      
+        Assert.AreEqual(10, result.Items.Count());
+        Assert.AreEqual(20, result.TotalCount);
     }
 
     #endregion

@@ -1,8 +1,8 @@
 using AutoMapper;
+using Mechanics.Application.Notification.Services;
 using Mechanics.Application.Utils;
 using Mechanics.Application.WorkOrders.Requests;
 using Mechanics.Application.WorkOrders.Responses;
-using Mechanics.Application.Notification.Services;
 using Mechanics.Domain.Base.Exceptions;
 using Mechanics.Domain.Customers;
 using Mechanics.Domain.Products;
@@ -13,288 +13,268 @@ using Mechanics.Infra.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace Mechanics.Application.WorkOrders.Services
-{
-    public class WorkOrderAppService : IAppService
-    {
-        private readonly AppDbContext _db;
-        private readonly IMapper _mapper;
-        private readonly IEmailService _emailService;
-        private readonly ILogger<WorkOrderAppService> _logger;
-        private readonly BudgetAppService _budgetService;
+namespace Mechanics.Application.WorkOrders.Services;
 
-        public WorkOrderAppService(
-            AppDbContext db,
-            IMapper mapper,
-            IEmailService emailService,
-            ILogger<WorkOrderAppService> logger,
-            BudgetAppService budgetService)
+public class WorkOrderAppService(
+    AppDbContext db,
+    IMapper mapper,
+    IEmailService emailService,
+    ILogger<WorkOrderAppService> logger,
+    BudgetAppService budgetService)
+    : IAppService
+{
+    /// <summary>
+    ///     Cria uma nova WorkOrder.
+    /// </summary>
+    public async Task<Guid> Create(CreateWorkOrderRequest request, CancellationToken cancellationToken = default)
+    {
+        var customer = await db.Customers.FindAsync([request.CustomerId], cancellationToken);
+        if (customer is null)
+            throw new EntityNotFoundException(nameof(Customer), request.CustomerId.ToString());
+
+        var vehicle = await db.Vehicles.FindAsync([request.VehicleId], cancellationToken);
+        if (vehicle is null)
+            throw new EntityNotFoundException(nameof(Vehicle), request.VehicleId.ToString());
+
+        var existing = await db.WorkOrders.Where(w => w.CustomerId == request.CustomerId).ToListAsync(cancellationToken);
+        var accessKey = WorkOrder.GenerateNewAccessKey(existing);
+
+        var now = DateTime.Now;
+
+        var wo = new WorkOrder
         {
-            _db = db;
-            _mapper = mapper;
-            _emailService = emailService;
-            _logger = logger;
-            _budgetService = budgetService;
+            CustomerId = request.CustomerId,
+            VehicleId = request.VehicleId,
+            AccessKey = accessKey,
+            Status = WorkOrderStatus.Received,
+            CreationDate = now,
+            LastUpdate = now,
+            ReportedProblem = request.ReportedProblem,
+        };
+
+        if (request.ProductIds?.Any() == true)
+        {
+            var products = await db.Products.Where(p => request.ProductIds.Contains(p.Id)).ToListAsync(cancellationToken);
+            wo.Products = products;
         }
 
-        /// <summary>
-        ///     Cria uma nova WorkOrder.
-        /// </summary>
-        public async Task<Guid> Create(CreateWorkOrderRequest request, CancellationToken cancellationToken = default)
+        if (request.ServiceCatalogIds?.Any() == true)
         {
-            var customer = await _db.Customers.FindAsync(new object[] { request.CustomerId }, cancellationToken);
-            if (customer is null)
-                throw new EntityNotFoundException(nameof(Customer), request.CustomerId.ToString());
+            var services = await db.ServiceCatalog.Where(s => request.ServiceCatalogIds.Contains(s.Id))
+                .ToListAsync(cancellationToken);
+            wo.ServiceCatalog = services;
+        }
 
-            var vehicle = await _db.Vehicles.FindAsync(new object[] { request.VehicleId }, cancellationToken);
-            if (vehicle is null)
-                throw new EntityNotFoundException(nameof(Vehicle), request.VehicleId.ToString());
+        await db.WorkOrders.AddAsync(wo, cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
 
-            var existing = await _db.WorkOrders.Where(w => w.CustomerId == request.CustomerId).ToListAsync(cancellationToken);
-            var accessKey = WorkOrder.GenerateNewAccessKey(existing);
+        try
+        {
+            await emailService.SendWorkOrderCreated(customer, wo, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to send WorkOrder created email for {WorkOrderId}", wo.Id);
+        }
 
-            var now = DateTime.Now;
+        return wo.Id;
+    }
 
-            var wo = new WorkOrder
-            {
-                CustomerId = request.CustomerId,
-                VehicleId = request.VehicleId,
-                AccessKey = accessKey,
-                Status = WorkOrderStatus.Received,
-                CreationDate = now,
-                LastUpdate = now,
-                ReportedProblem = request.ReportedProblem,
-            };
+    /// <summary>
+    ///     Obtém detalhes de uma WorkOrder por id.
+    /// </summary>
+    public async Task<GetWorkOrderResponse?> Get(Guid id, CancellationToken cancellationToken = default)
+    {
+        var wo = await db.WorkOrders
+            .Include(w => w.Products)
+            .Include(w => w.ServiceCatalog)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
 
-            if (request.ProductIds?.Any() == true)
-            {
-                var products = await _db.Products.Where(p => request.ProductIds.Contains(p.Id)).ToListAsync(cancellationToken);
-                wo.Products = products;
-            }
+        return wo is null ? null : mapper.Map<GetWorkOrderResponse>(wo);
+    }
 
-            if (request.ServiceCatalogIds?.Any() == true)
-            {
-                var services = await _db.ServiceCatalog.Where(s => request.ServiceCatalogIds.Contains(s.Id)).ToListAsync(cancellationToken);
-                wo.ServiceCatalog = services;
-            }
+    /// <summary>
+    ///     Consulta pública por documento do cliente e accessKey.
+    ///     Usado pelo cliente para acompanhar o progresso da OS.
+    /// </summary>
+    public async Task<GetWorkOrderResponse?> TrackByDocumentAndAccessKey(string document, string accessKey,
+        CancellationToken cancellationToken = default)
+    {
+        var normalizedDocument = new string(document.Where(char.IsDigit).ToArray());
+        var normalizedAccessKey = accessKey.Replace(" ", "");
 
-            await _db.WorkOrders.AddAsync(wo, cancellationToken);
-            await _db.SaveChangesAsync(cancellationToken);
+        var customer = await db.Customers
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Document.Number == normalizedDocument, cancellationToken);
 
+        if (customer is null) return null;
+
+        var wo = await db.WorkOrders
+            .Include(w => w.Products)
+            .Include(w => w.ServiceCatalog)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(w => w.CustomerId == customer.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
+
+        return wo is null ? null : mapper.Map<GetWorkOrderResponse>(wo);
+    }
+
+    /// <summary>
+    ///     Solicita aprovação do orçamento para a ordem.
+    /// </summary>
+    public async Task RequestApproval(Guid workOrderId, Guid performedByUserId, CancellationToken cancellationToken = default)
+    {
+        var woExists = await db.WorkOrders.AnyAsync(w => w.Id == workOrderId, cancellationToken);
+        if (!woExists)
+            throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
+
+        await budgetService.CreateAndSendBudget(workOrderId, performedByUserId, cancellationToken);
+    }
+
+    /// <summary>
+    ///     Altera o status da WorkOrder seguindo regras do fluxo principal.
+    ///     Received -> UnderDiagnosis -> PendingApproval -> InProgress -> Completed -> Delivered
+    /// </summary>
+    public async Task ChangeStatus(Guid workOrderId, WorkOrderStatus newStatus, Guid performedByUserId,
+        CancellationToken cancellationToken = default)
+    {
+        var wo = await db.WorkOrders.FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
+        if (wo is null)
+            throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
+
+        var previous = wo.Status;
+
+        if (!IsTransitionAllowed(previous, newStatus))
+            throw new BusinessException($"Invalid status transition from {previous} to {newStatus}.");
+
+        if (newStatus == WorkOrderStatus.InProgress)
+        {
+            var approved = wo.ApprovedAt != null ||
+                           await db.Budgets.AnyAsync(b => b.WorkOrderId == workOrderId && b.Status == BudgetStatus.Approved,
+                               cancellationToken);
+
+            if (!approved)
+                throw new BusinessException("Order must be approved before starting.");
+        }
+
+        wo.Status = newStatus;
+        wo.LastStatusChangeBy = performedByUserId;
+        if (newStatus == WorkOrderStatus.InProgress)
+            wo.ApprovedAt ??= DateTime.Now;
+        if (newStatus == WorkOrderStatus.Delivered)
+            wo.DeliveredAt = DateTime.Now;
+
+        wo.LastUpdate = DateTime.Now;
+
+        var hist = new WorkOrderHistory
+        {
+            WorkOrderId = wo.Id,
+            OccurredAt = DateTime.Now,
+            Action = "StatusChanged",
+            Details = $"From {previous} to {newStatus}",
+            PerformedByUserId = performedByUserId,
+        };
+        await db.WorkOrderHistories.AddAsync(hist, cancellationToken);
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        // notifica cliente sobre a mudança de status
+        var customer = await db.Customers.FindAsync([wo.CustomerId], cancellationToken);
+        if (customer != null)
+        {
             try
             {
-                await _emailService.SendWorkOrderCreated(customer, wo, cancellationToken);
+                await emailService.SendWorkOrderStatusChanged(customer, wo, previous, cancellationToken);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to send WorkOrder created email for {WorkOrderId}", wo.Id);
-            }
-
-            return wo.Id;
-        }
-
-        /// <summary>
-        ///     Obtém detalhes de uma WorkOrder por id.
-        /// </summary>
-        public async Task<GetWorkOrderResponse?> Get(Guid id, CancellationToken cancellationToken = default)
-        {
-            var wo = await _db.WorkOrders
-                .Include(w => w.Products)
-                .Include(w => w.ServiceCatalog)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
-
-            if (wo is null) return null;
-
-            return _mapper.Map<GetWorkOrderResponse>(wo);
-        }
-
-        /// <summary>
-        ///     Consulta pública por documento do cliente e accessKey.
-        ///     Usado pelo cliente para acompanhar o progresso da OS.
-        /// </summary>
-        public async Task<GetWorkOrderResponse?> TrackByDocumentAndAccessKey(string document, string accessKey, CancellationToken cancellationToken = default)
-        {
-            var normalizedDocument = new string((document ?? string.Empty).Where(char.IsDigit).ToArray());
-            var normalizedAccessKey = (accessKey ?? string.Empty).Replace(" ", "");
-
-            var customer = await _db.Customers
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Document.Number == normalizedDocument, cancellationToken);
-
-            if (customer is null) return null;
-
-            var wo = await _db.WorkOrders
-                .Include(w => w.Products)
-                .Include(w => w.ServiceCatalog)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(w => w.CustomerId == customer.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
-
-            if (wo is null) return null;
-
-            return _mapper.Map<GetWorkOrderResponse>(wo);
-        }
-
-        /// <summary>
-        ///     Solicita aprovação do orçamento para a ordem.
-        /// </summary>
-        public async Task RequestApproval(Guid workOrderId, Guid performedByUserId, CancellationToken cancellationToken = default)
-        {
-            var woExists = await _db.WorkOrders.AnyAsync(w => w.Id == workOrderId, cancellationToken);
-            if (!woExists)
-                throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
-
-            await _budgetService.CreateAndSendBudget(workOrderId, performedByUserId, cancellationToken);
-        }
-
-        /// <summary>
-        ///     Altera o status da WorkOrder seguindo regras do fluxo principal.
-        ///     Received -> UnderDiagnosis -> PendingApproval -> InProgress -> Completed -> Delivered
-        /// </summary>
-        public async Task ChangeStatus(Guid workOrderId, WorkOrderStatus newStatus, Guid performedByUserId, CancellationToken cancellationToken = default)
-        {
-            var wo = await _db.WorkOrders.FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
-            if (wo is null)
-                throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
-
-            var previous = wo.Status;
-
-            if (!IsTransitionAllowed(previous, newStatus))
-                throw new BusinessException($"Invalid status transition from {previous} to {newStatus}.");
-
-            if (newStatus == WorkOrderStatus.InProgress)
-            {
-                var approved = wo.ApprovedAt != null
-                    || await _db.Budgets.AnyAsync(b => b.WorkOrderId == workOrderId && b.Status == BudgetStatus.Approved, cancellationToken);
-
-                if (!approved)
-                    throw new BusinessException("Order must be approved before starting.");
-            }
-            wo.Status = newStatus;
-            wo.LastStatusChangeBy = performedByUserId;
-            if (newStatus == WorkOrderStatus.InProgress)
-                wo.ApprovedAt ??= DateTime.Now;
-            if (newStatus == WorkOrderStatus.Delivered)
-                wo.DeliveredAt = DateTime.Now;
-
-            wo.LastUpdate = DateTime.Now;
-
-            var hist = new WorkOrderHistory
-            {
-                WorkOrderId = wo.Id,
-                OccurredAt = DateTime.Now,
-                Action = "StatusChanged",
-                Details = $"From {previous} to {newStatus}",
-                PerformedByUserId = performedByUserId
-            };
-            await _db.WorkOrderHistories.AddAsync(hist, cancellationToken);
-
-            await _db.SaveChangesAsync(cancellationToken);
-
-            // notifica cliente sobre a mudança de status
-            var customer = await _db.Customers.FindAsync(new object[] { wo.CustomerId }, cancellationToken);
-            if (customer != null)
-            {
-                try
-                {
-                    await _emailService.SendWorkOrderStatusChanged(customer, wo, previous.ToString(), newStatus.ToString(), cancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to send status changed email for WorkOrder {WorkOrderId}", wo.Id);
-                }
+                logger.LogWarning(ex, "Failed to send status changed email for WorkOrder {WorkOrderId}", wo.Id);
             }
         }
+    }
 
-        /// <summary>
-        ///     Adiciona produtos (peças/insumos) à ordem.
-        /// </summary>
-        public async Task AddProducts(Guid workOrderId, IEnumerable<Guid> productIds, CancellationToken cancellationToken = default)
+    /// <summary>
+    ///     Adiciona produtos (peças/insumos) à ordem.
+    /// </summary>
+    public async Task AddProducts(Guid workOrderId, IEnumerable<Guid> productIds, CancellationToken cancellationToken = default)
+    {
+        var wo = await db.WorkOrders
+            .Include(w => w.Products)
+            .FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
+
+        if (wo is null)
+            throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
+
+        var products = await db.Products.Where(p => productIds.Contains(p.Id)).ToListAsync(cancellationToken);
+        if (products.Count == 0) return;
+
+        wo.Products ??= new List<Product>();
+
+        foreach (var p in products.Where(p => wo.Products.All(x => x.Id != p.Id)))
+            wo.Products.Add(p);
+
+        wo.LastUpdate = DateTime.Now;
+
+        var hist = new WorkOrderHistory
         {
-            var wo = await _db.WorkOrders
-                .Include(w => w.Products)
-                .FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
+            WorkOrderId = wo.Id,
+            OccurredAt = DateTime.Now,
+            Action = "ProductsAdded",
+            Details = $"Added {products.Count} products",
+            PerformedByUserId = null,
+        };
+        await db.WorkOrderHistories.AddAsync(hist, cancellationToken);
 
-            if (wo is null)
-                throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
+        await db.SaveChangesAsync(cancellationToken);
+    }
 
-            var products = await _db.Products.Where(p => productIds.Contains(p.Id)).ToListAsync(cancellationToken);
-            if (!products.Any()) return;
+    /// <summary>
+    ///     Adiciona serviços à ordem.
+    /// </summary>
+    public async Task AddServices(Guid workOrderId, IEnumerable<Guid> serviceIds, CancellationToken cancellationToken = default)
+    {
+        var wo = await db.WorkOrders
+            .Include(w => w.ServiceCatalog)
+            .FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
 
-            if (wo.Products is null) wo.Products = new List<Product>();
+        if (wo is null)
+            throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
 
-            foreach (var p in products)
-            {
-                if (!wo.Products.Any(x => x.Id == p.Id))
-                    ((ICollection<Product>)wo.Products).Add(p);
-            }
+        var services = await db.ServiceCatalog.Where(s => serviceIds.Contains(s.Id)).ToListAsync(cancellationToken);
+        if (services.Count == 0) return;
 
-            wo.LastUpdate = DateTime.Now;
+        wo.ServiceCatalog ??= new List<ServiceCatalog>();
 
-            var hist = new WorkOrderHistory
-            {
-                WorkOrderId = wo.Id,
-                OccurredAt = DateTime.Now,
-                Action = "ProductsAdded",
-                Details = $"Added {products.Count} products",
-                PerformedByUserId = null
-            };
-            await _db.WorkOrderHistories.AddAsync(hist, cancellationToken);
+        foreach (var s in services.Where(s => wo.ServiceCatalog.All(x => x.Id != s.Id)))
+            wo.ServiceCatalog.Add(s);
 
-            await _db.SaveChangesAsync(cancellationToken);
-        }
+        wo.LastUpdate = DateTime.Now;
 
-        /// <summary>
-        ///     Adiciona serviços à ordem.
-        /// </summary>
-        public async Task AddServices(Guid workOrderId, IEnumerable<Guid> serviceIds, CancellationToken cancellationToken = default)
+        var hist = new WorkOrderHistory
         {
-            var wo = await _db.WorkOrders
-                .Include(w => w.ServiceCatalog)
-                .FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
+            WorkOrderId = wo.Id,
+            OccurredAt = DateTime.Now,
+            Action = "ServicesAdded",
+            Details = $"Added {services.Count} services",
+            PerformedByUserId = null,
+        };
+        await db.WorkOrderHistories.AddAsync(hist, cancellationToken);
 
-            if (wo is null)
-                throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
+        await db.SaveChangesAsync(cancellationToken);
+    }
 
-            var services = await _db.ServiceCatalog.Where(s => serviceIds.Contains(s.Id)).ToListAsync(cancellationToken);
-            if (!services.Any()) return;
+    private static bool IsTransitionAllowed(WorkOrderStatus from, WorkOrderStatus to)
+    {
+        if (from == to) return true;
 
-            if (wo.ServiceCatalog is null) wo.ServiceCatalog = new List<ServiceCatalog>();
-
-            foreach (var s in services)
-            {
-                if (!wo.ServiceCatalog.Any(x => x.Id == s.Id))
-                    ((ICollection<ServiceCatalog>)wo.ServiceCatalog).Add(s);
-            }
-
-            wo.LastUpdate = DateTime.Now;
-
-            var hist = new WorkOrderHistory
-            {
-                WorkOrderId = wo.Id,
-                OccurredAt = DateTime.Now,
-                Action = "ServicesAdded",
-                Details = $"Added {services.Count} services",
-                PerformedByUserId = null
-            };
-            await _db.WorkOrderHistories.AddAsync(hist, cancellationToken);
-
-            await _db.SaveChangesAsync(cancellationToken);
-        }
-        
-        private static bool IsTransitionAllowed(WorkOrderStatus from, WorkOrderStatus to)
+        return (from, to) switch
         {
-            if (from == to) return true;
-
-            return (from, to) switch
-            {
-                (WorkOrderStatus.Received, WorkOrderStatus.UnderDiagnosis) => true,
-                (WorkOrderStatus.UnderDiagnosis, WorkOrderStatus.PendingApproval) => true,
-                (WorkOrderStatus.PendingApproval, WorkOrderStatus.InProgress) => true,
-                (WorkOrderStatus.InProgress, WorkOrderStatus.Completed) => true,
-                (WorkOrderStatus.Completed, WorkOrderStatus.Delivered) => true,
-                _ => false
-            };
-        }
+            (WorkOrderStatus.Received, WorkOrderStatus.UnderDiagnosis) => true,
+            (WorkOrderStatus.UnderDiagnosis, WorkOrderStatus.PendingApproval) => true,
+            (WorkOrderStatus.PendingApproval, WorkOrderStatus.InProgress) => true,
+            (WorkOrderStatus.InProgress, WorkOrderStatus.Completed) => true,
+            (WorkOrderStatus.Completed, WorkOrderStatus.Delivered) => true,
+            _ => false,
+        };
     }
 }

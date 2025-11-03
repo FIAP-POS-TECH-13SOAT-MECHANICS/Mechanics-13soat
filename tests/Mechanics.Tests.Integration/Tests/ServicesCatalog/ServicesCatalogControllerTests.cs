@@ -90,7 +90,8 @@ public class ServiceCatalogControllerTests
         var firstResponse = await client.PostAsJsonAsync("api/service-catalog", request, TestContext.CancellationTokenSource.Token);
         Assert.AreEqual(HttpStatusCode.Created, firstResponse.StatusCode);
 
-        var secondResponse = await client.PostAsJsonAsync("api/service-catalog", duplicateRequest, TestContext.CancellationTokenSource.Token);
+        var secondResponse =
+            await client.PostAsJsonAsync("api/service-catalog", duplicateRequest, TestContext.CancellationTokenSource.Token);
 
         var raw = await secondResponse.Content.ReadAsStringAsync(TestContext.CancellationTokenSource.Token);
         Console.WriteLine($"Status: {secondResponse.StatusCode}, Body: {raw}");
@@ -115,14 +116,15 @@ public class ServiceCatalogControllerTests
             Description = description,
             BasePrice = 180.00m,
             AverageTime = 50,
-            Status = ServiceCatalogStatusType.Active
+            Status = ServiceCatalogStatusType.Active,
         };
 
         var postResponse = await client.PostAsJsonAsync("api/service-catalog", request, TestContext.CancellationTokenSource.Token);
         Assert.AreEqual(HttpStatusCode.Created, postResponse.StatusCode);
 
         // Act
-        var searchResponse = await client.GetAsync("api/service-catalog/search?term=SUV", TestContext.CancellationTokenSource.Token);
+        var searchResponse =
+            await client.GetAsync("api/service-catalog/search?term=SUV", TestContext.CancellationTokenSource.Token);
         var content = await searchResponse.Content.ReadAsStringAsync(TestContext.CancellationTokenSource.Token);
 
         // Assert
@@ -139,7 +141,8 @@ public class ServiceCatalogControllerTests
         var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
 
         // Act
-        var response = await client.GetAsync("api/service-catalog/search?term=xyz-inexistente", TestContext.CancellationTokenSource.Token);
+        var response = await client.GetAsync("api/service-catalog/search?term=xyz-inexistente",
+            TestContext.CancellationTokenSource.Token);
 
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
@@ -155,7 +158,7 @@ public class ServiceCatalogControllerTests
         var factory = TestProperties.Factory;
         var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
 
-        for (int i = 0; i < 15; i++)
+        for (var i = 0; i < 15; i++)
         {
             var request = new CreateServiceCatalogRequest
             {
@@ -163,7 +166,7 @@ public class ServiceCatalogControllerTests
                 Description = "Serviço para teste de paginação",
                 BasePrice = 100 + i,
                 AverageTime = 30 + i,
-                Status = ServiceCatalogStatusType.Active
+                Status = ServiceCatalogStatusType.Active,
             };
 
             var response = await client.PostAsJsonAsync("api/service-catalog", request, TestContext.CancellationTokenSource.Token);
@@ -171,7 +174,8 @@ public class ServiceCatalogControllerTests
         }
 
         // Act
-        var pagedResponse = await client.GetAsync("api/service-catalog?page=2&itemsPerPage=10", TestContext.CancellationTokenSource.Token);
+        var pagedResponse =
+            await client.GetAsync("api/service-catalog?page=2&itemsPerPage=10", TestContext.CancellationTokenSource.Token);
         var content = await pagedResponse.Content.ReadAsStringAsync(TestContext.CancellationTokenSource.Token);
 
         // Assert

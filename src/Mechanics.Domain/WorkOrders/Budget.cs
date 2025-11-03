@@ -1,5 +1,4 @@
 using Mechanics.Domain.Base;
-using Mechanics.Domain.WorkOrders;
 
 namespace Mechanics.Domain.WorkOrders;
 

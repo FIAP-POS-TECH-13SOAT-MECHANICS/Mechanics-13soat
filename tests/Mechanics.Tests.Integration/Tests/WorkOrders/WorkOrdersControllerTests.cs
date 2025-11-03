@@ -1,18 +1,15 @@
-using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Net.Http.Json;
-using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Mechanics.Application.WorkOrders.Requests;
-using Mechanics.Infra.Data;
-using Mechanics.Tests.Integration.Helpers;
 using Mechanics.Domain.Auth;
-using Mechanics.Domain.Vehicles;
+using Mechanics.Domain.Base;
 using Mechanics.Domain.Customers;
 using Mechanics.Domain.ServicesCatalog;
-using Mechanics.Domain.Base;
+using Mechanics.Domain.Vehicles;
+using Mechanics.Domain.WorkOrders;
+using Mechanics.Infra.Data;
+using Mechanics.Tests.Integration.Helpers;
+using Microsoft.Extensions.DependencyInjection;
+using System.Net;
+using System.Net.Http.Json;
 
 namespace Mechanics.Tests.Integration.Tests.WorkOrders;
 
@@ -35,7 +32,7 @@ public class WorkOrdersControllerTests
                 Id = customerId,
                 Name = "Integration Customer",
                 Email = "int.customer@example.com",
-                Document = new PersonalDocument(DocumentType.Cpf, "12345678909")
+                Document = new PersonalDocument(DocumentType.Cpf, "12345678909"),
             });
             db.Vehicles.Add(new Vehicle
             {
@@ -46,22 +43,23 @@ public class WorkOrdersControllerTests
                 Year = "2020",
                 LicensePlate = new LicensePlate("INT1234"),
                 Chassis = "CHINT",
-                OwnerId = customerId
+                OwnerId = customerId,
             });
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
         }
 
         var createReq = new CreateWorkOrderRequest
         {
             CustomerId = customerId,
             VehicleId = vehicleId,
-            ReportedProblem = "Teste integração"
+            ReportedProblem = "Teste integração",
         };
 
-        var createResp = await client.PostAsJsonAsync("/api/work-orders", createReq);
+        var createResp = await client.PostAsJsonAsync("/api/work-orders", createReq, TestContext.CancellationTokenSource.Token);
         Assert.AreEqual(HttpStatusCode.Created, createResp.StatusCode);
 
-        var createdBody = await createResp.Content.ReadFromJsonAsync<Dictionary<string, Guid>>();
+        var createdBody =
+            await createResp.Content.ReadFromJsonAsync<Dictionary<string, Guid>>(TestContext.CancellationTokenSource.Token);
         if (createdBody is null)
         {
             Assert.Fail("Response body deserializado é nulo.");
@@ -83,12 +81,12 @@ public class WorkOrdersControllerTests
                 Description = "Serviço usado no teste de integração",
                 BasePrice = 100m,
                 AverageTime = 30,
-                Status = ServiceCatalogStatusType.Active
+                Status = ServiceCatalogStatusType.Active,
             };
 
             db.ServiceCatalog.Add(svc);
 
-            var wo = await db.WorkOrders.FindAsync(woId);
+            var wo = await db.WorkOrders.FindAsync(woId, TestContext.CancellationTokenSource.Token);
             if (wo is null)
                 Assert.Fail("WorkOrder not found in DB after creation.");
 
@@ -96,20 +94,21 @@ public class WorkOrdersControllerTests
                 wo.ServiceCatalog = new List<ServiceCatalog>();
             ((List<ServiceCatalog>)wo.ServiceCatalog).Add(svc);
 
-            await db.SaveChangesAsync();
+            await db.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
         }
 
         var attendantUserId = new Guid("c2a83e5a-27c7-440a-97e3-86234eebb3c7");
 
-        var reqApprovalResp = await client.PostAsync($"/api/work-orders/{woId}/request-approval", null);
+        var reqApprovalResp = await client.PostAsync($"/api/work-orders/{woId}/request-approval", null,
+            TestContext.CancellationTokenSource.Token);
         Assert.AreEqual(HttpStatusCode.NoContent, reqApprovalResp.StatusCode);
 
         using (var scope = TestProperties.Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var wo = await db.WorkOrders.FindAsync(woId);
+            var wo = await db.WorkOrders.FindAsync(woId, TestContext.CancellationTokenSource.Token);
             Assert.IsNotNull(wo);
-            Assert.AreEqual(Mechanics.Domain.WorkOrders.WorkOrderStatus.PendingApproval, wo!.Status);
+            Assert.AreEqual(WorkOrderStatus.PendingApproval, wo!.Status);
             Assert.IsNotNull(wo.ApprovalRequestedAt);
             Assert.AreEqual(attendantUserId, wo.LastStatusChangeBy);
         }

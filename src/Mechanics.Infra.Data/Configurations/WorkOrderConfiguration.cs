@@ -40,16 +40,11 @@ public class WorkOrderConfiguration : IEntityTypeConfiguration<WorkOrder>
         builder.Property(e => e.ReportedProblem).HasMaxLength(1000);
         builder.Property(e => e.Observations).HasMaxLength(2000);
 
-        builder.Property(e => e.ApprovalRequestedAt).HasColumnType("datetime2");
-        builder.Property(e => e.ApprovedAt).HasColumnType("datetime2");
-        builder.Property(e => e.DeliveredAt).HasColumnType("datetime2");
+        builder.Property(e => e.ApprovalRequestedAt);
+        builder.Property(e => e.ApprovedAt);
+        builder.Property(e => e.DeliveredAt);
 
         builder.Property(e => e.IsCancelled).HasDefaultValue(false);
-        builder.Property(e => e.LastStatusChangeBy).HasColumnType("uniqueidentifier");
-
-        builder.Property(e => e.CreationDate)
-            .IsRequired()
-            .HasColumnType("datetime2")
-            .HasDefaultValueSql("SYSDATETIME()");
+        builder.Property(e => e.LastStatusChangeBy);
     }
 }

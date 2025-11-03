@@ -11,6 +11,7 @@ using Mechanics.Tests.Unit.Helpers;
 using Mechanics.Tests.Unit.Mocks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Reflection;
 
 namespace Mechanics.Tests.Unit.Tests.WorkOrders;
 
@@ -241,5 +242,93 @@ public class WorkOrderAppServiceTests
         Assert.AreEqual(statusChangedBy, reloaded.LastStatusChangeBy);
         Assert.IsTrue(context.WorkOrderHistories.Any(h => h.WorkOrderId == wo.Id && h.Action == "StatusChanged"));
         Assert.IsTrue(_emailMock.SendWorkOrderStatusChangedCalled);
+    }
+
+    [TestMethod("ChangeStatus should reject same status and skip notifications")]
+    public async Task ChangeStatus_ShouldRejectSameStatus()
+    {
+        var customerId = Guid.NewGuid();
+        var vehicleId = Guid.NewGuid();
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(ctx =>
+            {
+                ctx.Customers.Add(new Customer
+                {
+                    Id = customerId,
+                    Name = "Laura",
+                    Email = "laura@example.com",
+                    Document = new PersonalDocument(DocumentType.Cpf, "55566677788")
+                });
+                ctx.Vehicles.Add(new Vehicle
+                {
+                    Id = vehicleId,
+                    Manufacturer = "Make",
+                    Model = "Model",
+                    Color = VehicleColor.Red,
+                    Year = "2018",
+                    LicensePlate = new LicensePlate("JKL3456"),
+                    Chassis = "CH4",
+                    OwnerId = customerId
+                });
+            })
+            .Build();
+
+        var wo = WorkOrderMocks.CreateWorkOrderEntity(Guid.NewGuid(), customerId, vehicleId);
+        Assert.AreEqual(WorkOrderStatus.Received, wo.Status);
+
+        context.WorkOrders.Add(wo);
+        await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
+
+        var budgetService = new BudgetAppService(
+            context,
+            _emailMock,
+            _loggerFactory.CreateLogger<BudgetAppService>());
+
+        var service = new WorkOrderAppService(
+            context,
+            _mapper,
+            _emailMock,
+            _loggerFactory.CreateLogger<WorkOrderAppService>(),
+            budgetService);
+
+        await Assert.ThrowsExactlyAsync<BusinessException>(() =>
+            service.ChangeStatus(wo.Id, WorkOrderStatus.Received, Guid.NewGuid(), TestContext.CancellationTokenSource.Token));
+
+        Assert.IsFalse(_emailMock.SendWorkOrderStatusChangedCalled, "Status change email should not be sent");
+        Assert.IsFalse(context.WorkOrderHistories.Any(h => h.WorkOrderId == wo.Id), "No history should be recorded");
+
+        var reloaded = await context.WorkOrders.FindAsync(wo.Id, TestContext.CancellationTokenSource.Token);
+        Assert.IsNotNull(reloaded);
+        Assert.AreEqual(WorkOrderStatus.Received, reloaded!.Status);
+    }
+
+    [TestClass]
+    [TestCategory("WorkOrder")]
+    public class WorkOrderAppServiceTransitionsTests
+    {
+        [TestMethod("IsTransitionAllowed deve permitir o fluxo principal e rejeitar transições inválidas ou iguais")]
+        public void IsTransitionAllowed_ValidAndInvalidTransitions()
+        {
+            Assert.IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.Received, WorkOrderStatus.UnderDiagnosis));
+            Assert.IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.UnderDiagnosis, WorkOrderStatus.PendingApproval));
+            Assert.IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.PendingApproval, WorkOrderStatus.InProgress));
+            Assert.IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.InProgress, WorkOrderStatus.Completed));
+            Assert.IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.Completed, WorkOrderStatus.Delivered));
+
+            // transição inválida (pular etapas)
+            Assert.IsFalse(InvokeIsTransitionAllowed(WorkOrderStatus.Received, WorkOrderStatus.InProgress));
+
+            // transição para o mesmo status deve ser considerada inválida no método
+            Assert.IsFalse(InvokeIsTransitionAllowed(WorkOrderStatus.Received, WorkOrderStatus.Received));
+            Assert.IsFalse(InvokeIsTransitionAllowed(WorkOrderStatus.Completed, WorkOrderStatus.Completed));
+        }
+
+        private static bool InvokeIsTransitionAllowed(WorkOrderStatus from, WorkOrderStatus to)
+        {
+            var method = typeof(WorkOrderAppService).GetMethod("IsTransitionAllowed", BindingFlags.NonPublic | BindingFlags.Static);
+            Assert.IsNotNull(method, "Método IsTransitionAllowed não encontrado. Verifique a assinatura e a visibilidade.");
+            return (bool)method!.Invoke(null, new object[] { from, to })!;
+        }
     }
 }

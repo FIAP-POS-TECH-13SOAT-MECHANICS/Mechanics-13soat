@@ -1,6 +1,7 @@
 using AutoMapper;
 using Mechanics.Application.WorkOrders.Requests;
 using Mechanics.Application.WorkOrders.Services;
+using Mechanics.Domain.Auth;
 using Mechanics.Domain.Base;
 using Mechanics.Domain.Base.Exceptions;
 using Mechanics.Domain.Customers;
@@ -200,13 +201,21 @@ public class WorkOrderAppServiceTests
             {
                 ctx.Customers.Add(new Customer
                 {
-                    Id = customerId, Name = "Pedro", Email = "pedro@example.com",
+                    Id = customerId,
+                    Name = "Pedro",
+                    Email = "pedro@example.com",
                     Document = new PersonalDocument(DocumentType.Cpf, "11122233344")
                 });
                 ctx.Vehicles.Add(new Vehicle
                 {
-                    Id = vehicleId, Manufacturer = "Make", Model = "Model", Color = VehicleColor.Gray, Year = "2019",
-                    LicensePlate = new LicensePlate("GHI9012"), Chassis = "CH3", OwnerId = customerId
+                    Id = vehicleId,
+                    Manufacturer = "Make",
+                    Model = "Model",
+                    Color = VehicleColor.Gray,
+                    Year = "2019",
+                    LicensePlate = new LicensePlate("GHI9012"),
+                    Chassis = "CH3",
+                    OwnerId = customerId
                 });
             })
             .Build();
@@ -228,14 +237,53 @@ public class WorkOrderAppServiceTests
             _loggerFactory.CreateLogger<WorkOrderAppService>(),
             budgetService);
 
+        var mechanicRoleId = Guid.NewGuid();
+        var mechanicRole = new Role
+        {
+            Id = mechanicRoleId,
+            Name = RoleNames.Mechanic,
+            CreationDate = DateTime.UtcNow
+        };
+        context.Roles.Add(mechanicRole);
+
+        var performingUserId = Guid.NewGuid();
+        var performingUser = new User
+        {
+            Id = performingUserId,
+            FullName = "Test Mechanic",
+            UserName = "test_mechanic",
+            Email = "test_mechanic@example.com",
+            PasswordHash = "hash",
+            SecurityStamp = Guid.NewGuid().ToString(),
+            RoleId = mechanicRoleId,
+            CreationDate = DateTime.UtcNow
+        };
+        context.Users.Add(performingUser);
+
+        await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
+
         await Assert.ThrowsExactlyAsync<BusinessException>(() =>
-            service.ChangeStatus(wo.Id, WorkOrderStatus.Received, Guid.NewGuid(), comment: null, TestContext.CancellationTokenSource.Token));
+            service.ChangeStatus(wo.Id, WorkOrderStatus.Received, performingUserId, comment: null, TestContext.CancellationTokenSource.Token));
 
         wo.ApprovedAt = DateTime.Now;
         context.WorkOrders.Update(wo);
         await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
 
         var statusChangedBy = Guid.NewGuid();
+        var otherUser = new User
+        {
+            Id = statusChangedBy,
+            FullName = "Another Mechanic",
+            UserName = "another_mechanic",
+            Email = "another_mechanic@example.com",
+            PasswordHash = "hash",
+            SecurityStamp = Guid.NewGuid().ToString(),
+            RoleId = mechanicRoleId,
+            CreationDate = DateTime.UtcNow
+        };
+        context.Users.Add(otherUser);
+        await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
+
         await service.ChangeStatus(wo.Id, WorkOrderStatus.InProgress, statusChangedBy, comment: null, TestContext.CancellationTokenSource.Token);
 
         var reloaded = await context.WorkOrders.FindAsync(wo.Id, TestContext.CancellationTokenSource.Token);
@@ -294,8 +342,33 @@ public class WorkOrderAppServiceTests
             _loggerFactory.CreateLogger<WorkOrderAppService>(),
             budgetService);
 
+        var roleId = Guid.NewGuid();
+        var role = new Role
+        {
+            Id = roleId,
+            Name = RoleNames.Mechanic,
+            CreationDate = DateTime.UtcNow
+        };
+        context.Roles.Add(role);
+
+        var actorId = Guid.NewGuid();
+        var actor = new User
+        {
+            Id = actorId,
+            FullName = "Actor User",
+            UserName = "actor_user",
+            Email = "actor@example.com",
+            PasswordHash = "hash",
+            SecurityStamp = Guid.NewGuid().ToString(),
+            RoleId = roleId,
+            CreationDate = DateTime.UtcNow
+        };
+        context.Users.Add(actor);
+
+        await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
+
         await Assert.ThrowsExactlyAsync<BusinessException>(() =>
-            service.ChangeStatus(wo.Id, WorkOrderStatus.Received, Guid.NewGuid(), comment: null, TestContext.CancellationTokenSource.Token));
+            service.ChangeStatus(wo.Id, WorkOrderStatus.Received, actorId, comment: null, TestContext.CancellationTokenSource.Token));
 
         Assert.IsFalse(_emailMock.SendWorkOrderStatusChangedCalled, "Status change email should not be sent");
         Assert.IsFalse(context.WorkOrderHistories.Any(h => h.WorkOrderId == wo.Id), "No history should be recorded");

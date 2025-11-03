@@ -99,7 +99,9 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     /// <summary>
     ///     Atualiza produtos, serviços e observações de uma ordem.
     /// </summary>
+    /// <param name="id">Identificador da ordem.</param>
     /// <param name="request">Dados de atualização.</param>
+    /// <param name="cancellationToken">Token para cancelamento da operação.</param>
     /// <response code="204">Ordem atualizada com sucesso.</response>
     /// <response code="400">Requisição inválida.</response>
     /// <response code="401">Usuário não autenticado.</response>

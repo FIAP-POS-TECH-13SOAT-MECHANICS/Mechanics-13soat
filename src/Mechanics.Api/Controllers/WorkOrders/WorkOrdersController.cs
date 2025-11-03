@@ -68,10 +68,8 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     public async Task<IActionResult> RequestApproval(Guid id, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        if (userId is null)
-            return Unauthorized();
 
-        await workOrderService.RequestApproval(id, userId.Value, cancellationToken);
+        await workOrderService.RequestApproval(id, userId, cancellationToken);
         return NoContent();
     }
 
@@ -92,10 +90,8 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     public async Task<IActionResult> Assign(Guid id, [FromBody] AssignWorkOrderRequest request, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        if (userId is null)
-            return Unauthorized();
 
-        await workOrderService.Assign(id, request.AssignedToUserId, userId.Value, request.Description, cancellationToken);
+        await workOrderService.Assign(id, request.AssignedToUserId, userId, request.Description, cancellationToken);
         return NoContent();
     }
 
@@ -116,10 +112,8 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
         CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        if (userId is null)
-            return Unauthorized();
 
-        await workOrderService.ChangeStatus(id, request.NewStatus, userId.Value, request.Description, cancellationToken);
+        await workOrderService.ChangeStatus(id, request.NewStatus, userId, request.Description, cancellationToken);
         return NoContent();
     }
 
@@ -133,6 +127,7 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     /// <response code="400">Requisição inválida.</response>
     /// <response code="401">Usuário não autenticado.</response>
     [HttpPut("{id:guid}")]
+    [Authorize]
     [Consumes(typeof(UpdateWorkOrderRequest), "application/json")]
     [Produces("application/json", Type = typeof(object))]
     [ProducesResponseType(typeof(object), (int)HttpStatusCode.NoContent)]
@@ -140,9 +135,9 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     public async Task<IActionResult> Update(Guid id, UpdateWorkOrderRequest request,
         CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId()!;
+        var userId = GetCurrentUserId();
 
-        await workOrderService.UpdateDetails(id, request, userId.Value, cancellationToken);
+        await workOrderService.UpdateDetails(id, request, userId, cancellationToken);
         return NoContent();
     }
 
@@ -176,9 +171,8 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     public async Task<IActionResult> Start(Guid id, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        if (userId is null) return Unauthorized();
 
-        await workOrderService.ChangeStatus(id, Domain.WorkOrders.WorkOrderStatus.InProgress, userId.Value, cancellationToken: cancellationToken);
+        await workOrderService.ChangeStatus(id, Domain.WorkOrders.WorkOrderStatus.InProgress, userId, cancellationToken: cancellationToken);
         return NoContent();
     }
 
@@ -191,9 +185,8 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     public async Task<IActionResult> Complete(Guid id, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        if (userId is null) return Unauthorized();
 
-        await workOrderService.ChangeStatus(id, Domain.WorkOrders.WorkOrderStatus.Completed, userId.Value, cancellationToken: cancellationToken);
+        await workOrderService.ChangeStatus(id, Domain.WorkOrders.WorkOrderStatus.Completed, userId, cancellationToken: cancellationToken);
         return NoContent();
     }
 
@@ -206,15 +199,16 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     public async Task<IActionResult> Deliver(Guid id, CancellationToken cancellationToken)
     {
         var userId = GetCurrentUserId();
-        if (userId is null) return Unauthorized();
 
-        await workOrderService.ChangeStatus(id, Domain.WorkOrders.WorkOrderStatus.Delivered, userId.Value, cancellationToken: cancellationToken);
+        await workOrderService.ChangeStatus(id, Domain.WorkOrders.WorkOrderStatus.Delivered, userId, cancellationToken: cancellationToken);
         return NoContent();
     }
 
-    private Guid? GetCurrentUserId()
+    private Guid GetCurrentUserId()
     {
         var identifier = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return Guid.TryParse(identifier, out var userId) ? userId : null;
+        if (Guid.TryParse(identifier, out var userId))
+            return userId;
+        throw new InvalidOperationException("User is not authenticated.");
     }
 }

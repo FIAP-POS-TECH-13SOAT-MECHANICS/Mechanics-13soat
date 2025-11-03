@@ -51,6 +51,16 @@ public class EmailService(ILogger<EmailService> logger, IEmailSenderService send
         logger.LogInformation("Work order cancelled sent to '{EmailAddress}'", customer.Email);
     }
 
+    public async Task SendMechanicBudgetDecision(User mechanic, WorkOrder workOrder, Budget budget, bool approved, CancellationToken cancellationToken = default)
+    {
+        logger.LogInformation("Sending mechanic budget decision to '{EmailAddress}'", mechanic.Email);
+
+        var message = WorkOrderEmailTemplates.MechanicBudgetDecision(mechanic, workOrder, budget, approved);
+        await senderService.SendAsync(message, cancellationToken);
+
+        logger.LogInformation("Mechanic budget decision sent to '{EmailAddress}'", mechanic.Email);
+    }
+
     public async Task SendWorkOrderDeliveredSurvey(Customer customer, WorkOrder workOrder,
         CancellationToken cancellationToken = default)
     {

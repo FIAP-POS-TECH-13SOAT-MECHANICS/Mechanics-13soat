@@ -10,6 +10,7 @@ using Mechanics.Tests.Integration.Helpers;
 using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Net.Http.Json;
+using Microsoft.EntityFrameworkCore;
 
 namespace Mechanics.Tests.Integration.Tests.WorkOrders;
 
@@ -97,6 +98,58 @@ public class WorkOrdersControllerTests
         }
 
         var attendantUserId = new Guid("c2a83e5a-27c7-440a-97e3-86234eebb3c7");
+
+        using (var scope = TestProperties.Factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+            var role = await db.Roles.FirstOrDefaultAsync(r => r.Name == RoleNames.Attendant, TestContext.CancellationTokenSource.Token);
+
+            Guid roleId;
+            if (role == null)
+            {
+                roleId = Guid.NewGuid();
+                db.Roles.Add(new Role
+                {
+                    Id = roleId,
+                    Name = RoleNames.Attendant,
+                    CreationDate = DateTime.UtcNow
+                });
+
+                db.Users.Add(new User
+                {
+                    Id = attendantUserId,
+                    FullName = "Integration Attendant",
+                    UserName = "int_attendant",
+                    Email = "int.attendant@example.com",
+                    PasswordHash = "hash",
+                    SecurityStamp = Guid.NewGuid().ToString(),
+                    RoleId = roleId,
+                    CreationDate = DateTime.UtcNow
+                });
+            }
+            else
+            {
+                roleId = role.Id;
+                var existingUser = await db.Users.FindAsync(attendantUserId, TestContext.CancellationTokenSource.Token);
+                if (existingUser == null)
+                {
+                    db.Users.Add(new User
+                    {
+                        Id = attendantUserId,
+                        FullName = "Integration Attendant",
+                        UserName = "int_attendant",
+                        Email = "int.attendant@example.com",
+                        PasswordHash = "hash",
+                        SecurityStamp = Guid.NewGuid().ToString(),
+                        RoleId = roleId,
+                        CreationDate = DateTime.UtcNow
+                    });
+                }
+            }
+
+            await db.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
+        }
 
         var reqApprovalResp = await client.PostAsync($"/api/work-orders/{woId}/request-approval", null,
             TestContext.CancellationTokenSource.Token);

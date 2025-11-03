@@ -31,5 +31,16 @@ public class BudgetConfiguration : IEntityTypeConfiguration<Budget>
             .WithOne(i => i.Budget)
             .HasForeignKey(i => i.BudgetId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Property(b => b.RejectedAt)
+            .HasColumnType("datetime2")
+            .HasDefaultValueSql("SYSDATETIME()")
+            .IsRequired(false);
+
+        builder.Property(b => b.Description)
+            .HasColumnType("nvarchar(2000)")
+            .HasMaxLength(2000)
+            .IsRequired(false);
+
     }
 }

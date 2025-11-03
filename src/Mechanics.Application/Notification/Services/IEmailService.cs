@@ -16,6 +16,8 @@ public interface IEmailService
 
     Task SendWorkOrderCancelled(Customer customer, WorkOrder workOrder, CancellationToken cancellationToken = default);
 
+    Task SendMechanicBudgetDecision(User mechanic, WorkOrder workOrder, Budget budget, bool approved, CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Envia pesquisa pós-entrega para o cliente associada à ordem de serviço.
     /// </summary>
@@ -23,6 +25,8 @@ public interface IEmailService
     /// AVISO: lógica de envio ainda não implementada. Seguir fluxo do Event Storming de Notificações;
     /// </remarks>
     Task SendWorkOrderDeliveredSurvey(Customer customer, WorkOrder workOrder, CancellationToken cancellationToken = default);
+
+
 
     Task SendUserPasswordCreationCode(User user, string passwordCreationCode, CancellationToken cancellationToken = default);
     Task UserPasswordChanged(User user, CancellationToken cancellationToken = default);

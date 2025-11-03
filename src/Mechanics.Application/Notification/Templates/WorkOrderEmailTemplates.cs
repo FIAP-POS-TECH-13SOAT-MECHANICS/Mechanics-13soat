@@ -1,3 +1,4 @@
+using Mechanics.Domain.Auth;
 using Mechanics.Domain.Customers;
 using Mechanics.Domain.WorkOrders;
 using Mechanics.Infra.Integrations.EmailSender;
@@ -113,6 +114,26 @@ public static class WorkOrderEmailTemplates
         Body = $"""
                 <p>Olá, <b>{customer.Name}</b>,</p>
                 <p>Seu veículo foi entregue.</p>
+                <p>Obrigado,<br/>FIAP Mechanics</p>
+                """,
+    };
+    public static EmailMessage MechanicBudgetDecision(User mechanic, WorkOrder workOrder, Budget budget, bool approved) => new()
+    {
+        Recipient = mechanic.Email,
+        Subject = approved
+            ? $"Orçamento aprovado - OS {workOrder.AccessKey} - FIAP Mechanics"
+            : $"Orçamento rejeitado - OS {workOrder.AccessKey} - FIAP Mechanics",
+        Body = $"""
+                <p>Olá, <b>{mechanic.FullName}</b>,</p>
+                <p>O orçamento da ordem <b>{workOrder.AccessKey}</b> ({workOrder.Id}) foi {(approved ? "aprovado" : "rejeitado")} pelo cliente.</p>
+
+                <ul>
+                    <li><b>Orçamento</b>: {budget.Id}</li>
+                    <li><b>Valor estimado</b>: {budget.Total:C}</li>
+                </ul>
+
+                <p>{(approved ? "Por favor, inicie a execução quando apropriado." : "Por favor, revise o orçamento e proceda com ajustes necessários.")}</p>
+
                 <p>Obrigado,<br/>FIAP Mechanics</p>
                 """,
     };

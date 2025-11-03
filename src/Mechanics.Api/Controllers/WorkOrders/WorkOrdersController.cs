@@ -2,6 +2,7 @@ using Mechanics.Application.WorkOrders.Requests;
 using Mechanics.Application.WorkOrders.Responses;
 using Mechanics.Application.WorkOrders.Services;
 using Mechanics.Domain.Auth;
+using Mechanics.Domain.WorkOrders;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
@@ -172,7 +173,8 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     {
         var userId = GetCurrentUserId();
 
-        await workOrderService.ChangeStatus(id, Domain.WorkOrders.WorkOrderStatus.InProgress, userId, cancellationToken: cancellationToken);
+        await workOrderService.ChangeStatus(id, WorkOrderStatus.InProgress, userId,
+            cancellationToken: cancellationToken);
         return NoContent();
     }
 
@@ -186,7 +188,8 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     {
         var userId = GetCurrentUserId();
 
-        await workOrderService.ChangeStatus(id, Domain.WorkOrders.WorkOrderStatus.Completed, userId, cancellationToken: cancellationToken);
+        await workOrderService.ChangeStatus(id, WorkOrderStatus.Completed, userId,
+            cancellationToken: cancellationToken);
         return NoContent();
     }
 
@@ -200,15 +203,16 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     {
         var userId = GetCurrentUserId();
 
-        await workOrderService.ChangeStatus(id, Domain.WorkOrders.WorkOrderStatus.Delivered, userId, cancellationToken: cancellationToken);
+        await workOrderService.ChangeStatus(id, WorkOrderStatus.Delivered, userId,
+            cancellationToken: cancellationToken);
         return NoContent();
     }
 
     private Guid GetCurrentUserId()
     {
         var identifier = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (Guid.TryParse(identifier, out var userId))
-            return userId;
-        throw new InvalidOperationException("User is not authenticated.");
+        return Guid.TryParse(identifier, out var userId)
+            ? userId
+            : throw new InvalidOperationException("User is not authenticated.");
     }
 }

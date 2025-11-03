@@ -5,10 +5,8 @@ using Mechanics.Application.WorkOrders.Requests;
 using Mechanics.Application.WorkOrders.Responses;
 using Mechanics.Domain.Auth;
 using Mechanics.Domain.Base.Exceptions;
-using Mechanics.Domain.Customers;
 using Mechanics.Domain.Products;
 using Mechanics.Domain.ServicesCatalog;
-using Mechanics.Domain.Vehicles;
 using Mechanics.Domain.WorkOrders;
 using Mechanics.Infra.Data;
 using Microsoft.EntityFrameworkCore;
@@ -33,23 +31,17 @@ public class WorkOrderAppService(
            .Include(v => v.Owner)
            .FirstOrDefaultAsync(v => v.Id == request.VehicleId, cancellationToken);
 
-        if (vehicle is null)
-            throw new EntityNotFoundException(nameof(Vehicle), request.VehicleId.ToString());
+        EntityNotFoundException.ThrowIfNull(vehicle, request.VehicleId);
+        EntityNotFoundException.ThrowIfNull(vehicle!.Owner, vehicle.OwnerId);
 
-
-        var customer = vehicle.Owner ?? await db.Customers.FindAsync(vehicle.OwnerId, cancellationToken);
-        if (customer is null)
-            throw new EntityNotFoundException(nameof(Customer), vehicle.OwnerId.ToString());
-
-        var existing = await db.WorkOrders.Where(w => w.CustomerId == customer.Id).ToListAsync(cancellationToken);
-
-        var accessKey = WorkOrder.GenerateNewAccessKey(existing);
+        var existingOrders = await db.WorkOrders.Where(w => w.CustomerId == vehicle.OwnerId)
+            .ToListAsync(cancellationToken);
+        var accessKey = WorkOrder.GenerateNewAccessKey(existingOrders);
 
         var now = DateTime.Now;
-
         var wo = new WorkOrder
         {
-            CustomerId = customer.Id,
+            CustomerId = vehicle.OwnerId,
             VehicleId = request.VehicleId,
             AccessKey = accessKey,
             Status = WorkOrderStatus.Received,
@@ -76,7 +68,7 @@ public class WorkOrderAppService(
 
         try
         {
-            await emailService.SendWorkOrderCreated(customer, wo, cancellationToken);
+            await emailService.SendWorkOrderCreated(vehicle.Owner!, wo, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -90,21 +82,19 @@ public class WorkOrderAppService(
        CancellationToken cancellationToken = default)
     {
         var wo = await db.WorkOrders.FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
-        if (wo is null)
-            throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
+        EntityNotFoundException.ThrowIfNull(wo, workOrderId);
 
         var assignedUser = await db.Users
             .AsNoTracking()
             .Include(u => u.Role)
             .FirstOrDefaultAsync(u => u.Id == assignedToUserId, cancellationToken);
 
-        if (assignedUser is null)
-            throw new EntityNotFoundException("User", assignedToUserId.ToString());
+        EntityNotFoundException.ThrowIfNull(assignedUser, assignedToUserId);
 
-        if (assignedUser.Role?.Name != RoleNames.Mechanic)
+        if (assignedUser!.Role?.Name != RoleNames.Mechanic)
             throw new BusinessException("Assigned user must be a mechanic.");
 
-        wo.AssignedToUserId = assignedToUserId;
+        wo!.AssignedToUserId = assignedToUserId;
         wo.LastUpdate = DateTime.Now;
 
         var hist = new WorkOrderHistory
@@ -171,8 +161,7 @@ public class WorkOrderAppService(
     public async Task RequestApproval(Guid workOrderId, Guid performedByUserId, CancellationToken cancellationToken = default)
     {
         var woExists = await db.WorkOrders.AnyAsync(w => w.Id == workOrderId, cancellationToken);
-        if (!woExists)
-            throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
+        EntityNotFoundException.ThrowIfFalse<WorkOrder>(woExists, workOrderId);
 
         await budgetService.CreateAndSendBudget(workOrderId, performedByUserId, cancellationToken);
     }
@@ -185,37 +174,15 @@ public class WorkOrderAppService(
         string? comment = null, CancellationToken cancellationToken = default)
     {
         var wo = await db.WorkOrders.FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
-        if (wo is null)
-            throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
+        EntityNotFoundException.ThrowIfNull(wo, workOrderId);
 
-        var previous = wo.Status;
+        var previous = wo!.Status;
 
         if (previous == newStatus)
             throw new BusinessException($"Work order is already in {newStatus}.");
 
         if (!IsTransitionAllowed(previous, newStatus))
             throw new BusinessException($"Invalid status transition from {previous} to {newStatus}.");
-
-        string actorRole;
-
-        if (performedByUserId == Guid.Empty)
-        {
-            actorRole = RoleNames.Administrator;
-        }
-        else
-        {
-            var actor = await db.Users
-                .AsNoTracking()
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Id == performedByUserId, cancellationToken);
-
-            if (actor == null)
-                throw new BusinessException("Performing user not found.");
-
-            actorRole = actor.Role?.Name ?? string.Empty;
-        }
-
-        EnsureUserCanChangeStatus(previous, newStatus, actorRole);
 
         if (newStatus == WorkOrderStatus.InProgress)
         {
@@ -249,7 +216,7 @@ public class WorkOrderAppService(
         await db.SaveChangesAsync(cancellationToken);
 
         // notifica cliente sobre a mudança de status
-        var customer = await db.Customers.FindAsync(wo.CustomerId, cancellationToken);
+        var customer = await db.Customers.FindAsync([wo.CustomerId], cancellationToken);
         if (customer != null)
         {
             try
@@ -264,66 +231,6 @@ public class WorkOrderAppService(
     }
 
     /// <summary>
-    ///     Adiciona produtos (peças/insumos) à ordem. 
-    /// </summary>
-    public async Task AddProducts(Guid workOrderId, IEnumerable<Guid> productIds, CancellationToken cancellationToken = default)
-    {
-        var wo = await db.WorkOrders
-            .Include(w => w.Products)
-            .FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
-
-        if (wo is null)
-            throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
-
-        var addedProducts = await ApplyProductsToWorkOrderAsync(wo, productIds, cancellationToken);
-        if (addedProducts == 0) return;
-
-        wo.LastUpdate = DateTime.Now;
-
-        var hist = new WorkOrderHistory
-        {
-            WorkOrderId = wo.Id,
-            OccurredAt = DateTime.Now,
-            Action = "ProductsAdded",
-            Details = $"Added {addedProducts} products",
-            PerformedByUserId = null,
-        };
-        await db.WorkOrderHistories.AddAsync(hist, cancellationToken);
-
-        await db.SaveChangesAsync(cancellationToken);
-    }
-
-    /// <summary>
-    ///     Adiciona serviços à ordem.
-    /// </summary>
-    public async Task AddServices(Guid workOrderId, IEnumerable<Guid> serviceIds, CancellationToken cancellationToken = default)
-    {
-        var wo = await db.WorkOrders
-            .Include(w => w.ServiceCatalog)
-            .FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
-
-        if (wo is null)
-            throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
-
-        var addedServices = await ApplyServicesToWorkOrderAsync(wo, serviceIds, cancellationToken);
-        if (addedServices == 0) return;
-
-        wo.LastUpdate = DateTime.Now;
-
-        var hist = new WorkOrderHistory
-        {
-            WorkOrderId = wo.Id,
-            OccurredAt = DateTime.Now,
-            Action = "ServicesAdded",
-            Details = $"Added {addedServices} services",
-            PerformedByUserId = null,
-        };
-        await db.WorkOrderHistories.AddAsync(hist, cancellationToken);
-
-        await db.SaveChangesAsync(cancellationToken);
-    }
-
-    /// <summary>
     ///     Atualiza produtos, serviços e observações da ordem.
     /// </summary>
     public async Task UpdateDetails(Guid workOrderId, UpdateWorkOrderRequest request, Guid performedByUserId,
@@ -334,26 +241,19 @@ public class WorkOrderAppService(
             .Include(w => w.ServiceCatalog)
             .FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
 
-        if (wo is null)
-            throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
+        EntityNotFoundException.ThrowIfNull(wo, workOrderId);
 
-        var addedProducts = await ApplyProductsToWorkOrderAsync(wo, request.ProductIds, cancellationToken);
-        var addedServices = await ApplyServicesToWorkOrderAsync(wo, request.ServiceIds, cancellationToken);
+        var addedProducts = await ApplyProductsToWorkOrderAsync(wo!, request.ProductIds, cancellationToken);
+        var addedServices = await ApplyServicesToWorkOrderAsync(wo!, request.ServiceIds, cancellationToken);
 
-        var observationChanged = false;
-        if (request.Observations is not null)
-        {
-            if (wo.Observations != request.Observations)
-            {
-                wo.Observations = request.Observations;
-                observationChanged = true;
-            }
-        }
+        var observationChanged = request.Observations is not null && wo!.Observations != request.Observations;
+        if (observationChanged)
+            wo!.Observations = request.Observations;
 
         if (addedProducts == 0 && addedServices == 0 && !observationChanged)
             return;
 
-        wo.LastUpdate = DateTime.Now;
+        wo!.LastUpdate = DateTime.Now;
 
         var detailsParts = new List<string>();
         if (addedProducts > 0) detailsParts.Add($"AddedProducts:{addedProducts}");
@@ -421,50 +321,8 @@ public class WorkOrderAppService(
         return added;
     }
 
-    private void EnsureUserCanChangeStatus(WorkOrderStatus previous, WorkOrderStatus next, string actorRole)
-    {
-        if (actorRole == RoleNames.Administrator) return;
-
-        if (previous == WorkOrderStatus.Received && next == WorkOrderStatus.UnderDiagnosis)
-        {
-            if (actorRole != RoleNames.Mechanic && actorRole != RoleNames.Attendant)
-                throw new BusinessException("Only mechanic or attendant can move order to UnderDiagnosis.");
-            return;
-        }
-
-        if (previous == WorkOrderStatus.UnderDiagnosis && next == WorkOrderStatus.PendingApproval)
-        {
-            if (actorRole != RoleNames.Mechanic)
-                throw new BusinessException("Only mechanic can request approval (PendingApproval).");
-            return;
-        }
-
-        if (next == WorkOrderStatus.InProgress)
-        {
-            if (actorRole != RoleNames.Mechanic)
-                throw new BusinessException("Only mechanic can start the order (InProgress).");
-            return;
-        }
-
-        if (previous == WorkOrderStatus.InProgress && next == WorkOrderStatus.Completed)
-        {
-            if (actorRole != RoleNames.Mechanic)
-                throw new BusinessException("Only mechanic can mark the order as completed.");
-            return;
-        }
-
-        if (previous == WorkOrderStatus.Completed && next == WorkOrderStatus.Delivered)
-        {
-            if (actorRole != RoleNames.Attendant && actorRole != RoleNames.Administrator)
-                throw new BusinessException("Only attendant or administrator can mark the order as delivered.");
-            return;
-        }
-
-        throw new BusinessException($"Transition from {previous} to {next} is not allowed for role {actorRole}.");
-    }
-    private static bool IsTransitionAllowed(WorkOrderStatus from, WorkOrderStatus to)
-    {
-        return (from, to) switch
+    private static bool IsTransitionAllowed(WorkOrderStatus from, WorkOrderStatus to) =>
+        (from, to) switch
         {
             (WorkOrderStatus.Received, WorkOrderStatus.UnderDiagnosis) => true,
             (WorkOrderStatus.UnderDiagnosis, WorkOrderStatus.PendingApproval) => true,
@@ -473,5 +331,4 @@ public class WorkOrderAppService(
             (WorkOrderStatus.Completed, WorkOrderStatus.Delivered) => true,
             _ => false,
         };
-    }
 }

@@ -1,7 +1,6 @@
 using Mechanics.Application.Notification.Services;
 using Mechanics.Application.Utils;
 using Mechanics.Domain.Base.Exceptions;
-using Mechanics.Domain.Customers;
 using Mechanics.Domain.Products;
 using Mechanics.Domain.WorkOrders;
 using Mechanics.Infra.Data;
@@ -31,10 +30,9 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
             .Include(w => w.ServiceCatalog)
             .FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
 
-        if (wo is null)
-            throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
+        EntityNotFoundException.ThrowIfNull(wo, workOrderId);
 
-        if ((wo.Products == null || wo.Products.Count == 0) && (wo.ServiceCatalog == null || wo.ServiceCatalog.Count == 0))
+        if ((wo!.Products == null || wo.Products.Count == 0) && (wo.ServiceCatalog == null || wo.ServiceCatalog.Count == 0))
             throw new BusinessException("Order must contain at least one product or service to create a budget.");
 
         var now = DateTime.Now;
@@ -141,11 +139,10 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Document.Number == normalizedDocument, cancellationToken);
 
-        if (customer is null)
-            throw new EntityNotFoundException(nameof(Customer), normalizedDocument);
+        EntityNotFoundException.ThrowIfNull(customer, null);
 
         var wo = await dbContext.WorkOrders
-            .FirstOrDefaultAsync(w => w.CustomerId == customer.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
+            .FirstOrDefaultAsync(w => w.CustomerId == customer!.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
 
         if (wo is null)
             throw new BusinessException("Work order not found or access key invalid.");
@@ -235,11 +232,10 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Document.Number == normalizedDocument, cancellationToken);
 
-        if (customer is null)
-            throw new EntityNotFoundException(nameof(Customer), normalizedDocument);
+        EntityNotFoundException.ThrowIfNull(customer, null);
 
         var wo = await dbContext.WorkOrders
-            .FirstOrDefaultAsync(w => w.CustomerId == customer.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
+            .FirstOrDefaultAsync(w => w.CustomerId == customer!.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
 
         if (wo is null)
             throw new BusinessException("Work order not found or access key invalid.");

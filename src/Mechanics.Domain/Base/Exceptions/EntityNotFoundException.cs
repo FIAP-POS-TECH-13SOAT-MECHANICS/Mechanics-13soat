@@ -5,7 +5,7 @@ namespace Mechanics.Domain.Base.Exceptions;
 /// </summary>
 public class EntityNotFoundException : BusinessException
 {
-    public EntityNotFoundException(string entityName, string? key = null)
+    private EntityNotFoundException(string entityName, string? key = null)
         : base(FormatMessage(entityName, key))
     {
         EntityName = entityName;
@@ -14,6 +14,22 @@ public class EntityNotFoundException : BusinessException
 
     public string EntityName { get; }
     public string? Key { get; }
+
+    public static void ThrowIfNull<T>(T? entity, Guid? key) where T : AbstractEntity
+    {
+        if (entity is not null)
+            return;
+
+        throw new EntityNotFoundException(typeof(T).Name, key?.ToString());
+    }
+
+    public static void ThrowIfFalse<T>(bool isValid, Guid? key) where T : AbstractEntity
+    {
+        if (isValid)
+            return;
+
+        throw new EntityNotFoundException(typeof(T).Name, key?.ToString());
+    }
 
     private static string FormatMessage(string entityName, string? key)
     {

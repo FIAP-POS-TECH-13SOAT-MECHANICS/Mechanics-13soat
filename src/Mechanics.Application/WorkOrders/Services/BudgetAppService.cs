@@ -187,7 +187,7 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var customerEntity = await dbContext.Customers.FindAsync(wo.CustomerId, cancellationToken);
+        var customerEntity = await dbContext.Customers.FindAsync([wo.CustomerId], cancellationToken);
         if (customerEntity != null)
         {
             try
@@ -204,7 +204,7 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
 
         if (wo.AssignedToUserId != null)
         {
-            var mechanic = await dbContext.Users.FindAsync(wo.AssignedToUserId, cancellationToken);
+            var mechanic = await dbContext.Users.FindAsync([wo.AssignedToUserId], cancellationToken);
             if (mechanic != null)
             {
                 try
@@ -275,7 +275,7 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var customerEntity = await dbContext.Customers.FindAsync(wo.CustomerId, cancellationToken);
+        var customerEntity = await dbContext.Customers.FindAsync([wo.CustomerId], cancellationToken);
         if (customerEntity != null)
         {
             try
@@ -290,7 +290,7 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
 
         if (wo.AssignedToUserId != null)
         {
-            var mechanic = await dbContext.Users.FindAsync(wo.AssignedToUserId, cancellationToken);
+            var mechanic = await dbContext.Users.FindAsync([wo.AssignedToUserId], cancellationToken);
             if (mechanic != null)
             {
                 try

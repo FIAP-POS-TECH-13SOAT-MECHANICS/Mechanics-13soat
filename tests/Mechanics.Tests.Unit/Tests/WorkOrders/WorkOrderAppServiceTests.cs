@@ -81,7 +81,7 @@ public class WorkOrderAppServiceTests
 
         var id = await service.Create(request, TestContext.CancellationTokenSource.Token);
 
-        var wo = await context.WorkOrders.FindAsync(id, TestContext.CancellationTokenSource.Token);
+        var wo = await context.WorkOrders.FindAsync([id], TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(wo, "Work order should be persisted");
         Assert.AreEqual(customerId, wo!.CustomerId, "CustomerId persisted");
         Assert.IsTrue(_emailMock.SendWorkOrderCreatedCalled, "SendWorkOrderCreated should be called");
@@ -159,7 +159,7 @@ public class WorkOrderAppServiceTests
             })
             .Build();
 
-        var svc = await context.ServiceCatalog.FindAsync(svcId, TestContext.CancellationTokenSource.Token);
+        var svc = await context.ServiceCatalog.FindAsync([svcId], TestContext.CancellationTokenSource.Token);
         var wo = WorkOrderMocks.CreateWorkOrderWithServices(Guid.NewGuid(), customerId, vehicleId, svc!);
 
         context.WorkOrders.Add(wo);
@@ -180,7 +180,7 @@ public class WorkOrderAppServiceTests
         var performedBy = Guid.NewGuid();
         await service.RequestApproval(wo.Id, performedBy, TestContext.CancellationTokenSource.Token);
 
-        var reloaded = await context.WorkOrders.FindAsync(wo.Id, TestContext.CancellationTokenSource.Token);
+        var reloaded = await context.WorkOrders.FindAsync([wo.Id], TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(reloaded);
         Assert.AreEqual(WorkOrderStatus.PendingApproval, reloaded!.Status);
         Assert.IsNotNull(reloaded.ApprovalRequestedAt);
@@ -286,7 +286,7 @@ public class WorkOrderAppServiceTests
 
         await service.ChangeStatus(wo.Id, WorkOrderStatus.InProgress, statusChangedBy, comment: null, TestContext.CancellationTokenSource.Token);
 
-        var reloaded = await context.WorkOrders.FindAsync(wo.Id, TestContext.CancellationTokenSource.Token);
+        var reloaded = await context.WorkOrders.FindAsync([wo.Id], TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(reloaded);
         Assert.AreEqual(WorkOrderStatus.InProgress, reloaded!.Status);
         Assert.AreEqual(statusChangedBy, reloaded.LastStatusChangeBy);
@@ -373,7 +373,7 @@ public class WorkOrderAppServiceTests
         Assert.IsFalse(_emailMock.SendWorkOrderStatusChangedCalled, "Status change email should not be sent");
         Assert.IsFalse(context.WorkOrderHistories.Any(h => h.WorkOrderId == wo.Id), "No history should be recorded");
 
-        var reloaded = await context.WorkOrders.FindAsync(wo.Id, TestContext.CancellationTokenSource.Token);
+        var reloaded = await context.WorkOrders.FindAsync([wo.Id], TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(reloaded);
         Assert.AreEqual(WorkOrderStatus.Received, reloaded!.Status);
     }

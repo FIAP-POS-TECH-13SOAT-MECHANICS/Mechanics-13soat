@@ -86,7 +86,7 @@ public class WorkOrdersControllerTests
 
             db.ServiceCatalog.Add(svc);
 
-            var wo = await db.WorkOrders.FindAsync(woId, TestContext.CancellationTokenSource.Token);
+            var wo = await db.WorkOrders.FindAsync([woId], TestContext.CancellationTokenSource.Token);
             if (wo is null)
                 Assert.Fail("WorkOrder not found in DB after creation.");
 
@@ -131,7 +131,7 @@ public class WorkOrdersControllerTests
             else
             {
                 roleId = role.Id;
-                var existingUser = await db.Users.FindAsync(attendantUserId, TestContext.CancellationTokenSource.Token);
+                var existingUser = await db.Users.FindAsync([attendantUserId], TestContext.CancellationTokenSource.Token);
                 if (existingUser == null)
                 {
                     db.Users.Add(new User
@@ -158,7 +158,7 @@ public class WorkOrdersControllerTests
         using (var scope = TestProperties.Factory.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            var wo = await db.WorkOrders.FindAsync(woId, TestContext.CancellationTokenSource.Token);
+            var wo = await db.WorkOrders.FindAsync([woId], TestContext.CancellationTokenSource.Token);
             Assert.IsNotNull(wo);
             Assert.AreEqual(WorkOrderStatus.PendingApproval, wo!.Status);
             Assert.IsNotNull(wo.ApprovalRequestedAt);

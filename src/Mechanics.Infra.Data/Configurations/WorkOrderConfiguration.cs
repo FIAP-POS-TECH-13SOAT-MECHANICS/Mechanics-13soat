@@ -16,8 +16,6 @@ public class WorkOrderConfiguration : IEntityTypeConfiguration<WorkOrder>
 
         builder.Property(entity => entity.AccessKey).HasMaxLength(8).IsRequired();
         builder.HasIndex(entity => new { entity.CustomerId, entity.AccessKey }).IsUnique();
-                builder.Property(e => e.AssignedToUserId).HasColumnType("uniqueidentifier").IsRequired(false);
-
 
         builder.HasOne(entity => entity.Customer)
             .WithMany()
@@ -49,8 +47,6 @@ public class WorkOrderConfiguration : IEntityTypeConfiguration<WorkOrder>
 
         builder.Property(e => e.IsCancelled).HasDefaultValue(false);
         builder.Property(e => e.LastStatusChangeBy);
-
-        builder.Property(e => e.AssignedToUserId).HasColumnType("uniqueidentifier").IsRequired(false);
 
         builder.HasOne(e => e.AssignedToUser)
             .WithMany()

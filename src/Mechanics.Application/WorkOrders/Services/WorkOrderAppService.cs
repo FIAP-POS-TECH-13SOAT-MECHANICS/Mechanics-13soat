@@ -3,6 +3,7 @@ using Mechanics.Application.Notification.Services;
 using Mechanics.Application.Utils;
 using Mechanics.Application.WorkOrders.Requests;
 using Mechanics.Application.WorkOrders.Responses;
+using Mechanics.Domain.Auth;
 using Mechanics.Domain.Base.Exceptions;
 using Mechanics.Domain.Customers;
 using Mechanics.Domain.Products;
@@ -67,7 +68,7 @@ public class WorkOrderAppService(
         {
             var services = await db.ServiceCatalog.Where(s => request.ServiceCatalogIds.Contains(s.Id))
                 .ToListAsync(cancellationToken);
-            wo.ServiceCatalog = services;
+                wo.ServiceCatalog = services;
         }
 
         await db.WorkOrders.AddAsync(wo, cancellationToken);
@@ -83,6 +84,46 @@ public class WorkOrderAppService(
         }
 
         return wo.Id;
+    }
+
+    public async Task Assign(Guid workOrderId, Guid assignedToUserId, Guid performedByUserId, string? comment = null,
+       CancellationToken cancellationToken = default)
+    {
+        var wo = await db.WorkOrders.FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
+        if (wo is null)
+            throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
+
+        var assignedUser = await db.Users
+            .AsNoTracking()
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.Id == assignedToUserId, cancellationToken);
+
+        if (assignedUser is null)
+            throw new EntityNotFoundException("User", assignedToUserId.ToString());
+
+        if (assignedUser.Role?.Name != RoleNames.Mechanic)
+            throw new BusinessException("Assigned user must be a mechanic.");
+
+        wo.AssignedToUserId = assignedToUserId;
+        wo.LastUpdate = DateTime.Now;
+
+        var hist = new WorkOrderHistory
+        {
+            WorkOrderId = wo.Id,
+            OccurredAt = DateTime.Now,
+            Action = "Assigned",
+            Details = comment is null ? $"Assigned to {assignedToUserId}" : $"Assigned to {assignedToUserId}. Comment: {comment}",
+            PerformedByUserId = performedByUserId
+        };
+        await db.WorkOrderHistories.AddAsync(hist, cancellationToken);
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        if (wo.Status == WorkOrderStatus.Received)
+        {
+            await ChangeStatus(workOrderId, WorkOrderStatus.UnderDiagnosis, performedByUserId,
+                comment: "Auto-transition to UnderDiagnosis due assignment", cancellationToken);
+        }
     }
 
     /// <summary>
@@ -141,7 +182,7 @@ public class WorkOrderAppService(
     ///     Received -> UnderDiagnosis -> PendingApproval -> InProgress -> Completed -> Delivered
     /// </summary>
     public async Task ChangeStatus(Guid workOrderId, WorkOrderStatus newStatus, Guid performedByUserId,
-        CancellationToken cancellationToken = default)
+        string? comment = null, CancellationToken cancellationToken = default)
     {
         var wo = await db.WorkOrders.FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
         if (wo is null)
@@ -153,7 +194,28 @@ public class WorkOrderAppService(
             throw new BusinessException($"Work order is already in {newStatus}.");
 
         if (!IsTransitionAllowed(previous, newStatus))
-            throw new BusinessException($"Invalid status transition from {previous} to {newStatus}.");       
+            throw new BusinessException($"Invalid status transition from {previous} to {newStatus}.");
+
+        string actorRole;
+
+        if (performedByUserId == Guid.Empty)
+        {
+            actorRole = RoleNames.Administrator;
+        }
+        else
+        {
+            var actor = await db.Users
+                .AsNoTracking()
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Id == performedByUserId, cancellationToken);
+
+            if (actor == null)
+                throw new BusinessException("Performing user not found.");
+
+            actorRole = actor.Role?.Name ?? string.Empty;
+        }
+
+        EnsureUserCanChangeStatus(previous, newStatus, actorRole);
 
         if (newStatus == WorkOrderStatus.InProgress)
         {
@@ -179,7 +241,7 @@ public class WorkOrderAppService(
             WorkOrderId = wo.Id,
             OccurredAt = DateTime.Now,
             Action = "StatusChanged",
-            Details = $"From {previous} to {newStatus}",
+            Details = comment is null ? $"From {previous} to {newStatus}" : $"From {previous} to {newStatus}. Comment: {comment}",
             PerformedByUserId = performedByUserId,
         };
         await db.WorkOrderHistories.AddAsync(hist, cancellationToken);
@@ -359,6 +421,47 @@ public class WorkOrderAppService(
         return added;
     }
 
+    private void EnsureUserCanChangeStatus(WorkOrderStatus previous, WorkOrderStatus next, string actorRole)
+    {
+        if (actorRole == RoleNames.Administrator) return;
+
+        if (previous == WorkOrderStatus.Received && next == WorkOrderStatus.UnderDiagnosis)
+        {
+            if (actorRole != RoleNames.Mechanic && actorRole != RoleNames.Attendant)
+                throw new BusinessException("Only mechanic or attendant can move order to UnderDiagnosis.");
+            return;
+        }
+
+        if (previous == WorkOrderStatus.UnderDiagnosis && next == WorkOrderStatus.PendingApproval)
+        {
+            if (actorRole != RoleNames.Mechanic)
+                throw new BusinessException("Only mechanic can request approval (PendingApproval).");
+            return;
+        }
+
+        if (next == WorkOrderStatus.InProgress)
+        {
+            if (actorRole != RoleNames.Mechanic)
+                throw new BusinessException("Only mechanic can start the order (InProgress).");
+            return;
+        }
+
+        if (previous == WorkOrderStatus.InProgress && next == WorkOrderStatus.Completed)
+        {
+            if (actorRole != RoleNames.Mechanic)
+                throw new BusinessException("Only mechanic can mark the order as completed.");
+            return;
+        }
+
+        if (previous == WorkOrderStatus.Completed && next == WorkOrderStatus.Delivered)
+        {
+            if (actorRole != RoleNames.Attendant && actorRole != RoleNames.Administrator)
+                throw new BusinessException("Only attendant or administrator can mark the order as delivered.");
+            return;
+        }
+
+        throw new BusinessException($"Transition from {previous} to {next} is not allowed for role {actorRole}.");
+    }
     private static bool IsTransitionAllowed(WorkOrderStatus from, WorkOrderStatus to)
     {
         return (from, to) switch

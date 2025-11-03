@@ -1,6 +1,7 @@
 using Mechanics.Application.WorkOrders.Requests;
 using Mechanics.Application.WorkOrders.Responses;
 using Mechanics.Application.WorkOrders.Services;
+using Mechanics.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
@@ -61,6 +62,7 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     /// <response code="204">Solicitação realizada.</response>
     /// <response code="400">Requisição inválida.</response>
     [HttpPost("{id:guid}/request-approval")]
+    [Authorize(Roles = $"{RoleNames.Mechanic},{RoleNames.Administrator},{RoleNames.Attendant}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> RequestApproval(Guid id, CancellationToken cancellationToken)
@@ -74,6 +76,30 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     }
 
     /// <summary>
+    ///     Atribui a WorkOrder a um mecânico. (Atendente/Administrator)
+    ///     Essa ação grava a atribuição e, se a OS estiver em Received, move automaticamente para UnderDiagnosis.
+    /// </summary>
+    /// <param name="id">Identificador da ordem.</param>
+    /// <param name="request">AssignedToUserId e comentário opcional.</param>
+    /// <param name="cancellationToken">Token para cancelamento da operação.</param>
+    /// <response code="204">Atribuição realizada.</response>
+    /// <response code="400">Requisição inválida.</response>
+    [HttpPost("{id:guid}/assign")]
+    [Authorize(Roles = $"{RoleNames.Attendant},{RoleNames.Administrator}")]
+    [Consumes(typeof(AssignWorkOrderRequest), "application/json")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Assign(Guid id, [FromBody] AssignWorkOrderRequest request, CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        if (userId is null)
+            return Unauthorized();
+
+        await workOrderService.Assign(id, request.AssignedToUserId, userId.Value, request.Comment, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>
     ///     Altera o status de uma ordem de serviço.
     /// </summary>
     /// <param name="id">Identificador da ordem.</param>
@@ -82,6 +108,7 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     /// <response code="204">Status alterado com sucesso.</response>
     /// <response code="400">Requisição inválida.</response>
     [HttpPost("{id:guid}/status")]
+    [Authorize]
     [Consumes(typeof(ChangeStatusRequest), "application/json")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
@@ -92,7 +119,7 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
         if (userId is null)
             return Unauthorized();
 
-        await workOrderService.ChangeStatus(id, request.NewStatus, userId.Value, cancellationToken);
+        await workOrderService.ChangeStatus(id, request.NewStatus, userId.Value, request.Comment, cancellationToken);
         return NoContent();
     }
 
@@ -138,6 +165,51 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
         var resp = await workOrderService.TrackByDocumentAndAccessKey(document, accessKey, cancellationToken);
         if (resp is null) return NotFound();
         return Ok(resp);
+    }
+
+    /// <summary>
+    ///     Inicia a execução da OS (Status: InProgress). (Mechanic)
+    /// </summary>
+    [HttpPost("{id:guid}/start")]
+    [Authorize(Roles = $"{RoleNames.Mechanic},{RoleNames.Administrator}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Start(Guid id, CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        await workOrderService.ChangeStatus(id, Domain.WorkOrders.WorkOrderStatus.InProgress, userId.Value, cancellationToken: cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>
+    ///     Marca a OS como concluída (Status: Completed). (Mechanic)
+    /// </summary>
+    [HttpPost("{id:guid}/complete")]
+    [Authorize(Roles = $"{RoleNames.Mechanic},{RoleNames.Administrator}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Complete(Guid id, CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        await workOrderService.ChangeStatus(id, Domain.WorkOrders.WorkOrderStatus.Completed, userId.Value, cancellationToken: cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>
+    ///     Registra a entrega/retirada do veículo e encerra a OS. (Status: Delivered) (Attendant)
+    /// </summary>
+    [HttpPost("{id:guid}/deliver")]
+    [Authorize(Roles = $"{RoleNames.Attendant},{RoleNames.Administrator}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public async Task<IActionResult> Deliver(Guid id, CancellationToken cancellationToken)
+    {
+        var userId = GetCurrentUserId();
+        if (userId is null) return Unauthorized();
+
+        await workOrderService.ChangeStatus(id, Domain.WorkOrders.WorkOrderStatus.Delivered, userId.Value, cancellationToken: cancellationToken);
+        return NoContent();
     }
 
     private Guid? GetCurrentUserId()

@@ -71,6 +71,11 @@ public class WorkOrder : AbstractEntity
     public Guid? LastStatusChangeBy { get; set; }
 
     /// <summary>
+    ///     Usuário a quem a OS foi atribuída (mecânico).
+    /// </summary>
+    public Guid? AssignedToUserId { get; set; }
+
+    /// <summary>
     ///     Gera uma nova chave de acesso única por cliente.
     /// </summary>
     /// <param name="existingOrders">As ordens de serviço do cliente.</param>

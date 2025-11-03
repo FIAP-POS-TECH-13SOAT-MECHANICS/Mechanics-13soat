@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace Mechanics.Application.WorkOrders.Requests;
 
 public class UpdateWorkOrderRequest

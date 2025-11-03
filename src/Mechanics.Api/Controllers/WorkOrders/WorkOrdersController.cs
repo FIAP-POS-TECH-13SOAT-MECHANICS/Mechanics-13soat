@@ -105,12 +105,16 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     /// <response code="204">Ordem atualizada com sucesso.</response>
     /// <response code="400">Requisição inválida.</response>
     /// <response code="401">Usuário não autenticado.</response>
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateWorkOrderRequest request,
+    [HttpPut("{id:guid}")]
+    [Consumes(typeof(UpdateWorkOrderRequest), "application/json")]
+    [Produces("application/json", Type = typeof(object))]
+    [ProducesResponseType(typeof(object), (int)HttpStatusCode.NoContent)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> Update(Guid id, UpdateWorkOrderRequest request,
         CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
-        if (userId is null)
-            return Unauthorized();
+        var userId = GetCurrentUserId()!;
+
         await workOrderService.UpdateDetails(id, request, userId.Value, cancellationToken);
         return NoContent();
     }

@@ -52,5 +52,13 @@ public class WorkOrderConfiguration : IEntityTypeConfiguration<WorkOrder>
 
         builder.Property(e => e.AssignedToUserId).HasColumnType("uniqueidentifier").IsRequired(false);
 
+        builder.HasOne(e => e.AssignedToUser)
+            .WithMany()
+            .HasForeignKey(e => e.AssignedToUserId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasIndex(e => e.AssignedToUserId)
+            .HasDatabaseName("IX_WorkOrders_AssignedToUserId");
+
     }
 }

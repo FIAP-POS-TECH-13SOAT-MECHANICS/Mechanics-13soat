@@ -1,8 +1,9 @@
+using Mechanics.Domain.Auth;
 using Mechanics.Domain.Base;
 using Mechanics.Domain.Customers;
 using Mechanics.Domain.Products;
-using Mechanics.Domain.Vehicles;
 using Mechanics.Domain.ServicesCatalog;
+using Mechanics.Domain.Vehicles;
 
 namespace Mechanics.Domain.WorkOrders;
 
@@ -74,6 +75,11 @@ public class WorkOrder : AbstractEntity
     ///     Usuário a quem a OS foi atribuída (mecânico).
     /// </summary>
     public Guid? AssignedToUserId { get; set; }
+
+    /// <summary>
+    ///     Navegação para o usuário atribuído.
+    /// </summary>
+    public User? AssignedToUser { get; set; }
 
     /// <summary>
     ///     Gera uma nova chave de acesso única por cliente.

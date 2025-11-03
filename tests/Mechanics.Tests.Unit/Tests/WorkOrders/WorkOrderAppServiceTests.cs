@@ -229,14 +229,14 @@ public class WorkOrderAppServiceTests
             budgetService);
 
         await Assert.ThrowsExactlyAsync<BusinessException>(() =>
-            service.ChangeStatus(wo.Id, WorkOrderStatus.InProgress, Guid.NewGuid(), TestContext.CancellationTokenSource.Token));
+            service.ChangeStatus(wo.Id, WorkOrderStatus.Received, Guid.NewGuid(), comment: null, TestContext.CancellationTokenSource.Token));
 
         wo.ApprovedAt = DateTime.Now;
         context.WorkOrders.Update(wo);
         await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
 
         var statusChangedBy = Guid.NewGuid();
-        await service.ChangeStatus(wo.Id, WorkOrderStatus.InProgress, statusChangedBy, TestContext.CancellationTokenSource.Token);
+        await service.ChangeStatus(wo.Id, WorkOrderStatus.InProgress, statusChangedBy, comment: null, TestContext.CancellationTokenSource.Token);
 
         var reloaded = await context.WorkOrders.FindAsync(wo.Id, TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(reloaded);
@@ -295,7 +295,7 @@ public class WorkOrderAppServiceTests
             budgetService);
 
         await Assert.ThrowsExactlyAsync<BusinessException>(() =>
-            service.ChangeStatus(wo.Id, WorkOrderStatus.Received, Guid.NewGuid(), TestContext.CancellationTokenSource.Token));
+            service.ChangeStatus(wo.Id, WorkOrderStatus.Received, Guid.NewGuid(), comment: null, TestContext.CancellationTokenSource.Token));
 
         Assert.IsFalse(_emailMock.SendWorkOrderStatusChangedCalled, "Status change email should not be sent");
         Assert.IsFalse(context.WorkOrderHistories.Any(h => h.WorkOrderId == wo.Id), "No history should be recorded");

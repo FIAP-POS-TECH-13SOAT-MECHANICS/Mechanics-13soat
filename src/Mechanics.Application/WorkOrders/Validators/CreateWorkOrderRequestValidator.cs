@@ -7,7 +7,6 @@ public class CreateWorkOrderRequestValidator : AbstractValidator<CreateWorkOrder
 {
     public CreateWorkOrderRequestValidator()
     {
-        RuleFor(r => r.CustomerId).NotEmpty().WithMessage("CustomerId is required.");
         RuleFor(r => r.VehicleId).NotEmpty().WithMessage("VehicleId is required.");
 
         RuleFor(r => r.ReportedProblem)

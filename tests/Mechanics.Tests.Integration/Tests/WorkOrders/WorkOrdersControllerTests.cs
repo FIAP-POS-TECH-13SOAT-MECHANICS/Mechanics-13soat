@@ -50,7 +50,6 @@ public class WorkOrdersControllerTests
 
         var createReq = new CreateWorkOrderRequest
         {
-            CustomerId = customerId,
             VehicleId = vehicleId,
             ReportedProblem = "Teste integração",
         };

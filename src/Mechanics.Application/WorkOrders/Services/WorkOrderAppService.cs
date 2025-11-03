@@ -28,22 +28,27 @@ public class WorkOrderAppService(
     /// </summary>
     public async Task<Guid> Create(CreateWorkOrderRequest request, CancellationToken cancellationToken = default)
     {
-        var customer = await db.Customers.FindAsync([request.CustomerId], cancellationToken);
-        if (customer is null)
-            throw new EntityNotFoundException(nameof(Customer), request.CustomerId.ToString());
+        var vehicle = await db.Vehicles
+           .Include(v => v.Owner)
+           .FirstOrDefaultAsync(v => v.Id == request.VehicleId, cancellationToken);
 
-        var vehicle = await db.Vehicles.FindAsync([request.VehicleId], cancellationToken);
         if (vehicle is null)
             throw new EntityNotFoundException(nameof(Vehicle), request.VehicleId.ToString());
 
-        var existing = await db.WorkOrders.Where(w => w.CustomerId == request.CustomerId).ToListAsync(cancellationToken);
+
+        var customer = vehicle.Owner ?? await db.Customers.FindAsync([vehicle.OwnerId], cancellationToken);
+        if (customer is null)
+            throw new EntityNotFoundException(nameof(Customer), vehicle.OwnerId.ToString());
+
+        var existing = await db.WorkOrders.Where(w => w.CustomerId == customer.Id).ToListAsync(cancellationToken);
+
         var accessKey = WorkOrder.GenerateNewAccessKey(existing);
 
         var now = DateTime.Now;
 
         var wo = new WorkOrder
         {
-            CustomerId = request.CustomerId,
+            CustomerId = customer.Id,
             VehicleId = request.VehicleId,
             AccessKey = accessKey,
             Status = WorkOrderStatus.Received,

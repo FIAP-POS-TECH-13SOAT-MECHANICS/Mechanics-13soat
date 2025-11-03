@@ -36,7 +36,7 @@ public class WorkOrderAppService(
             throw new EntityNotFoundException(nameof(Vehicle), request.VehicleId.ToString());
 
 
-        var customer = vehicle.Owner ?? await db.Customers.FindAsync([vehicle.OwnerId], cancellationToken);
+        var customer = vehicle.Owner ?? await db.Customers.FindAsync(vehicle.OwnerId, cancellationToken);
         if (customer is null)
             throw new EntityNotFoundException(nameof(Customer), vehicle.OwnerId.ToString());
 
@@ -149,8 +149,11 @@ public class WorkOrderAppService(
 
         var previous = wo.Status;
 
+        if (previous == newStatus)
+            throw new BusinessException($"Work order is already in {newStatus}.");
+
         if (!IsTransitionAllowed(previous, newStatus))
-            throw new BusinessException($"Invalid status transition from {previous} to {newStatus}.");
+            throw new BusinessException($"Invalid status transition from {previous} to {newStatus}.");       
 
         if (newStatus == WorkOrderStatus.InProgress)
         {
@@ -184,7 +187,7 @@ public class WorkOrderAppService(
         await db.SaveChangesAsync(cancellationToken);
 
         // notifica cliente sobre a mudança de status
-        var customer = await db.Customers.FindAsync([wo.CustomerId], cancellationToken);
+        var customer = await db.Customers.FindAsync(wo.CustomerId, cancellationToken);
         if (customer != null)
         {
             try
@@ -270,8 +273,6 @@ public class WorkOrderAppService(
 
     private static bool IsTransitionAllowed(WorkOrderStatus from, WorkOrderStatus to)
     {
-        if (from == to) return true;
-
         return (from, to) switch
         {
             (WorkOrderStatus.Received, WorkOrderStatus.UnderDiagnosis) => true,

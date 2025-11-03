@@ -69,7 +69,6 @@ public class WorkOrderAppServiceTests
 
         var request = new CreateWorkOrderRequest
         {
-            CustomerId = customerId,
             VehicleId = vehicleId,
             ProductIds = [],
             ServiceCatalogIds = [],
@@ -82,6 +81,50 @@ public class WorkOrderAppServiceTests
         Assert.IsNotNull(wo, "Work order should be persisted");
         Assert.AreEqual(customerId, wo!.CustomerId, "CustomerId persisted");
         Assert.IsTrue(_emailMock.SendWorkOrderCreatedCalled, "SendWorkOrderCreated should be called");
+    }
+
+    [TestMethod("Create should throw when vehicle owner customer does not exist")]
+    public async Task Create_ShouldThrow_WhenVehicleOwnerCustomerMissing()
+    {
+        var orphanOwnerId = Guid.NewGuid();
+        var vehicleId = Guid.NewGuid();
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(ctx =>
+            {
+                ctx.Vehicles.Add(new Vehicle
+                {
+                    Id = vehicleId,
+                    Manufacturer = "Make",
+                    Model = "Model",
+                    Color = VehicleColor.White,
+                    Year = "2022",
+                    LicensePlate = new LicensePlate("ORP1234"),
+                    Chassis = "CHORP",
+                    OwnerId = orphanOwnerId,
+                });
+            })
+            .Build();
+
+        var budgetService = new BudgetAppService(
+            context,
+            _emailMock,
+            _loggerFactory.CreateLogger<BudgetAppService>());
+
+        var service = new WorkOrderAppService(
+            context,
+            _mapper,
+            _emailMock,
+            _loggerFactory.CreateLogger<WorkOrderAppService>(),
+            budgetService);
+
+        var request = new CreateWorkOrderRequest
+        {
+            VehicleId = vehicleId,
+        };
+
+        await Assert.ThrowsExactlyAsync<EntityNotFoundException>(() =>
+            service.Create(request, TestContext.CancellationTokenSource.Token));
     }
 
     [TestMethod("RequestApproval should calculate estimate, set PendingApproval and send email")]

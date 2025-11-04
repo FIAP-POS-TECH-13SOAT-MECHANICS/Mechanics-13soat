@@ -52,12 +52,12 @@ public class WorkOrderAppServiceTests
                 ctx.Customers.Add(new Customer
                 {
                     Id = customerId, Name = "John", Email = "john@example.com",
-                    Document = new PersonalDocument(DocumentType.Cpf, "12345678909")
+                    Document = new PersonalDocument(DocumentType.Cpf, "12345678909"),
                 });
                 ctx.Vehicles.Add(new Vehicle
                 {
                     Id = vehicleId, Manufacturer = "Make", Model = "Model", Color = VehicleColor.White, Year = "2020",
-                    LicensePlate = new LicensePlate("ABC1234"), Chassis = "CH", OwnerId = customerId
+                    LicensePlate = new LicensePlate("ABC1234"), Chassis = "CH", OwnerId = customerId,
                 });
                 ctx.Products.Add(new Product
                 {
@@ -66,7 +66,7 @@ public class WorkOrderAppServiceTests
                     Description = "Óleo sintético 5W30",
                     Quantity = 1,
                     Status = ProductStatusType.Active,
-                    Type = ProductType.Part
+                    Type = ProductType.Part,
                 });
                 ctx.ServiceCatalog.Add(new ServiceCatalog
                 {
@@ -75,7 +75,7 @@ public class WorkOrderAppServiceTests
                     Description = "Troca completa de óleo",
                     BasePrice = 80m,
                     AverageTime = 40,
-                    Status = ServiceCatalogStatusType.Active
+                    Status = ServiceCatalogStatusType.Active,
                 });
             })
             .Build();
@@ -95,7 +95,7 @@ public class WorkOrderAppServiceTests
         var request = new CreateWorkOrderRequest
         {
             VehicleId = vehicleId,
-            ProductIds = [productId],
+            Products = [new WorkOrderProductRequest { ProductId = productId, Quantity = 1 }],
             ServiceCatalogIds = [serviceId],
             ReportedProblem = "Test problem",
         };
@@ -165,17 +165,17 @@ public class WorkOrderAppServiceTests
                 ctx.Customers.Add(new Customer
                 {
                     Id = customerId, Name = "Mary", Email = "mary@example.com",
-                    Document = new PersonalDocument(DocumentType.Cpf, "98765432100")
+                    Document = new PersonalDocument(DocumentType.Cpf, "98765432100"),
                 });
                 ctx.Vehicles.Add(new Vehicle
                 {
                     Id = vehicleId, Manufacturer = "Make", Model = "Model", Color = VehicleColor.Black, Year = "2021",
-                    LicensePlate = new LicensePlate("DEF5678"), Chassis = "CH2", OwnerId = customerId
+                    LicensePlate = new LicensePlate("DEF5678"), Chassis = "CH2", OwnerId = customerId,
                 });
                 ctx.ServiceCatalog.Add(new ServiceCatalog
                 {
                     Id = svcId, Name = "Oil change", Description = "Change oil", BasePrice = 100m, AverageTime = 30,
-                    Status = ServiceCatalogStatusType.Active
+                    Status = ServiceCatalogStatusType.Active,
                 });
             })
             .Build();
@@ -225,7 +225,7 @@ public class WorkOrderAppServiceTests
                     Id = customerId,
                     Name = "Pedro",
                     Email = "pedro@example.com",
-                    Document = new PersonalDocument(DocumentType.Cpf, "11122233344")
+                    Document = new PersonalDocument(DocumentType.Cpf, "11122233344"),
                 });
                 ctx.Vehicles.Add(new Vehicle
                 {
@@ -236,7 +236,7 @@ public class WorkOrderAppServiceTests
                     Year = "2019",
                     LicensePlate = new LicensePlate("GHI9012"),
                     Chassis = "CH3",
-                    OwnerId = customerId
+                    OwnerId = customerId,
                 });
             })
             .Build();
@@ -263,7 +263,7 @@ public class WorkOrderAppServiceTests
         {
             Id = mechanicRoleId,
             Name = RoleNames.Mechanic,
-            CreationDate = DateTime.UtcNow
+            CreationDate = DateTime.UtcNow,
         };
         context.Roles.Add(mechanicRole);
 
@@ -277,7 +277,7 @@ public class WorkOrderAppServiceTests
             PasswordHash = "hash",
             SecurityStamp = Guid.NewGuid().ToString(),
             RoleId = mechanicRoleId,
-            CreationDate = DateTime.UtcNow
+            CreationDate = DateTime.UtcNow,
         };
         context.Users.Add(performingUser);
 
@@ -301,7 +301,7 @@ public class WorkOrderAppServiceTests
             PasswordHash = "hash",
             SecurityStamp = Guid.NewGuid().ToString(),
             RoleId = mechanicRoleId,
-            CreationDate = DateTime.UtcNow
+            CreationDate = DateTime.UtcNow,
         };
         context.Users.Add(otherUser);
         await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
@@ -333,7 +333,7 @@ public class WorkOrderAppServiceTests
                     Id = customerId,
                     Name = "Laura",
                     Email = "laura@example.com",
-                    Document = new PersonalDocument(DocumentType.Cpf, "55566677788")
+                    Document = new PersonalDocument(DocumentType.Cpf, "55566677788"),
                 });
                 ctx.Vehicles.Add(new Vehicle
                 {
@@ -344,7 +344,7 @@ public class WorkOrderAppServiceTests
                     Year = "2018",
                     LicensePlate = new LicensePlate("JKL3456"),
                     Chassis = "CH4",
-                    OwnerId = customerId
+                    OwnerId = customerId,
                 });
             })
             .Build();
@@ -372,7 +372,7 @@ public class WorkOrderAppServiceTests
         {
             Id = roleId,
             Name = RoleNames.Mechanic,
-            CreationDate = DateTime.UtcNow
+            CreationDate = DateTime.UtcNow,
         };
         context.Roles.Add(role);
 
@@ -386,7 +386,7 @@ public class WorkOrderAppServiceTests
             PasswordHash = "hash",
             SecurityStamp = Guid.NewGuid().ToString(),
             RoleId = roleId,
-            CreationDate = DateTime.UtcNow
+            CreationDate = DateTime.UtcNow,
         };
         context.Users.Add(actor);
 
@@ -452,7 +452,7 @@ public class WorkOrderAppServiceTests
                     Id = customerId,
                     Name = "Client",
                     Email = "client@example.com",
-                    Document = new PersonalDocument(DocumentType.Cpf, "12345678909")
+                    Document = new PersonalDocument(DocumentType.Cpf, "12345678909"),
                 });
 
                 ctx.Vehicles.Add(new Vehicle
@@ -464,7 +464,7 @@ public class WorkOrderAppServiceTests
                     Year = "2020",
                     LicensePlate = new LicensePlate("ABC1234"),
                     Chassis = "CH",
-                    OwnerId = customerId
+                    OwnerId = customerId,
                 });
 
                 ctx.Products.Add(new Product
@@ -474,7 +474,7 @@ public class WorkOrderAppServiceTests
                     Description = "Filtro de óleo",
                     Quantity = 5,
                     Status = ProductStatusType.Active,
-                    Type = ProductType.Part
+                    Type = ProductType.Part,
                 });
 
                 ctx.ServiceCatalog.Add(new ServiceCatalog
@@ -484,7 +484,7 @@ public class WorkOrderAppServiceTests
                     Description = "Troca de filtro",
                     BasePrice = 50m,
                     AverageTime = 20,
-                    Status = ServiceCatalogStatusType.Active
+                    Status = ServiceCatalogStatusType.Active,
                 });
             })
             .Build();
@@ -510,16 +510,16 @@ public class WorkOrderAppServiceTests
             AccessKey = WorkOrder.GenerateNewAccessKey([]),
             Status = WorkOrderStatus.Received,
             CreationDate = DateTime.Now,
-            LastUpdate = DateTime.Now
+            LastUpdate = DateTime.Now,
         };
         context.WorkOrders.Add(wo);
         await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
 
         var req = new UpdateWorkOrderRequest
         {
-            ProductIds = [productId],
+            Products = [new WorkOrderProductRequest { ProductId = productId, Quantity = 1 }],
             ServiceIds = [serviceId],
-            Observations = "Substituir filtro e testar motor"
+            Observations = "Substituir filtro e testar motor",
         };
 
         await service.UpdateDetails(wo.Id, req, mechanicUserId, TestContext.CancellationTokenSource.Token);
@@ -530,7 +530,7 @@ public class WorkOrderAppServiceTests
             .FirstOrDefaultAsync(w => w.Id == wo.Id, TestContext.CancellationTokenSource.Token);
 
         IsNotNull(reloaded);
-        IsTrue(reloaded.Products != null && reloaded.Products.Any(p => p.Id == productId));
+        IsTrue(reloaded.Products != null && reloaded.Products.Any(p => p.ProductId == productId));
         IsTrue(reloaded.ServiceCatalog != null && reloaded.ServiceCatalog.Any(s => s.Id == serviceId));
         AreEqual(req.Observations, reloaded.Observations);
 
@@ -561,7 +561,7 @@ public class WorkOrderAppServiceTests
                     Id = customerId,
                     Name = "Client",
                     Email = "client@example.com",
-                    Document = new PersonalDocument(DocumentType.Cpf, "12312312312")
+                    Document = new PersonalDocument(DocumentType.Cpf, "12312312312"),
                 });
 
                 ctx.Vehicles.Add(new Vehicle
@@ -573,7 +573,7 @@ public class WorkOrderAppServiceTests
                     Year = "2020",
                     LicensePlate = new LicensePlate("AVG1234"),
                     Chassis = "CHAVG",
-                    OwnerId = customerId
+                    OwnerId = customerId,
                 });
 
                 ctx.ServiceCatalog.Add(new ServiceCatalog
@@ -583,7 +583,7 @@ public class WorkOrderAppServiceTests
                     Description = "S1",
                     BasePrice = 10m,
                     AverageTime = 30,
-                    Status = ServiceCatalogStatusType.Active
+                    Status = ServiceCatalogStatusType.Active,
                 });
 
                 ctx.ServiceCatalog.Add(new ServiceCatalog
@@ -593,7 +593,7 @@ public class WorkOrderAppServiceTests
                     Description = "S2",
                     BasePrice = 20m,
                     AverageTime = 45,
-                    Status = ServiceCatalogStatusType.Active
+                    Status = ServiceCatalogStatusType.Active,
                 });
             })
             .Build();
@@ -610,7 +610,7 @@ public class WorkOrderAppServiceTests
             Status = WorkOrderStatus.Received,
             CreationDate = DateTime.Now,
             LastUpdate = DateTime.Now,
-            ServiceCatalog = new List<ServiceCatalog> { svc1!, svc2! }
+            ServiceCatalog = new List<ServiceCatalog> { svc1!, svc2! },
         };
 
         context.WorkOrders.Add(wo);
@@ -673,7 +673,7 @@ public class WorkOrderAppServiceTests
                     Id = customerId,
                     Name = "Client",
                     Email = "client@example.com",
-                    Document = new PersonalDocument(DocumentType.Cpf, "12345678909")
+                    Document = new PersonalDocument(DocumentType.Cpf, "12345678909"),
                 });
                 ctx.Vehicles.Add(new Vehicle
                 {
@@ -684,7 +684,7 @@ public class WorkOrderAppServiceTests
                     Year = "2020",
                     LicensePlate = new LicensePlate("AAA1B23"),
                     Chassis = "CH",
-                    OwnerId = customerId
+                    OwnerId = customerId,
                 });
 
                 // mechanic role
@@ -700,7 +700,7 @@ public class WorkOrderAppServiceTests
                     PasswordHash = "hash",
                     SecurityStamp = Guid.NewGuid().ToString(),
                     RoleId = mechanicRoleId,
-                    CreationDate = DateTime.UtcNow
+                    CreationDate = DateTime.UtcNow,
                 });
 
                 // performing user (could also be mechanic)
@@ -713,7 +713,7 @@ public class WorkOrderAppServiceTests
                     PasswordHash = "hash",
                     SecurityStamp = Guid.NewGuid().ToString(),
                     RoleId = mechanicRoleId,
-                    CreationDate = DateTime.UtcNow
+                    CreationDate = DateTime.UtcNow,
                 });
 
                 // work order in Received
@@ -725,7 +725,7 @@ public class WorkOrderAppServiceTests
                     AccessKey = WorkOrder.GenerateNewAccessKey([]),
                     Status = WorkOrderStatus.Received,
                     CreationDate = DateTime.Now,
-                    LastUpdate = DateTime.Now
+                    LastUpdate = DateTime.Now,
                 });
             })
             .Build();
@@ -784,12 +784,12 @@ public class WorkOrderAppServiceTests
                 ctx.Customers.Add(new Customer
                 {
                     Id = customerId, Name = "C", Email = "c@example.com",
-                    Document = new PersonalDocument(DocumentType.Cpf, "11122233344")
+                    Document = new PersonalDocument(DocumentType.Cpf, "11122233344"),
                 });
                 ctx.Vehicles.Add(new Vehicle
                 {
                     Id = vehicleId, Manufacturer = "M", Model = "X", Color = VehicleColor.Black, Year = "2022",
-                    LicensePlate = new LicensePlate("BBB1C23"), Chassis = "CH2", OwnerId = customerId
+                    LicensePlate = new LicensePlate("BBB1C23"), Chassis = "CH2", OwnerId = customerId,
                 });
 
                 // non-mechanic role
@@ -800,19 +800,19 @@ public class WorkOrderAppServiceTests
                 {
                     Id = assignedToUserId, FullName = "Admin User", UserName = "admin", Email = "admin@example.com",
                     PasswordHash = "h", SecurityStamp = Guid.NewGuid().ToString(), RoleId = nonMechanicRoleId,
-                    CreationDate = DateTime.UtcNow
+                    CreationDate = DateTime.UtcNow,
                 });
                 ctx.Users.Add(new User
                 {
                     Id = performerId, FullName = "Perf", UserName = "perf", Email = "perf@example.com", PasswordHash = "h",
-                    SecurityStamp = Guid.NewGuid().ToString(), RoleId = nonMechanicRoleId, CreationDate = DateTime.UtcNow
+                    SecurityStamp = Guid.NewGuid().ToString(), RoleId = nonMechanicRoleId, CreationDate = DateTime.UtcNow,
                 });
 
                 ctx.WorkOrders.Add(new WorkOrder
                 {
                     Id = workOrderId, CustomerId = customerId, VehicleId = vehicleId,
                     AccessKey = WorkOrder.GenerateNewAccessKey([]), Status = WorkOrderStatus.Received, CreationDate = DateTime.Now,
-                    LastUpdate = DateTime.Now
+                    LastUpdate = DateTime.Now,
                 });
             })
             .Build();
@@ -838,12 +838,12 @@ public class WorkOrderAppServiceTests
                 ctx.Customers.Add(new Customer
                 {
                     Id = customerId, Name = "C", Email = "c@example.com",
-                    Document = new PersonalDocument(DocumentType.Cpf, "99988877766")
+                    Document = new PersonalDocument(DocumentType.Cpf, "99988877766"),
                 });
                 ctx.Vehicles.Add(new Vehicle
                 {
                     Id = vehicleId, Manufacturer = "M", Model = "Y", Color = VehicleColor.Gray, Year = "2020",
-                    LicensePlate = new LicensePlate("CCC1D23"), Chassis = "CH3", OwnerId = customerId
+                    LicensePlate = new LicensePlate("CCC1D23"), Chassis = "CH3", OwnerId = customerId,
                 });
                 ctx.Roles.Add(new Role { Id = mechanicRoleId, Name = RoleNames.Mechanic, CreationDate = DateTime.UtcNow });
             })
@@ -859,7 +859,7 @@ public class WorkOrderAppServiceTests
         await context.Users.AddAsync(new User
         {
             Id = someUserId, FullName = "Mec A", UserName = "meca", Email = "meca@example.com", PasswordHash = "h",
-            SecurityStamp = Guid.NewGuid().ToString(), RoleId = mechanicRoleId, CreationDate = DateTime.UtcNow
+            SecurityStamp = Guid.NewGuid().ToString(), RoleId = mechanicRoleId, CreationDate = DateTime.UtcNow,
         });
         await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
 
@@ -870,7 +870,7 @@ public class WorkOrderAppServiceTests
         var wo = new WorkOrder
         {
             Id = Guid.NewGuid(), CustomerId = customerId, VehicleId = vehicleId, AccessKey = WorkOrder.GenerateNewAccessKey([]),
-            Status = WorkOrderStatus.Received, CreationDate = DateTime.Now, LastUpdate = DateTime.Now
+            Status = WorkOrderStatus.Received, CreationDate = DateTime.Now, LastUpdate = DateTime.Now,
         };
         context.WorkOrders.Add(wo);
         await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
@@ -893,22 +893,22 @@ public class WorkOrderAppServiceTests
                 ctx.Customers.Add(new Customer
                 {
                     Id = customerId, Name = "C", Email = "c@example.com",
-                    Document = new PersonalDocument(DocumentType.Cpf, "22233344455")
+                    Document = new PersonalDocument(DocumentType.Cpf, "22233344455"),
                 });
                 ctx.Vehicles.Add(new Vehicle
                 {
                     Id = vehicleId, Manufacturer = "M", Model = "Z", Color = VehicleColor.Blue, Year = "2019",
-                    LicensePlate = new LicensePlate("DDD1E23"), Chassis = "CH4", OwnerId = customerId
+                    LicensePlate = new LicensePlate("DDD1E23"), Chassis = "CH4", OwnerId = customerId,
                 });
                 ctx.Products.Add(new Product
                 {
                     Id = productId, Name = "P1", Description = "D1", Quantity = 10, Status = ProductStatusType.Active,
-                    Type = ProductType.Part
+                    Type = ProductType.Part,
                 });
                 ctx.ServiceCatalog.Add(new ServiceCatalog
                 {
                     Id = serviceId, Name = "S1", Description = "SD1", BasePrice = 10m, AverageTime = 10,
-                    Status = ServiceCatalogStatusType.Active
+                    Status = ServiceCatalogStatusType.Active,
                 });
             })
             .Build();
@@ -927,7 +927,7 @@ public class WorkOrderAppServiceTests
         // attach relations
         var prod = await context.Products.FindAsync([productId], TestContext.CancellationTokenSource.Token);
         var svc = await context.ServiceCatalog.FindAsync([serviceId], TestContext.CancellationTokenSource.Token);
-        wo.Products = new List<Product> { prod! };
+        wo.Products = [new WorkOrderProduct { Product = prod, Quantity = 1 }];
         wo.ServiceCatalog = new List<ServiceCatalog> { svc! };
 
         context.WorkOrders.Add(wo);
@@ -944,7 +944,7 @@ public class WorkOrderAppServiceTests
         AreEqual(wo.Status, resp.Status);
         AreEqual(wo.CustomerId, resp.CustomerId);
         AreEqual(wo.VehicleId, resp.VehicleId);
-        IsTrue(resp.ProductIds != null && resp.ProductIds.Contains(productId));
+        IsTrue(resp.Products != null && resp.Products.Select(p => p.ProductId).Contains(productId));
         IsTrue(resp.ServiceCatalogIds != null && resp.ServiceCatalogIds.Contains(serviceId));
     }
 
@@ -980,7 +980,7 @@ public class WorkOrderAppServiceTests
                     Id = customerId,
                     Name = "Jane",
                     Email = "jane@example.com",
-                    Document = new PersonalDocument(DocumentType.Cpf, rawDocument)
+                    Document = new PersonalDocument(DocumentType.Cpf, rawDocument),
                 });
 
                 ctx.Vehicles.Add(new Vehicle
@@ -992,7 +992,7 @@ public class WorkOrderAppServiceTests
                     Year = "2020",
                     LicensePlate = new LicensePlate("ABC1D23"),
                     Chassis = "CHX",
-                    OwnerId = customerId
+                    OwnerId = customerId,
                 });
 
                 ctx.WorkOrders.Add(new WorkOrder
@@ -1003,7 +1003,7 @@ public class WorkOrderAppServiceTests
                     AccessKey = storedAccessKey,
                     Status = WorkOrderStatus.Received,
                     CreationDate = DateTime.Now,
-                    LastUpdate = DateTime.Now
+                    LastUpdate = DateTime.Now,
                 });
             })
             .Build();
@@ -1021,4 +1021,112 @@ public class WorkOrderAppServiceTests
         AreEqual(customerId, resp.CustomerId, "CustomerId should match");
         AreEqual(vehicleId, resp.VehicleId, "VehicleId should match");
     }
+
+    #region list work orders
+
+    [TestMethod("GetList should filter by CustomerId")]
+    public async Task GetList_ShouldFilterByCustomerId()
+    {
+        var customerA = Guid.NewGuid();
+        var customerB = Guid.NewGuid();
+        var vehicleA1 = Guid.NewGuid();
+        var vehicleB1 = Guid.NewGuid();
+
+        await using var context = new DbContextTestBuilder()
+            .WithData([
+                CustomerMocks.CreateCustomerPf(customerA),
+                CustomerMocks.CreateCustomerPf(customerB),
+            ])
+            .WithData([
+                VehicleMocks.CreateVehicle(vehicleA1, customerA, "ABC4D09"),
+                VehicleMocks.CreateVehicle(vehicleB1, customerB, "ABC3D72"),
+            ])
+            .WithData([
+                WorkOrderMocks.CreateWorkOrderEntity(Guid.NewGuid(), customerA, vehicleA1, Guid.NewGuid()),
+                WorkOrderMocks.CreateWorkOrderEntity(Guid.NewGuid(), customerA, vehicleA1, Guid.NewGuid()),
+                WorkOrderMocks.CreateWorkOrderEntity(Guid.NewGuid(), customerB, vehicleB1, Guid.NewGuid()),
+            ])
+            .Build();
+
+        var budgetService = new BudgetAppService(context, _emailMock, _loggerFactory.CreateLogger<BudgetAppService>());
+        var service = new WorkOrderAppService(context, _mapper, _emailMock, _loggerFactory.CreateLogger<WorkOrderAppService>(),
+            budgetService);
+
+        var request = new GetWorkOrdersRequest { CustomerId = customerA, Page = 1, ItemsPerPage = 10 };
+        var response = await service.GetList(request, TestContext.CancellationTokenSource.Token);
+
+        AreEqual(2, response.TotalCount, "Should return only work orders for the specified customer");
+        IsTrue(response.Items.All(i => i.CustomerId == customerA));
+    }
+
+    [TestMethod("GetList should filter by VehicleId")]
+    public async Task GetList_ShouldFilterByVehicleId()
+    {
+        var customer = Guid.NewGuid();
+        var vehicleX = Guid.NewGuid();
+        var vehicleY = Guid.NewGuid();
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(ctx =>
+            {
+                ctx.Customers.Add(CustomerMocks.CreateCustomerPf(customer));
+                ctx.Vehicles.Add(new Vehicle
+                {
+                    Id = vehicleX, Manufacturer = "Make", Model = "X", Color = VehicleColor.White, Year = "2020",
+                    LicensePlate = new LicensePlate("JKL3C56"), Chassis = "CH-X", OwnerId = customer,
+                });
+                ctx.Vehicles.Add(new Vehicle
+                {
+                    Id = vehicleY, Manufacturer = "Make", Model = "Y", Color = VehicleColor.Black, Year = "2021",
+                    LicensePlate = new LicensePlate("MNO4D78"), Chassis = "CH-Y", OwnerId = customer,
+                });
+                ctx.WorkOrders.Add(WorkOrderMocks.CreateWorkOrderEntity(Guid.NewGuid(), customer, vehicleX, Guid.NewGuid()));
+                ctx.WorkOrders.Add(WorkOrderMocks.CreateWorkOrderEntity(Guid.NewGuid(), customer, vehicleY, Guid.NewGuid()));
+                ctx.WorkOrders.Add(WorkOrderMocks.CreateWorkOrderEntity(Guid.NewGuid(), customer, vehicleX, Guid.NewGuid()));
+            })
+            .Build();
+
+        var budgetService = new BudgetAppService(context, _emailMock, _loggerFactory.CreateLogger<BudgetAppService>());
+        var service = new WorkOrderAppService(context, _mapper, _emailMock, _loggerFactory.CreateLogger<WorkOrderAppService>(),
+            budgetService);
+
+        var request = new GetWorkOrdersRequest { VehicleId = vehicleX, Page = 1, ItemsPerPage = 10 };
+        var response = await service.GetList(request, TestContext.CancellationTokenSource.Token);
+
+        AreEqual(2, response.TotalCount, "Should return only work orders for the specified vehicle");
+        IsTrue(response.Items.All(i => i.VehicleId == vehicleX));
+    }
+
+    [TestMethod("GetList should return paged list")]
+    public async Task GetList_ShouldReturnPaged()
+    {
+        var customer = Guid.NewGuid();
+        var vehicle = Guid.NewGuid();
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(ctx =>
+            {
+                ctx.Customers.Add(CustomerMocks.CreateCustomerPf(customer));
+                ctx.Vehicles.Add(new Vehicle
+                {
+                    Id = vehicle, Manufacturer = "Make", Model = "M", Color = VehicleColor.Silver, Year = "2019",
+                    LicensePlate = new LicensePlate("PQR5E67"), Chassis = "CH-M", OwnerId = customer,
+                });
+                for (var i = 0; i < 25; i++)
+                    ctx.WorkOrders.Add(WorkOrderMocks.CreateWorkOrderEntity(Guid.NewGuid(), customer, vehicle, Guid.NewGuid()));
+            })
+            .Build();
+
+        var budgetService = new BudgetAppService(context, _emailMock, _loggerFactory.CreateLogger<BudgetAppService>());
+        var service = new WorkOrderAppService(context, _mapper, _emailMock, _loggerFactory.CreateLogger<WorkOrderAppService>(),
+            budgetService);
+
+        var request = new GetWorkOrdersRequest { Page = 2, ItemsPerPage = 10 };
+        var response = await service.GetList(request, TestContext.CancellationTokenSource.Token);
+
+        AreEqual(25, response.TotalCount);
+        AreEqual(10, response.Items.Count());
+    }
+
+    #endregion
 }

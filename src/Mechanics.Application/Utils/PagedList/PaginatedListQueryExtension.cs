@@ -14,7 +14,7 @@ public static class PaginatedListQueryExtension
             ? await queryable
                 .OrderBy(t => t.Id)
                 .Skip(request.ItemsPerPage * (request.Page - 1))
-                .Take(request.Page * request.ItemsPerPage)
+                .Take(request.ItemsPerPage)
                 .ToListAsync(cancellationToken)
             : [];
 

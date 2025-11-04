@@ -23,7 +23,7 @@ namespace Mechanics.Tests.Unit.Tests.WorkOrders;
 [TestCategory("WorkOrder")]
 public class WorkOrderAppServiceTests
 {
-    public TestContext TestContext { get; set; } = null!;
+    public TestContext TestContext { get; set; }
 
     private IMapper _mapper = null!;
     private EmailServiceMock _emailMock = null!;
@@ -43,6 +43,8 @@ public class WorkOrderAppServiceTests
     {
         var customerId = Guid.NewGuid();
         var vehicleId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+        var serviceId = Guid.NewGuid();
 
         await using var context = new DbContextTestBuilder()
             .WithData(ctx =>
@@ -56,6 +58,24 @@ public class WorkOrderAppServiceTests
                 {
                     Id = vehicleId, Manufacturer = "Make", Model = "Model", Color = VehicleColor.White, Year = "2020",
                     LicensePlate = new LicensePlate("ABC1234"), Chassis = "CH", OwnerId = customerId
+                });
+                ctx.Products.Add(new Product
+                {
+                    Id = productId,
+                    Name = "Óleo de Motor",
+                    Description = "Óleo sintético 5W30",
+                    Quantity = 1,
+                    Status = ProductStatusType.Active,
+                    Type = ProductType.Part
+                });
+                ctx.ServiceCatalog.Add(new ServiceCatalog
+                {
+                    Id = serviceId,
+                    Name = "Troca de Óleo",
+                    Description = "Troca completa de óleo",
+                    BasePrice = 80m,
+                    AverageTime = 40,
+                    Status = ServiceCatalogStatusType.Active
                 });
             })
             .Build();
@@ -75,8 +95,8 @@ public class WorkOrderAppServiceTests
         var request = new CreateWorkOrderRequest
         {
             VehicleId = vehicleId,
-            ProductIds = [],
-            ServiceCatalogIds = [],
+            ProductIds = [productId],
+            ServiceCatalogIds = [serviceId],
             ReportedProblem = "Test problem",
         };
 
@@ -522,5 +542,373 @@ public class WorkOrderAppServiceTests
         Contains("AddedProducts:1", history.Details);
         Contains("AddedServices:1", history.Details);
         Contains("ObservationsUpdated", history.Details);
+    }
+
+    [TestMethod("Assign should set mechanic, record history and auto-transition from Received")]
+    public async Task Assign_ShouldAssignMechanic_RecordHistory_AndAutoTransition()
+    {
+        var customerId = Guid.NewGuid();
+        var vehicleId = Guid.NewGuid();
+        var workOrderId = Guid.NewGuid();
+        var assignedToUserId = Guid.NewGuid();
+        var performedByUserId = Guid.NewGuid();
+        var mechanicRoleId = Guid.NewGuid();
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(ctx =>
+            {
+                // base customer/vehicle
+                ctx.Customers.Add(new Customer
+                {
+                    Id = customerId,
+                    Name = "Client",
+                    Email = "client@example.com",
+                    Document = new PersonalDocument(DocumentType.Cpf, "12345678909")
+                });
+                ctx.Vehicles.Add(new Vehicle
+                {
+                    Id = vehicleId,
+                    Manufacturer = "Make",
+                    Model = "Model",
+                    Color = VehicleColor.White,
+                    Year = "2020",
+                    LicensePlate = new LicensePlate("AAA1B23"),
+                    Chassis = "CH",
+                    OwnerId = customerId
+                });
+
+                // mechanic role
+                ctx.Roles.Add(new Role { Id = mechanicRoleId, Name = RoleNames.Mechanic, CreationDate = DateTime.UtcNow });
+
+                // assigned user (mechanic)
+                ctx.Users.Add(new User
+                {
+                    Id = assignedToUserId,
+                    FullName = "Assigned Mechanic",
+                    UserName = "assigned_mechanic",
+                    Email = "assigned@example.com",
+                    PasswordHash = "hash",
+                    SecurityStamp = Guid.NewGuid().ToString(),
+                    RoleId = mechanicRoleId,
+                    CreationDate = DateTime.UtcNow
+                });
+
+                // performing user (could also be mechanic)
+                ctx.Users.Add(new User
+                {
+                    Id = performedByUserId,
+                    FullName = "Supervisor",
+                    UserName = "supervisor",
+                    Email = "sup@example.com",
+                    PasswordHash = "hash",
+                    SecurityStamp = Guid.NewGuid().ToString(),
+                    RoleId = mechanicRoleId,
+                    CreationDate = DateTime.UtcNow
+                });
+
+                // work order in Received
+                ctx.WorkOrders.Add(new WorkOrder
+                {
+                    Id = workOrderId,
+                    CustomerId = customerId,
+                    VehicleId = vehicleId,
+                    AccessKey = WorkOrder.GenerateNewAccessKey([]),
+                    Status = WorkOrderStatus.Received,
+                    CreationDate = DateTime.Now,
+                    LastUpdate = DateTime.Now
+                });
+            })
+            .Build();
+
+        var budgetService = new BudgetAppService(
+            context,
+            _emailMock,
+            _loggerFactory.CreateLogger<BudgetAppService>());
+
+        var service = new WorkOrderAppService(
+            context,
+            _mapper,
+            _emailMock,
+            _loggerFactory.CreateLogger<WorkOrderAppService>(),
+            budgetService);
+
+        const string comment = "Take this ASAP";
+        await service.Assign(workOrderId, assignedToUserId, performedByUserId, comment, TestContext.CancellationTokenSource.Token);
+
+        var reloaded = await context.WorkOrders.FindAsync([workOrderId], TestContext.CancellationTokenSource.Token);
+        IsNotNull(reloaded);
+        AreEqual(assignedToUserId, reloaded.AssignedToUserId, "AssignedToUserId updated");
+
+        // assignment history
+        var histAssign = await context.WorkOrderHistories
+            .Where(h => h.WorkOrderId == workOrderId && h.Action == "Assigned")
+            .ToListAsync(TestContext.CancellationTokenSource.Token);
+        HasCount(1, histAssign, "One assignment history should be recorded");
+        Contains(assignedToUserId.ToString(), histAssign[0].Details!);
+        Contains(comment, histAssign[0].Details!);
+        AreEqual(performedByUserId, histAssign[0].PerformedByUserId);
+
+        // Auto-transition from Received -> UnderDiagnosis should have occurred and notified
+        AreEqual(WorkOrderStatus.UnderDiagnosis, reloaded.Status, "Auto-transition to UnderDiagnosis expected");
+        IsTrue(_emailMock.SendWorkOrderStatusChangedCalled, "Status changed email should be sent due to auto-transition");
+
+        var histStatus = await context.WorkOrderHistories
+            .Where(h => h.WorkOrderId == workOrderId && h.Action == "StatusChanged")
+            .ToListAsync(TestContext.CancellationTokenSource.Token);
+        IsNotEmpty(histStatus, "Status change history should be recorded");
+    }
+
+    [TestMethod("Assign should throw when assigned user is not a mechanic")]
+    public async Task Assign_ShouldThrow_WhenAssignedUserIsNotMechanic()
+    {
+        var customerId = Guid.NewGuid();
+        var vehicleId = Guid.NewGuid();
+        var workOrderId = Guid.NewGuid();
+        var assignedToUserId = Guid.NewGuid();
+        var nonMechanicRoleId = Guid.NewGuid();
+        var performerId = Guid.NewGuid();
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(ctx =>
+            {
+                ctx.Customers.Add(new Customer
+                {
+                    Id = customerId, Name = "C", Email = "c@example.com",
+                    Document = new PersonalDocument(DocumentType.Cpf, "11122233344")
+                });
+                ctx.Vehicles.Add(new Vehicle
+                {
+                    Id = vehicleId, Manufacturer = "M", Model = "X", Color = VehicleColor.Black, Year = "2022",
+                    LicensePlate = new LicensePlate("BBB1C23"), Chassis = "CH2", OwnerId = customerId
+                });
+
+                // non-mechanic role
+                ctx.Roles.Add(new Role { Id = nonMechanicRoleId, Name = "Admin", CreationDate = DateTime.UtcNow });
+
+                // non-mechanic user
+                ctx.Users.Add(new User
+                {
+                    Id = assignedToUserId, FullName = "Admin User", UserName = "admin", Email = "admin@example.com",
+                    PasswordHash = "h", SecurityStamp = Guid.NewGuid().ToString(), RoleId = nonMechanicRoleId,
+                    CreationDate = DateTime.UtcNow
+                });
+                ctx.Users.Add(new User
+                {
+                    Id = performerId, FullName = "Perf", UserName = "perf", Email = "perf@example.com", PasswordHash = "h",
+                    SecurityStamp = Guid.NewGuid().ToString(), RoleId = nonMechanicRoleId, CreationDate = DateTime.UtcNow
+                });
+
+                ctx.WorkOrders.Add(new WorkOrder
+                {
+                    Id = workOrderId, CustomerId = customerId, VehicleId = vehicleId,
+                    AccessKey = WorkOrder.GenerateNewAccessKey([]), Status = WorkOrderStatus.Received, CreationDate = DateTime.Now,
+                    LastUpdate = DateTime.Now
+                });
+            })
+            .Build();
+
+        var budgetService = new BudgetAppService(context, _emailMock, _loggerFactory.CreateLogger<BudgetAppService>());
+        var service = new WorkOrderAppService(context, _mapper, _emailMock, _loggerFactory.CreateLogger<WorkOrderAppService>(),
+            budgetService);
+
+        await ThrowsExactlyAsync<BusinessException>(() =>
+            service.Assign(workOrderId, assignedToUserId, performerId, null, TestContext.CancellationTokenSource.Token));
+    }
+
+    [TestMethod("Assign should throw EntityNotFound when WorkOrder or User does not exist")]
+    public async Task Assign_ShouldThrow_WhenWorkOrderOrUserNotFound()
+    {
+        var customerId = Guid.NewGuid();
+        var vehicleId = Guid.NewGuid();
+        var mechanicRoleId = Guid.NewGuid();
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(ctx =>
+            {
+                ctx.Customers.Add(new Customer
+                {
+                    Id = customerId, Name = "C", Email = "c@example.com",
+                    Document = new PersonalDocument(DocumentType.Cpf, "99988877766")
+                });
+                ctx.Vehicles.Add(new Vehicle
+                {
+                    Id = vehicleId, Manufacturer = "M", Model = "Y", Color = VehicleColor.Gray, Year = "2020",
+                    LicensePlate = new LicensePlate("CCC1D23"), Chassis = "CH3", OwnerId = customerId
+                });
+                ctx.Roles.Add(new Role { Id = mechanicRoleId, Name = RoleNames.Mechanic, CreationDate = DateTime.UtcNow });
+            })
+            .Build();
+
+        var budgetService = new BudgetAppService(context, _emailMock, _loggerFactory.CreateLogger<BudgetAppService>());
+        var service = new WorkOrderAppService(context, _mapper, _emailMock, _loggerFactory.CreateLogger<WorkOrderAppService>(),
+            budgetService);
+
+        // 1) WorkOrder not found
+        var missingWoId = Guid.NewGuid();
+        var someUserId = Guid.NewGuid();
+        await context.Users.AddAsync(new User
+        {
+            Id = someUserId, FullName = "Mec A", UserName = "meca", Email = "meca@example.com", PasswordHash = "h",
+            SecurityStamp = Guid.NewGuid().ToString(), RoleId = mechanicRoleId, CreationDate = DateTime.UtcNow
+        });
+        await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
+
+        await ThrowsExactlyAsync<EntityNotFoundException>(() =>
+            service.Assign(missingWoId, someUserId, someUserId, null, TestContext.CancellationTokenSource.Token));
+
+        // 2) User not found
+        var wo = new WorkOrder
+        {
+            Id = Guid.NewGuid(), CustomerId = customerId, VehicleId = vehicleId, AccessKey = WorkOrder.GenerateNewAccessKey([]),
+            Status = WorkOrderStatus.Received, CreationDate = DateTime.Now, LastUpdate = DateTime.Now
+        };
+        context.WorkOrders.Add(wo);
+        await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
+
+        await ThrowsExactlyAsync<EntityNotFoundException>(() =>
+            service.Assign(wo.Id, Guid.NewGuid(), someUserId, null, TestContext.CancellationTokenSource.Token));
+    }
+
+    [TestMethod("Get should return mapped response with ProductIds and ServiceCatalogIds")]
+    public async Task Get_ShouldReturnMappedResponse_WithProductsAndServices()
+    {
+        var customerId = Guid.NewGuid();
+        var vehicleId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+        var serviceId = Guid.NewGuid();
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(ctx =>
+            {
+                ctx.Customers.Add(new Customer
+                {
+                    Id = customerId, Name = "C", Email = "c@example.com",
+                    Document = new PersonalDocument(DocumentType.Cpf, "22233344455")
+                });
+                ctx.Vehicles.Add(new Vehicle
+                {
+                    Id = vehicleId, Manufacturer = "M", Model = "Z", Color = VehicleColor.Blue, Year = "2019",
+                    LicensePlate = new LicensePlate("DDD1E23"), Chassis = "CH4", OwnerId = customerId
+                });
+                ctx.Products.Add(new Product
+                {
+                    Id = productId, Name = "P1", Description = "D1", Quantity = 10, Status = ProductStatusType.Active,
+                    Type = ProductType.Part
+                });
+                ctx.ServiceCatalog.Add(new ServiceCatalog
+                {
+                    Id = serviceId, Name = "S1", Description = "SD1", BasePrice = 10m, AverageTime = 10,
+                    Status = ServiceCatalogStatusType.Active
+                });
+            })
+            .Build();
+
+        var wo = new WorkOrder
+        {
+            Id = Guid.NewGuid(),
+            CustomerId = customerId,
+            VehicleId = vehicleId,
+            AccessKey = WorkOrder.GenerateNewAccessKey([]),
+            Status = WorkOrderStatus.Received,
+            CreationDate = DateTime.Now,
+            LastUpdate = DateTime.Now,
+        };
+
+        // attach relations
+        var prod = await context.Products.FindAsync([productId], TestContext.CancellationTokenSource.Token);
+        var svc = await context.ServiceCatalog.FindAsync([serviceId], TestContext.CancellationTokenSource.Token);
+        wo.Products = new List<Product> { prod! };
+        wo.ServiceCatalog = new List<ServiceCatalog> { svc! };
+
+        context.WorkOrders.Add(wo);
+        await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
+
+        var budgetService = new BudgetAppService(context, _emailMock, _loggerFactory.CreateLogger<BudgetAppService>());
+        var service = new WorkOrderAppService(context, _mapper, _emailMock, _loggerFactory.CreateLogger<WorkOrderAppService>(),
+            budgetService);
+
+        var resp = await service.Get(wo.Id, TestContext.CancellationTokenSource.Token);
+        IsNotNull(resp, "Response should not be null");
+        AreEqual(wo.Id, resp.Id);
+        AreEqual(wo.AccessKey, resp.AccessKey);
+        AreEqual(wo.Status, resp.Status);
+        AreEqual(wo.CustomerId, resp.CustomerId);
+        AreEqual(wo.VehicleId, resp.VehicleId);
+        IsTrue(resp.ProductIds != null && resp.ProductIds.Contains(productId));
+        IsTrue(resp.ServiceCatalogIds != null && resp.ServiceCatalogIds.Contains(serviceId));
+    }
+
+    [TestMethod("Get should return null when WorkOrder not found")]
+    public async Task Get_ShouldReturnNull_WhenNotFound()
+    {
+        await using var context = new DbContextTestBuilder().Build();
+
+        var budgetService = new BudgetAppService(context, _emailMock, _loggerFactory.CreateLogger<BudgetAppService>());
+        var service = new WorkOrderAppService(context, _mapper, _emailMock, _loggerFactory.CreateLogger<WorkOrderAppService>(),
+            budgetService);
+
+        var resp = await service.Get(Guid.NewGuid(), TestContext.CancellationTokenSource.Token);
+        IsNull(resp);
+    }
+
+    [TestMethod("TrackByDocumentAndAccessKey should return WorkOrder for matching document and access key")]
+    public async Task TrackByDocumentAndAccessKey_ShouldReturnWorkOrder_WhenDocumentAndAccessKeyMatch()
+    {
+        var customerId = Guid.NewGuid();
+        var vehicleId = Guid.NewGuid();
+        var workOrderId = Guid.NewGuid();
+        const string rawDocument = "12345678909";
+        const string queryDocument = "123.456.789-09";
+        const string storedAccessKey = "123123";
+        const string queryAccessKey = "1 2 3 1 2 3";
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(ctx =>
+            {
+                ctx.Customers.Add(new Customer
+                {
+                    Id = customerId,
+                    Name = "Jane",
+                    Email = "jane@example.com",
+                    Document = new PersonalDocument(DocumentType.Cpf, rawDocument)
+                });
+
+                ctx.Vehicles.Add(new Vehicle
+                {
+                    Id = vehicleId,
+                    Manufacturer = "Make",
+                    Model = "Model",
+                    Color = VehicleColor.White,
+                    Year = "2020",
+                    LicensePlate = new LicensePlate("ABC1D23"),
+                    Chassis = "CHX",
+                    OwnerId = customerId
+                });
+
+                ctx.WorkOrders.Add(new WorkOrder
+                {
+                    Id = workOrderId,
+                    CustomerId = customerId,
+                    VehicleId = vehicleId,
+                    AccessKey = storedAccessKey,
+                    Status = WorkOrderStatus.Received,
+                    CreationDate = DateTime.Now,
+                    LastUpdate = DateTime.Now
+                });
+            })
+            .Build();
+
+        var budgetService = new BudgetAppService(context, _emailMock, _loggerFactory.CreateLogger<BudgetAppService>());
+        var service = new WorkOrderAppService(context, _mapper, _emailMock, _loggerFactory.CreateLogger<WorkOrderAppService>(),
+            budgetService);
+
+        var resp = await service.TrackByDocumentAndAccessKey(queryDocument, queryAccessKey,
+            TestContext.CancellationTokenSource.Token);
+
+        IsNotNull(resp, "Response should not be null");
+        AreEqual(workOrderId, resp.Id, "Returned work order id should match");
+        AreEqual(storedAccessKey.Replace(" ", string.Empty), resp.AccessKey, "AccessKey should match stored value");
+        AreEqual(customerId, resp.CustomerId, "CustomerId should match");
+        AreEqual(vehicleId, resp.VehicleId, "VehicleId should match");
     }
 }

@@ -178,34 +178,28 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
-        var customerEntity = await dbContext.Customers.FindAsync([wo.CustomerId], cancellationToken);
-        if (customerEntity != null)
+        try
         {
-            try
-            {
-                await emailService.SendWorkOrderStatusChanged(customerEntity, wo, WorkOrderStatus.PendingApproval,
-                    cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex, "Failed to send status changed email after budget approval for WorkOrder {WorkOrderId}",
-                    wo.Id);
-            }
+            await emailService.SendWorkOrderStatusChanged(customer, wo, WorkOrderStatus.PendingApproval, cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Failed to send status changed email after budget approval for WorkOrder {WorkOrderId}",
+                wo.Id);
         }
 
         if (wo.AssignedToUserId != null)
         {
             var mechanic = await dbContext.Users.FindAsync([wo.AssignedToUserId], cancellationToken);
-            if (mechanic != null)
+            EntityNotFoundException.ThrowIfNull(mechanic, wo.AssignedToUserId);
+
+            try
             {
-                try
-                {
-                    await emailService.SendMechanicBudgetDecision(mechanic, wo, budget, approved: true, cancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex, "Failed to send mechanic notification for approved budget {BudgetId}", budget.Id);
-                }
+                await emailService.SendMechanicBudgetDecision(mechanic, wo, budget, approved: true, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to send mechanic notification for approved budget {BudgetId}", budget.Id);
             }
         }
     }
@@ -281,16 +275,15 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
         if (wo.AssignedToUserId != null)
         {
             var mechanic = await dbContext.Users.FindAsync([wo.AssignedToUserId], cancellationToken);
-            if (mechanic != null)
+            EntityNotFoundException.ThrowIfNull(mechanic, wo.AssignedToUserId);
+
+            try
             {
-                try
-                {
-                    await emailService.SendMechanicBudgetDecision(mechanic, wo, budget, approved: false, cancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex, "Failed to send mechanic notification for rejected budget {BudgetId}", budget.Id);
-                }
+                await emailService.SendMechanicBudgetDecision(mechanic, wo, budget, approved: false, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Failed to send mechanic notification for rejected budget {BudgetId}", budget.Id);
             }
         }
     }

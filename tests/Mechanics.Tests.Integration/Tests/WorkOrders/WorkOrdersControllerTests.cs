@@ -18,6 +18,8 @@ namespace Mechanics.Tests.Integration.Tests.WorkOrders;
 [TestClass]
 public class WorkOrdersControllerTests
 {
+    public TestContext TestContext { get; set; }
+
     [TestMethod]
     public async Task Create_And_RequestApproval_Flow_Works()
     {
@@ -105,20 +107,12 @@ public class WorkOrdersControllerTests
         {
             var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-            var role = await db.Roles.FirstOrDefaultAsync(r => r.Name == RoleNames.Attendant,
+            var role = await db.Roles.FirstAsync(r => r.Name == RoleNames.Attendant,
                 TestContext.CancellationTokenSource.Token);
 
-            Guid roleId;
-            if (role == null)
+            var existingUser = await db.Users.FindAsync([attendantUserId], TestContext.CancellationTokenSource.Token);
+            if (existingUser == null)
             {
-                roleId = Guid.NewGuid();
-                db.Roles.Add(new Role
-                {
-                    Id = roleId,
-                    Name = RoleNames.Attendant,
-                    CreationDate = DateTime.UtcNow
-                });
-
                 db.Users.Add(new User
                 {
                     Id = attendantUserId,
@@ -127,28 +121,9 @@ public class WorkOrdersControllerTests
                     Email = "int.attendant@example.com",
                     PasswordHash = "hash",
                     SecurityStamp = Guid.NewGuid().ToString(),
-                    RoleId = roleId,
+                    RoleId = role.Id,
                     CreationDate = DateTime.UtcNow
                 });
-            }
-            else
-            {
-                roleId = role.Id;
-                var existingUser = await db.Users.FindAsync([attendantUserId], TestContext.CancellationTokenSource.Token);
-                if (existingUser == null)
-                {
-                    db.Users.Add(new User
-                    {
-                        Id = attendantUserId,
-                        FullName = "Integration Attendant",
-                        UserName = "int_attendant",
-                        Email = "int.attendant@example.com",
-                        PasswordHash = "hash",
-                        SecurityStamp = Guid.NewGuid().ToString(),
-                        RoleId = roleId,
-                        CreationDate = DateTime.UtcNow
-                    });
-                }
             }
 
             await db.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
@@ -178,7 +153,5 @@ public class WorkOrdersControllerTests
             TestContext.CancellationTokenSource.Token);
 
         Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
-    }  
-
-    public TestContext TestContext { get; set; } = null!;
+    }
 }

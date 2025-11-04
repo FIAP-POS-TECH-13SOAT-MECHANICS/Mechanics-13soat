@@ -29,6 +29,7 @@ public class WorkOrderConfiguration : IEntityTypeConfiguration<WorkOrder>
             .OnDelete(DeleteBehavior.NoAction)
             .IsRequired();
 
+
         builder.HasMany(entity => entity.Products)
             .WithMany(entity => entity.WorkOrders)
             .UsingEntity("WorkOrderProducts");
@@ -40,11 +41,11 @@ public class WorkOrderConfiguration : IEntityTypeConfiguration<WorkOrder>
         builder.Property(e => e.ReportedProblem).HasMaxLength(1000);
         builder.Property(e => e.Observations).HasMaxLength(2000);
 
-        builder.Property(e => e.ApprovalRequestedAt);
-        builder.Property(e => e.ApprovedAt);
-        builder.Property(e => e.DeliveredAt);
+        builder.HasOne(e => e.AssignedToUser)
+            .WithMany()
+            .HasForeignKey(e => e.AssignedToUserId)
+            .OnDelete(DeleteBehavior.NoAction);
 
-        builder.Property(e => e.IsCancelled).HasDefaultValue(false);
-        builder.Property(e => e.LastStatusChangeBy);
+        builder.HasIndex(e => e.AssignedToUserId);
     }
 }

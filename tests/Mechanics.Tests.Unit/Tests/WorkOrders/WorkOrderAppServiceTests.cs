@@ -1,6 +1,7 @@
 using AutoMapper;
 using Mechanics.Application.WorkOrders.Requests;
 using Mechanics.Application.WorkOrders.Services;
+using Mechanics.Domain.Auth;
 using Mechanics.Domain.Base;
 using Mechanics.Domain.Base.Exceptions;
 using Mechanics.Domain.Customers;
@@ -14,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Reflection;
+using static Microsoft.VisualStudio.TestTools.UnitTesting.Assert;
 
 namespace Mechanics.Tests.Unit.Tests.WorkOrders;
 
@@ -80,10 +82,10 @@ public class WorkOrderAppServiceTests
 
         var id = await service.Create(request, TestContext.CancellationTokenSource.Token);
 
-        var wo = await context.WorkOrders.FindAsync(id, TestContext.CancellationTokenSource.Token);
-        Assert.IsNotNull(wo, "Work order should be persisted");
-        Assert.AreEqual(customerId, wo!.CustomerId, "CustomerId persisted");
-        Assert.IsTrue(_emailMock.SendWorkOrderCreatedCalled, "SendWorkOrderCreated should be called");
+        var wo = await context.WorkOrders.FindAsync([id], TestContext.CancellationTokenSource.Token);
+        IsNotNull(wo, "Work order should be persisted");
+        AreEqual(customerId, wo.CustomerId, "CustomerId persisted");
+        IsTrue(_emailMock.SendWorkOrderCreatedCalled, "SendWorkOrderCreated should be called");
     }
 
     [TestMethod("Create should throw when vehicle owner customer does not exist")]
@@ -126,7 +128,7 @@ public class WorkOrderAppServiceTests
             VehicleId = vehicleId,
         };
 
-        await Assert.ThrowsExactlyAsync<EntityNotFoundException>(() =>
+        await ThrowsExactlyAsync<EntityNotFoundException>(() =>
             service.Create(request, TestContext.CancellationTokenSource.Token));
     }
 
@@ -158,7 +160,7 @@ public class WorkOrderAppServiceTests
             })
             .Build();
 
-        var svc = await context.ServiceCatalog.FindAsync(svcId, TestContext.CancellationTokenSource.Token);
+        var svc = await context.ServiceCatalog.FindAsync([svcId], TestContext.CancellationTokenSource.Token);
         var wo = WorkOrderMocks.CreateWorkOrderWithServices(Guid.NewGuid(), customerId, vehicleId, svc!);
 
         context.WorkOrders.Add(wo);
@@ -179,14 +181,14 @@ public class WorkOrderAppServiceTests
         var performedBy = Guid.NewGuid();
         await service.RequestApproval(wo.Id, performedBy, TestContext.CancellationTokenSource.Token);
 
-        var reloaded = await context.WorkOrders.FindAsync(wo.Id, TestContext.CancellationTokenSource.Token);
-        Assert.IsNotNull(reloaded);
-        Assert.AreEqual(WorkOrderStatus.PendingApproval, reloaded!.Status);
-        Assert.IsNotNull(reloaded.ApprovalRequestedAt);
-        Assert.AreEqual(performedBy, reloaded.LastStatusChangeBy);
-        Assert.IsTrue(_emailMock.SendWorkOrderPendingApprovalCalled);
+        var reloaded = await context.WorkOrders.FindAsync([wo.Id], TestContext.CancellationTokenSource.Token);
+        IsNotNull(reloaded);
+        AreEqual(WorkOrderStatus.PendingApproval, reloaded.Status);
+        IsNotNull(reloaded.ApprovalRequestedAt);
+        AreEqual(performedBy, reloaded.LastStatusChangeBy);
+        IsTrue(_emailMock.SendWorkOrderPendingApprovalCalled);
 
-        Assert.AreEqual(100m, _emailMock.LastBudgetTotal);
+        AreEqual(100m, _emailMock.LastBudgetTotal);
     }
 
     [TestMethod("ChangeStatus should require approval before InProgress and should record history")]
@@ -200,13 +202,21 @@ public class WorkOrderAppServiceTests
             {
                 ctx.Customers.Add(new Customer
                 {
-                    Id = customerId, Name = "Pedro", Email = "pedro@example.com",
+                    Id = customerId,
+                    Name = "Pedro",
+                    Email = "pedro@example.com",
                     Document = new PersonalDocument(DocumentType.Cpf, "11122233344")
                 });
                 ctx.Vehicles.Add(new Vehicle
                 {
-                    Id = vehicleId, Manufacturer = "Make", Model = "Model", Color = VehicleColor.Gray, Year = "2019",
-                    LicensePlate = new LicensePlate("GHI9012"), Chassis = "CH3", OwnerId = customerId
+                    Id = vehicleId,
+                    Manufacturer = "Make",
+                    Model = "Model",
+                    Color = VehicleColor.Gray,
+                    Year = "2019",
+                    LicensePlate = new LicensePlate("GHI9012"),
+                    Chassis = "CH3",
+                    OwnerId = customerId
                 });
             })
             .Build();
@@ -228,22 +238,65 @@ public class WorkOrderAppServiceTests
             _loggerFactory.CreateLogger<WorkOrderAppService>(),
             budgetService);
 
-        await Assert.ThrowsExactlyAsync<BusinessException>(() =>
-            service.ChangeStatus(wo.Id, WorkOrderStatus.InProgress, Guid.NewGuid(), TestContext.CancellationTokenSource.Token));
+        var mechanicRoleId = Guid.NewGuid();
+        var mechanicRole = new Role
+        {
+            Id = mechanicRoleId,
+            Name = RoleNames.Mechanic,
+            CreationDate = DateTime.UtcNow
+        };
+        context.Roles.Add(mechanicRole);
+
+        var performingUserId = Guid.NewGuid();
+        var performingUser = new User
+        {
+            Id = performingUserId,
+            FullName = "Test Mechanic",
+            UserName = "test_mechanic",
+            Email = "test_mechanic@example.com",
+            PasswordHash = "hash",
+            SecurityStamp = Guid.NewGuid().ToString(),
+            RoleId = mechanicRoleId,
+            CreationDate = DateTime.UtcNow
+        };
+        context.Users.Add(performingUser);
+
+        await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
+
+        await ThrowsExactlyAsync<BusinessException>(() =>
+            service.ChangeStatus(wo.Id, WorkOrderStatus.Received, performingUserId, comment: null,
+                TestContext.CancellationTokenSource.Token));
 
         wo.ApprovedAt = DateTime.Now;
         context.WorkOrders.Update(wo);
         await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
 
         var statusChangedBy = Guid.NewGuid();
-        await service.ChangeStatus(wo.Id, WorkOrderStatus.InProgress, statusChangedBy, TestContext.CancellationTokenSource.Token);
+        var otherUser = new User
+        {
+            Id = statusChangedBy,
+            FullName = "Another Mechanic",
+            UserName = "another_mechanic",
+            Email = "another_mechanic@example.com",
+            PasswordHash = "hash",
+            SecurityStamp = Guid.NewGuid().ToString(),
+            RoleId = mechanicRoleId,
+            CreationDate = DateTime.UtcNow
+        };
+        context.Users.Add(otherUser);
+        await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
 
-        var reloaded = await context.WorkOrders.FindAsync(wo.Id, TestContext.CancellationTokenSource.Token);
-        Assert.IsNotNull(reloaded);
-        Assert.AreEqual(WorkOrderStatus.InProgress, reloaded!.Status);
-        Assert.AreEqual(statusChangedBy, reloaded.LastStatusChangeBy);
-        Assert.IsTrue(context.WorkOrderHistories.Any(h => h.WorkOrderId == wo.Id && h.Action == "StatusChanged"));
-        Assert.IsTrue(_emailMock.SendWorkOrderStatusChangedCalled);
+        await service.ChangeStatus(wo.Id, WorkOrderStatus.InProgress, statusChangedBy, comment: null,
+            TestContext.CancellationTokenSource.Token);
+
+        var reloaded = await context.WorkOrders.FindAsync([wo.Id], TestContext.CancellationTokenSource.Token);
+        IsNotNull(reloaded);
+        AreEqual(WorkOrderStatus.InProgress, reloaded.Status);
+        AreEqual(statusChangedBy, reloaded.LastStatusChangeBy);
+        var histories = await context.WorkOrderHistories.Where(h => h.WorkOrderId == wo.Id && h.Action == "StatusChanged")
+            .ToListAsync(TestContext.CancellationTokenSource.Token);
+        IsNotEmpty(histories);
+        IsTrue(_emailMock.SendWorkOrderStatusChangedCalled);
     }
 
     [TestMethod("ChangeStatus should reject same status and skip notifications")]
@@ -277,7 +330,7 @@ public class WorkOrderAppServiceTests
             .Build();
 
         var wo = WorkOrderMocks.CreateWorkOrderEntity(Guid.NewGuid(), customerId, vehicleId);
-        Assert.AreEqual(WorkOrderStatus.Received, wo.Status);
+        AreEqual(WorkOrderStatus.Received, wo.Status);
 
         context.WorkOrders.Add(wo);
         await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
@@ -294,15 +347,43 @@ public class WorkOrderAppServiceTests
             _loggerFactory.CreateLogger<WorkOrderAppService>(),
             budgetService);
 
-        await Assert.ThrowsExactlyAsync<BusinessException>(() =>
-            service.ChangeStatus(wo.Id, WorkOrderStatus.Received, Guid.NewGuid(), TestContext.CancellationTokenSource.Token));
+        var roleId = Guid.NewGuid();
+        var role = new Role
+        {
+            Id = roleId,
+            Name = RoleNames.Mechanic,
+            CreationDate = DateTime.UtcNow
+        };
+        context.Roles.Add(role);
 
-        Assert.IsFalse(_emailMock.SendWorkOrderStatusChangedCalled, "Status change email should not be sent");
-        Assert.IsFalse(context.WorkOrderHistories.Any(h => h.WorkOrderId == wo.Id), "No history should be recorded");
+        var actorId = Guid.NewGuid();
+        var actor = new User
+        {
+            Id = actorId,
+            FullName = "Actor User",
+            UserName = "actor_user",
+            Email = "actor@example.com",
+            PasswordHash = "hash",
+            SecurityStamp = Guid.NewGuid().ToString(),
+            RoleId = roleId,
+            CreationDate = DateTime.UtcNow
+        };
+        context.Users.Add(actor);
 
-        var reloaded = await context.WorkOrders.FindAsync(wo.Id, TestContext.CancellationTokenSource.Token);
-        Assert.IsNotNull(reloaded);
-        Assert.AreEqual(WorkOrderStatus.Received, reloaded!.Status);
+        await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
+
+        await ThrowsExactlyAsync<BusinessException>(() =>
+            service.ChangeStatus(wo.Id, WorkOrderStatus.Received, actorId, comment: null,
+                TestContext.CancellationTokenSource.Token));
+
+        IsFalse(_emailMock.SendWorkOrderStatusChangedCalled, "Status change email should not be sent");
+        var histories = await context.WorkOrderHistories.Where(h => h.WorkOrderId == wo.Id)
+            .ToListAsync(TestContext.CancellationTokenSource.Token);
+        IsEmpty(histories, "No history should be recorded");
+
+        var reloaded = await context.WorkOrders.FindAsync([wo.Id], TestContext.CancellationTokenSource.Token);
+        IsNotNull(reloaded);
+        AreEqual(WorkOrderStatus.Received, reloaded.Status);
     }
 
     [TestClass]
@@ -312,25 +393,25 @@ public class WorkOrderAppServiceTests
         [TestMethod("IsTransitionAllowed deve permitir o fluxo principal e rejeitar transições inválidas ou iguais")]
         public void IsTransitionAllowed_ValidAndInvalidTransitions()
         {
-            Assert.IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.Received, WorkOrderStatus.UnderDiagnosis));
-            Assert.IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.UnderDiagnosis, WorkOrderStatus.PendingApproval));
-            Assert.IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.PendingApproval, WorkOrderStatus.InProgress));
-            Assert.IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.InProgress, WorkOrderStatus.Completed));
-            Assert.IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.Completed, WorkOrderStatus.Delivered));
+            IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.Received, WorkOrderStatus.UnderDiagnosis));
+            IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.UnderDiagnosis, WorkOrderStatus.PendingApproval));
+            IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.PendingApproval, WorkOrderStatus.InProgress));
+            IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.InProgress, WorkOrderStatus.Completed));
+            IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.Completed, WorkOrderStatus.Delivered));
 
             // transição inválida (pular etapas)
-            Assert.IsFalse(InvokeIsTransitionAllowed(WorkOrderStatus.Received, WorkOrderStatus.InProgress));
+            IsFalse(InvokeIsTransitionAllowed(WorkOrderStatus.Received, WorkOrderStatus.InProgress));
 
             // transição para o mesmo status deve ser considerada inválida no método
-            Assert.IsFalse(InvokeIsTransitionAllowed(WorkOrderStatus.Received, WorkOrderStatus.Received));
-            Assert.IsFalse(InvokeIsTransitionAllowed(WorkOrderStatus.Completed, WorkOrderStatus.Completed));
+            IsFalse(InvokeIsTransitionAllowed(WorkOrderStatus.Received, WorkOrderStatus.Received));
+            IsFalse(InvokeIsTransitionAllowed(WorkOrderStatus.Completed, WorkOrderStatus.Completed));
         }
 
         private static bool InvokeIsTransitionAllowed(WorkOrderStatus from, WorkOrderStatus to)
         {
             var method = typeof(WorkOrderAppService).GetMethod("IsTransitionAllowed", BindingFlags.NonPublic | BindingFlags.Static);
-            Assert.IsNotNull(method, "Método IsTransitionAllowed não encontrado. Verifique a assinatura e a visibilidade.");
-            return (bool)method!.Invoke(null, new object[] { from, to })!;
+            IsNotNull(method, "Método IsTransitionAllowed não encontrado. Verifique a assinatura e a visibilidade.");
+            return (bool)method.Invoke(null, [from, to])!;
         }
     }
 
@@ -416,8 +497,8 @@ public class WorkOrderAppServiceTests
 
         var req = new UpdateWorkOrderRequest
         {
-            ProductIds = new[] { productId },
-            ServiceIds = new[] { serviceId },
+            ProductIds = [productId],
+            ServiceIds = [serviceId],
             Observations = "Substituir filtro e testar motor"
         };
 
@@ -428,16 +509,18 @@ public class WorkOrderAppServiceTests
             .Include(w => w.ServiceCatalog)
             .FirstOrDefaultAsync(w => w.Id == wo.Id, TestContext.CancellationTokenSource.Token);
 
-        Assert.IsNotNull(reloaded);
-        Assert.IsTrue(reloaded!.Products != null && reloaded.Products.Any(p => p.Id == productId));
-        Assert.IsTrue(reloaded.ServiceCatalog != null && reloaded.ServiceCatalog.Any(s => s.Id == serviceId));
-        Assert.AreEqual(req.Observations, reloaded.Observations);
+        IsNotNull(reloaded);
+        IsTrue(reloaded.Products != null && reloaded.Products.Any(p => p.Id == productId));
+        IsTrue(reloaded.ServiceCatalog != null && reloaded.ServiceCatalog.Any(s => s.Id == serviceId));
+        AreEqual(req.Observations, reloaded.Observations);
 
-        var history = context.WorkOrderHistories.FirstOrDefault(h => h.WorkOrderId == wo.Id && h.Action == "DetailsUpdated");
-        Assert.IsNotNull(history);
-        Assert.AreEqual(mechanicUserId, history!.PerformedByUserId);
-        Assert.IsTrue(history.Details!.Contains("AddedProducts:1"));
-        Assert.IsTrue(history.Details.Contains("AddedServices:1"));
-        Assert.IsTrue(history.Details.Contains("ObservationsUpdated"));
+        var history = await context.WorkOrderHistories.Where(h => h.WorkOrderId == wo.Id && h.Action == "DetailsUpdated")
+            .FirstOrDefaultAsync(TestContext.CancellationTokenSource.Token);
+        IsNotNull(history);
+        IsNotNull(history.Details);
+        AreEqual(mechanicUserId, history.PerformedByUserId);
+        Contains("AddedProducts:1", history.Details);
+        Contains("AddedServices:1", history.Details);
+        Contains("ObservationsUpdated", history.Details);
     }
 }

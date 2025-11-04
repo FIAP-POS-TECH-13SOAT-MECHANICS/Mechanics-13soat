@@ -1,4 +1,4 @@
-﻿using Mechanics.Application.WorkOrders.Requests;
+using Mechanics.Application.WorkOrders.Requests;
 using Mechanics.Application.WorkOrders.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -27,7 +27,23 @@ public class BudgetsController(BudgetAppService budgetService) : ControllerBase
     public async Task<IActionResult> ApproveBudget([FromBody] ApproveBudgetPublicRequest request,
         CancellationToken cancellationToken)
     {
-        await budgetService.PublicApproveBudget(request.Document, request.AccessKey, cancellationToken);
+        await budgetService.PublicApproveBudget(request.Document, request.AccessKey, request.Description, cancellationToken);
+        return NoContent();
+    }
+
+    /// <summary>
+    ///     Rejeita publicamente um budget associado à ordem de serviço.
+    ///     Rota pública para o cliente sinalizar que não aceita o orçamento.
+    /// </summary>
+    [AllowAnonymous]
+    [HttpPost("reject-budget")]
+    [Consumes(typeof(ApproveBudgetPublicRequest), "application/json")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> RejectBudget([FromBody] ApproveBudgetPublicRequest request,
+        CancellationToken cancellationToken)
+    {
+        await budgetService.PublicRejectBudget(request.Document, request.AccessKey, request.Description, cancellationToken);
         return NoContent();
     }
 }

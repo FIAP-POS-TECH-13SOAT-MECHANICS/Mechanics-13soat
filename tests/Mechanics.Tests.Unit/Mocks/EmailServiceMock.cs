@@ -17,6 +17,10 @@ public class EmailServiceMock : IEmailService
     public bool SendWorkOrderCancelledCalled { get; private set; }
     public bool SendWorkOrderDeliveredSurveyCalled { get; private set; }
 
+    public bool SendMechanicBudgetDecisionCalled { get; private set; }
+    public bool? LastMechanicDecisionApproved { get; private set; }
+    public User? LastMechanic { get; private set; }
+
     public Budget? LastBudget { get; private set; }
     public Guid? LastBudgetId => LastBudget?.Id;
     public decimal? LastBudgetTotal => LastBudget?.Total;
@@ -56,6 +60,15 @@ public class EmailServiceMock : IEmailService
     public Task SendWorkOrderDeliveredSurvey(Customer customer, WorkOrder workOrder, CancellationToken cancellationToken = default)
     {
         SendWorkOrderDeliveredSurveyCalled = true;
+        return Task.CompletedTask;
+    }
+
+    public Task SendMechanicBudgetDecision(User mechanic, WorkOrder workOrder, Budget budget, bool approved, CancellationToken cancellationToken = default)
+    {
+        SendMechanicBudgetDecisionCalled = true;
+        LastMechanic = mechanic;
+        LastBudget = budget;
+        LastMechanicDecisionApproved = approved;
         return Task.CompletedTask;
     }
 

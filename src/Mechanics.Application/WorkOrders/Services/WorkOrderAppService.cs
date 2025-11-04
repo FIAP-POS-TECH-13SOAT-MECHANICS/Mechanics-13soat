@@ -3,11 +3,10 @@ using Mechanics.Application.Notification.Services;
 using Mechanics.Application.Utils;
 using Mechanics.Application.WorkOrders.Requests;
 using Mechanics.Application.WorkOrders.Responses;
+using Mechanics.Domain.Auth;
 using Mechanics.Domain.Base.Exceptions;
-using Mechanics.Domain.Customers;
 using Mechanics.Domain.Products;
 using Mechanics.Domain.ServicesCatalog;
-using Mechanics.Domain.Vehicles;
 using Mechanics.Domain.WorkOrders;
 using Mechanics.Infra.Data;
 using Microsoft.EntityFrameworkCore;
@@ -32,23 +31,17 @@ public class WorkOrderAppService(
            .Include(v => v.Owner)
            .FirstOrDefaultAsync(v => v.Id == request.VehicleId, cancellationToken);
 
-        if (vehicle is null)
-            throw new EntityNotFoundException(nameof(Vehicle), request.VehicleId.ToString());
+        EntityNotFoundException.ThrowIfNull(vehicle, request.VehicleId);
+        EntityNotFoundException.ThrowIfNull(vehicle.Owner, vehicle.OwnerId);
 
-
-        var customer = vehicle.Owner ?? await db.Customers.FindAsync(vehicle.OwnerId, cancellationToken);
-        if (customer is null)
-            throw new EntityNotFoundException(nameof(Customer), vehicle.OwnerId.ToString());
-
-        var existing = await db.WorkOrders.Where(w => w.CustomerId == customer.Id).ToListAsync(cancellationToken);
-
-        var accessKey = WorkOrder.GenerateNewAccessKey(existing);
+        var existingOrders = await db.WorkOrders.Where(w => w.CustomerId == vehicle.OwnerId)
+            .ToListAsync(cancellationToken);
+        var accessKey = WorkOrder.GenerateNewAccessKey(existingOrders);
 
         var now = DateTime.Now;
-
         var wo = new WorkOrder
         {
-            CustomerId = customer.Id,
+            CustomerId = vehicle.OwnerId,
             VehicleId = request.VehicleId,
             AccessKey = accessKey,
             Status = WorkOrderStatus.Received,
@@ -67,7 +60,7 @@ public class WorkOrderAppService(
         {
             var services = await db.ServiceCatalog.Where(s => request.ServiceCatalogIds.Contains(s.Id))
                 .ToListAsync(cancellationToken);
-            wo.ServiceCatalog = services;
+                wo.ServiceCatalog = services;
         }
 
         await db.WorkOrders.AddAsync(wo, cancellationToken);
@@ -75,7 +68,7 @@ public class WorkOrderAppService(
 
         try
         {
-            await emailService.SendWorkOrderCreated(customer, wo, cancellationToken);
+            await emailService.SendWorkOrderCreated(vehicle.Owner!, wo, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -83,6 +76,43 @@ public class WorkOrderAppService(
         }
 
         return wo.Id;
+    }
+
+    public async Task Assign(Guid workOrderId, Guid assignedToUserId, Guid performedByUserId, string? comment = null,
+       CancellationToken cancellationToken = default)
+    {
+        var wo = await db.WorkOrders.FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
+        EntityNotFoundException.ThrowIfNull(wo, workOrderId);
+
+        var assignedUser = await db.Users
+            .AsNoTracking()
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.Id == assignedToUserId, cancellationToken);
+
+        EntityNotFoundException.ThrowIfNull(assignedUser, assignedToUserId);
+
+        if (assignedUser.Role?.Name != RoleNames.Mechanic)
+            throw new BusinessException("Assigned user must be a mechanic.");
+
+        wo.AssignedToUserId = assignedToUserId;
+        wo.LastUpdate = DateTime.Now;
+
+        var hist = new WorkOrderHistory
+        {
+            WorkOrderId = wo.Id,
+            Action = "Assigned",
+            Details = comment is null ? $"Assigned to {assignedToUserId}" : $"Assigned to {assignedToUserId}. Comment: {comment}",
+            PerformedByUserId = performedByUserId
+        };
+        await db.WorkOrderHistories.AddAsync(hist, cancellationToken);
+
+        await db.SaveChangesAsync(cancellationToken);
+
+        if (wo.Status == WorkOrderStatus.Received)
+        {
+            await ChangeStatus(workOrderId, WorkOrderStatus.UnderDiagnosis, performedByUserId,
+                comment: "Auto-transition to UnderDiagnosis due assignment", cancellationToken: cancellationToken);
+        }
     }
 
     /// <summary>
@@ -113,7 +143,7 @@ public class WorkOrderAppService(
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Document.Number == normalizedDocument, cancellationToken);
 
-        if (customer is null) return null;
+        EntityNotFoundException.ThrowIfNull(customer, document);
 
         var wo = await db.WorkOrders
             .Include(w => w.Products)
@@ -121,7 +151,9 @@ public class WorkOrderAppService(
             .AsNoTracking()
             .FirstOrDefaultAsync(w => w.CustomerId == customer.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
 
-        return wo is null ? null : mapper.Map<GetWorkOrderResponse>(wo);
+        EntityNotFoundException.ThrowIfNull(wo, accessKey);
+
+        return mapper.Map<GetWorkOrderResponse>(wo);
     }
 
     /// <summary>
@@ -130,8 +162,7 @@ public class WorkOrderAppService(
     public async Task RequestApproval(Guid workOrderId, Guid performedByUserId, CancellationToken cancellationToken = default)
     {
         var woExists = await db.WorkOrders.AnyAsync(w => w.Id == workOrderId, cancellationToken);
-        if (!woExists)
-            throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
+        EntityNotFoundException.ThrowIfNotFound<WorkOrder>(woExists, workOrderId);
 
         await budgetService.CreateAndSendBudget(workOrderId, performedByUserId, cancellationToken);
     }
@@ -141,11 +172,10 @@ public class WorkOrderAppService(
     ///     Received -> UnderDiagnosis -> PendingApproval -> InProgress -> Completed -> Delivered
     /// </summary>
     public async Task ChangeStatus(Guid workOrderId, WorkOrderStatus newStatus, Guid performedByUserId,
-        CancellationToken cancellationToken = default)
+        string? comment = null, CancellationToken cancellationToken = default)
     {
         var wo = await db.WorkOrders.FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
-        if (wo is null)
-            throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
+        EntityNotFoundException.ThrowIfNull(wo, workOrderId);
 
         var previous = wo.Status;
 
@@ -153,7 +183,7 @@ public class WorkOrderAppService(
             throw new BusinessException($"Work order is already in {newStatus}.");
 
         if (!IsTransitionAllowed(previous, newStatus))
-            throw new BusinessException($"Invalid status transition from {previous} to {newStatus}.");       
+            throw new BusinessException($"Invalid status transition from {previous} to {newStatus}.");
 
         if (newStatus == WorkOrderStatus.InProgress)
         {
@@ -177,9 +207,8 @@ public class WorkOrderAppService(
         var hist = new WorkOrderHistory
         {
             WorkOrderId = wo.Id,
-            OccurredAt = DateTime.Now,
             Action = "StatusChanged",
-            Details = $"From {previous} to {newStatus}",
+            Details = comment is null ? $"From {previous} to {newStatus}" : $"From {previous} to {newStatus}. Comment: {comment}",
             PerformedByUserId = performedByUserId,
         };
         await db.WorkOrderHistories.AddAsync(hist, cancellationToken);
@@ -187,7 +216,7 @@ public class WorkOrderAppService(
         await db.SaveChangesAsync(cancellationToken);
 
         // notifica cliente sobre a mudança de status
-        var customer = await db.Customers.FindAsync(wo.CustomerId, cancellationToken);
+        var customer = await db.Customers.FindAsync([wo.CustomerId], cancellationToken);
         if (customer != null)
         {
             try
@@ -202,66 +231,6 @@ public class WorkOrderAppService(
     }
 
     /// <summary>
-    ///     Adiciona produtos (peças/insumos) à ordem. 
-    /// </summary>
-    public async Task AddProducts(Guid workOrderId, IEnumerable<Guid> productIds, CancellationToken cancellationToken = default)
-    {
-        var wo = await db.WorkOrders
-            .Include(w => w.Products)
-            .FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
-
-        if (wo is null)
-            throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
-
-        var addedProducts = await ApplyProductsToWorkOrderAsync(wo, productIds, cancellationToken);
-        if (addedProducts == 0) return;
-
-        wo.LastUpdate = DateTime.Now;
-
-        var hist = new WorkOrderHistory
-        {
-            WorkOrderId = wo.Id,
-            OccurredAt = DateTime.Now,
-            Action = "ProductsAdded",
-            Details = $"Added {addedProducts} products",
-            PerformedByUserId = null,
-        };
-        await db.WorkOrderHistories.AddAsync(hist, cancellationToken);
-
-        await db.SaveChangesAsync(cancellationToken);
-    }
-
-    /// <summary>
-    ///     Adiciona serviços à ordem.
-    /// </summary>
-    public async Task AddServices(Guid workOrderId, IEnumerable<Guid> serviceIds, CancellationToken cancellationToken = default)
-    {
-        var wo = await db.WorkOrders
-            .Include(w => w.ServiceCatalog)
-            .FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
-
-        if (wo is null)
-            throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
-
-        var addedServices = await ApplyServicesToWorkOrderAsync(wo, serviceIds, cancellationToken);
-        if (addedServices == 0) return;
-
-        wo.LastUpdate = DateTime.Now;
-
-        var hist = new WorkOrderHistory
-        {
-            WorkOrderId = wo.Id,
-            OccurredAt = DateTime.Now,
-            Action = "ServicesAdded",
-            Details = $"Added {addedServices} services",
-            PerformedByUserId = null,
-        };
-        await db.WorkOrderHistories.AddAsync(hist, cancellationToken);
-
-        await db.SaveChangesAsync(cancellationToken);
-    }
-
-    /// <summary>
     ///     Atualiza produtos, serviços e observações da ordem.
     /// </summary>
     public async Task UpdateDetails(Guid workOrderId, UpdateWorkOrderRequest request, Guid performedByUserId,
@@ -272,21 +241,14 @@ public class WorkOrderAppService(
             .Include(w => w.ServiceCatalog)
             .FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
 
-        if (wo is null)
-            throw new EntityNotFoundException(nameof(WorkOrder), workOrderId.ToString());
+        EntityNotFoundException.ThrowIfNull(wo, workOrderId);
 
         var addedProducts = await ApplyProductsToWorkOrderAsync(wo, request.ProductIds, cancellationToken);
         var addedServices = await ApplyServicesToWorkOrderAsync(wo, request.ServiceIds, cancellationToken);
 
-        var observationChanged = false;
-        if (request.Observations is not null)
-        {
-            if (wo.Observations != request.Observations)
-            {
-                wo.Observations = request.Observations;
-                observationChanged = true;
-            }
-        }
+        var observationChanged = request.Observations is not null && wo.Observations != request.Observations;
+        if (observationChanged)
+            wo.Observations = request.Observations;
 
         if (addedProducts == 0 && addedServices == 0 && !observationChanged)
             return;
@@ -301,7 +263,6 @@ public class WorkOrderAppService(
         var hist = new WorkOrderHistory
         {
             WorkOrderId = wo.Id,
-            OccurredAt = DateTime.Now,
             Action = "DetailsUpdated",
             Details = string.Join("; ", detailsParts),
             PerformedByUserId = performedByUserId,
@@ -359,9 +320,8 @@ public class WorkOrderAppService(
         return added;
     }
 
-    private static bool IsTransitionAllowed(WorkOrderStatus from, WorkOrderStatus to)
-    {
-        return (from, to) switch
+    private static bool IsTransitionAllowed(WorkOrderStatus from, WorkOrderStatus to) =>
+        (from, to) switch
         {
             (WorkOrderStatus.Received, WorkOrderStatus.UnderDiagnosis) => true,
             (WorkOrderStatus.UnderDiagnosis, WorkOrderStatus.PendingApproval) => true,
@@ -370,5 +330,4 @@ public class WorkOrderAppService(
             (WorkOrderStatus.Completed, WorkOrderStatus.Delivered) => true,
             _ => false,
         };
-    }
 }

@@ -4,6 +4,7 @@ using Mechanics.Infra.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Mechanics.Infra.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251104002347_RemoveOcurredAtColumn")]
+    partial class RemoveOcurredAtColumn
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -220,10 +223,6 @@ namespace Mechanics.Infra.Data.Migrations
                     b.Property<int>("Type")
                         .HasColumnType("int");
 
-                    b.Property<decimal>("UnitPrice")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
-
                     b.HasKey("Id");
 
                     b.ToTable("Products", "Mechanics");
@@ -346,7 +345,9 @@ namespace Mechanics.Infra.Data.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("RejectedAt")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("SYSDATETIME()");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
@@ -439,7 +440,9 @@ namespace Mechanics.Infra.Data.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsCancelled")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<Guid?>("LastStatusChangeBy")
                         .HasColumnType("uniqueidentifier");
@@ -465,7 +468,8 @@ namespace Mechanics.Infra.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("AssignedToUserId");
+                    b.HasIndex("AssignedToUserId")
+                        .HasDatabaseName("IX_WorkOrders_AssignedToUserId");
 
                     b.HasIndex("VehicleId");
 

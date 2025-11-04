@@ -4,11 +4,9 @@ namespace Mechanics.Domain.WorkOrders;
 
 public class WorkOrderHistory : AbstractEntity
 {
-    public required Guid WorkOrderId { get; set; }
-    public WorkOrder? WorkOrder { get; set; }
-
-    public required DateTime OccurredAt { get; set; }
-    public required string Action { get; set; } = default!; 
-    public string? Details { get; set; }
-    public Guid? PerformedByUserId { get; set; }
+    public required Guid WorkOrderId { get; init; }
+    public WorkOrder? WorkOrder { get; init; }
+    public required string Action { get; init; }
+    public string? Details { get; init; }
+    public Guid? PerformedByUserId { get; init; }
 }

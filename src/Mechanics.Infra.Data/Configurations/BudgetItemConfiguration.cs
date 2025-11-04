@@ -10,10 +10,7 @@ public class BudgetItemConfiguration : IEntityTypeConfiguration<BudgetItem>
     {
         builder.ToTable("BudgetItems");
 
-        builder.HasKey(i => i.Id);
         builder.Property(i => i.BudgetId).IsRequired();
-        builder.Property(i => i.ProductId).HasColumnType("uniqueidentifier");
-        builder.Property(i => i.ServiceCatalogId).HasColumnType("uniqueidentifier");
         builder.Property(i => i.NameSnapshot).IsRequired().HasMaxLength(500);
         builder.Property(i => i.UnitPriceSnapshot).HasColumnType("decimal(18,2)");
         builder.Property(i => i.Quantity).IsRequired();

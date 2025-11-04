@@ -37,4 +37,10 @@ public class Budget : AbstractEntity
     /// Itens do orçamento (produtos/serviços com preços no momento do orçamento).
     /// </summary>
     public ICollection<BudgetItem>? Items { get; set; }
+
+    /// <summary>
+    /// Quando rejeitado pelo cliente.
+    /// </summary>
+    public DateTime? RejectedAt { get; set; }
+    public string? Description { get; set; }
 }

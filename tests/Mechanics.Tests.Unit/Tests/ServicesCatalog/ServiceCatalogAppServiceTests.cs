@@ -109,7 +109,7 @@ public class ServiceCatalogAppServiceTests
 
         // Assert
         Assert.IsNotNull(response);
-        Assert.AreEqual(id, response!.Id);
+        Assert.AreEqual(id, response.Id);
         Assert.AreEqual(existing.Name, response.Name);
         Assert.AreEqual(existing.Description, response.Description);
     }

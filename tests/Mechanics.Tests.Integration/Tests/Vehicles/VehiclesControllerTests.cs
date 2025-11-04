@@ -46,7 +46,7 @@ public class VehiclesControllerTests
         Assert.AreEqual(HttpStatusCode.Created, httpResponse.StatusCode);
         var content = await httpResponse.Content.ReadFromJsonAsync<CreateItemResponse>(TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(content);
-        Assert.AreNotEqual(Guid.Empty, content!.CreatedId);
+        Assert.AreNotEqual(Guid.Empty, content.CreatedId);
     }
 
     [TestMethod("Atualização de veículo")]

@@ -28,8 +28,9 @@ public class ProductsControllerTest
             Name = "Pneu",
             Description = "Pneu Pirelli",
             Type = ProductType.Part,
-            Quantity = 10,
+            Quantity = 4,
             Status = ProductStatusType.Active,
+            UnitPrice = 199,
         };
 
         // Act
@@ -39,7 +40,7 @@ public class ProductsControllerTest
         Assert.AreEqual(HttpStatusCode.Created, httpResponse.StatusCode);
         var content = await httpResponse.Content.ReadFromJsonAsync<CreateItemResponse>(TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(content);
-        Assert.AreNotEqual(Guid.Empty, content!.CreatedId);
+        Assert.AreNotEqual(Guid.Empty, content.CreatedId);
     }
 
     [TestMethod("Cadastro de produto com erro")]
@@ -56,6 +57,7 @@ public class ProductsControllerTest
             Type = ProductType.Part,
             Quantity = -1,
             Status = ProductStatusType.Active,
+            UnitPrice = 199m,
         };
 
         // Act

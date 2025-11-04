@@ -100,7 +100,6 @@ public class WorkOrderAppService(
         var hist = new WorkOrderHistory
         {
             WorkOrderId = wo.Id,
-            OccurredAt = DateTime.Now,
             Action = "Assigned",
             Details = comment is null ? $"Assigned to {assignedToUserId}" : $"Assigned to {assignedToUserId}. Comment: {comment}",
             PerformedByUserId = performedByUserId
@@ -208,7 +207,6 @@ public class WorkOrderAppService(
         var hist = new WorkOrderHistory
         {
             WorkOrderId = wo.Id,
-            OccurredAt = DateTime.Now,
             Action = "StatusChanged",
             Details = comment is null ? $"From {previous} to {newStatus}" : $"From {previous} to {newStatus}. Comment: {comment}",
             PerformedByUserId = performedByUserId,
@@ -265,7 +263,6 @@ public class WorkOrderAppService(
         var hist = new WorkOrderHistory
         {
             WorkOrderId = wo.Id,
-            OccurredAt = DateTime.Now,
             Action = "DetailsUpdated",
             Details = string.Join("; ", detailsParts),
             PerformedByUserId = performedByUserId,

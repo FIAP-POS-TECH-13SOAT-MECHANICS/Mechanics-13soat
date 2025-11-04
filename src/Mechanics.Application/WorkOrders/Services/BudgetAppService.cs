@@ -104,7 +104,6 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
         var hist = new WorkOrderHistory
         {
             WorkOrderId = wo.Id,
-            OccurredAt = now,
             Action = "BudgetSent",
             Details = $"Budget {budget.Id} sent. Total: {budget.Total:C}",
             PerformedByUserId = performedByUserId,
@@ -179,7 +178,6 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
         var hist = new WorkOrderHistory
         {
             WorkOrderId = wo.Id,
-            OccurredAt = DateTime.Now,
             Action = "BudgetApprovedPublic",
             Details = description is null
                 ? $"Budget {budget.Id} approved by customer {normalizedDocument}."
@@ -270,7 +268,6 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
         var hist = new WorkOrderHistory
         {
             WorkOrderId = wo.Id,
-            OccurredAt = DateTime.Now,
             Action = "BudgetRejectedByCustomer",
             Details = description is null
                 ? $"Budget {budget.Id} rejected by customer {normalizedDocument}."

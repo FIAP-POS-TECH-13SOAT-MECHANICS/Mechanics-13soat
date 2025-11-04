@@ -10,16 +10,9 @@ public class BudgetConfiguration : IEntityTypeConfiguration<Budget>
     {
         builder.ToTable("Budgets");
 
-        builder.HasKey(b => b.Id);
         builder.Property(b => b.WorkOrderId).IsRequired();
-        builder.Property(b => b.CreationDate)
-            .IsRequired()
-            .HasColumnType("datetime2")
-            .HasDefaultValueSql("SYSDATETIME()");
-        builder.Property(b => b.ExpiresAt).HasColumnType("datetime2");
         builder.Property(b => b.Status).IsRequired();
         builder.Property(b => b.Total).HasColumnType("decimal(18,2)");
-        builder.Property(b => b.ApprovedAt).HasColumnType("datetime2");
         builder.Property(b => b.ApprovedByCustomerDocument).HasMaxLength(20);
 
         builder.HasOne(b => b.WorkOrder)
@@ -33,12 +26,10 @@ public class BudgetConfiguration : IEntityTypeConfiguration<Budget>
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Property(b => b.RejectedAt)
-            .HasColumnType("datetime2")
             .HasDefaultValueSql("SYSDATETIME()")
             .IsRequired(false);
 
         builder.Property(b => b.Description)
-            .HasColumnType("nvarchar(2000)")
             .HasMaxLength(2000)
             .IsRequired(false);
 

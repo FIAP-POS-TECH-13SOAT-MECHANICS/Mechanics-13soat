@@ -15,14 +15,10 @@ public class WorkOrderHistoryConfiguration : IEntityTypeConfiguration<WorkOrderH
             .HasForeignKey(h => h.WorkOrderId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Property(h => h.OccurredAt)
-            .IsRequired()
-            .HasDefaultValueSql("SYSDATETIME()");
         builder.Property(h => h.Action)
             .IsRequired()
             .HasMaxLength(100);
         builder.Property(h => h.Details)
             .HasMaxLength(2000);
-        builder.Property(h => h.PerformedByUserId).HasColumnType("uniqueidentifier");
     }
 }

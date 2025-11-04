@@ -6,9 +6,10 @@ namespace Mechanics.Tests.Unit.Mocks;
 
 public static class WorkOrderMocks
 {
-    public static WorkOrder CreateWorkOrderEntity(Guid id, Guid customerId, Guid vehicleId)
+    public static WorkOrder CreateWorkOrderEntity(Guid id, Guid customerId, Guid vehicleId, Guid? assignedToUserId = null)
     {
         var now = DateTime.Now;
+        var userId = assignedToUserId ?? new Guid("380038b3-5118-484a-bfd3-35df9363d969");
         return new WorkOrder
         {
             Id = id,
@@ -18,8 +19,8 @@ public static class WorkOrderMocks
             Status = WorkOrderStatus.Received,
             CreationDate = now,
             LastUpdate = now,
-            AssignedToUser = UserMocks.CreateUser(new Guid("380038b3-5118-484a-bfd3-35df9363d969"), "meca", RoleNames.Mechanic),
-            AssignedToUserId = new Guid("380038b3-5118-484a-bfd3-35df9363d969"),
+            AssignedToUser = UserMocks.CreateUser(userId, $"meca-{userId:N}", RoleNames.Mechanic),
+            AssignedToUserId = userId,
         };
     }
 

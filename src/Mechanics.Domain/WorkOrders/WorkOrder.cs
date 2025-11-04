@@ -1,7 +1,7 @@
 using Mechanics.Domain.Auth;
 using Mechanics.Domain.Base;
+using Mechanics.Domain.Base.Validation;
 using Mechanics.Domain.Customers;
-using Mechanics.Domain.Products;
 using Mechanics.Domain.ServicesCatalog;
 using Mechanics.Domain.Vehicles;
 
@@ -10,7 +10,7 @@ namespace Mechanics.Domain.WorkOrders;
 /// <summary>
 ///     Representa uma ordem de serviço vinculada a um cliente e veículo.
 /// </summary>
-public class WorkOrder : AbstractEntity
+public class WorkOrder : AbstractEntity, IValidatable
 {
     public required Guid CustomerId { get; init; }
     public Customer? Customer { get; init; }
@@ -29,7 +29,7 @@ public class WorkOrder : AbstractEntity
     /// <summary>
     ///     Produtos utilizados na ordem.
     /// </summary>
-    public ICollection<Product>? Products { get; set; }
+    public ICollection<WorkOrderProduct>? Products { get; set; }
 
     /// <summary>
     ///     Serviços executados na ordem.
@@ -39,7 +39,7 @@ public class WorkOrder : AbstractEntity
     /// <summary>
     ///     Problema relatado pelo cliente.
     /// </summary>
-    public string? ReportedProblem { get; set; }
+    public string? ReportedProblem { get; init; }
 
     /// <summary>
     ///     Observações internas da oficina.
@@ -97,5 +97,14 @@ public class WorkOrder : AbstractEntity
             if (existingKeys.Add(newKey))
                 return newKey;
         }
+    }
+
+    public void Validate(ValidationBuilder builder)
+    {
+        if (Products is null)
+            return;
+
+        foreach (var workOrderProduct in Products)
+            builder.AddValidation(workOrderProduct.Validate, nameof(Products));
     }
 }

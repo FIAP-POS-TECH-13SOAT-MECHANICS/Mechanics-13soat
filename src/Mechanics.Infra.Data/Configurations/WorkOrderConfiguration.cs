@@ -29,11 +29,6 @@ public class WorkOrderConfiguration : IEntityTypeConfiguration<WorkOrder>
             .OnDelete(DeleteBehavior.NoAction)
             .IsRequired();
 
-
-        builder.HasMany(entity => entity.Products)
-            .WithMany(entity => entity.WorkOrders)
-            .UsingEntity("WorkOrderProducts");
-
         builder.HasMany(entity => entity.ServiceCatalog)
             .WithMany(entity => entity.WorkOrders)
             .UsingEntity("ServiceCatalogWorkOrder");

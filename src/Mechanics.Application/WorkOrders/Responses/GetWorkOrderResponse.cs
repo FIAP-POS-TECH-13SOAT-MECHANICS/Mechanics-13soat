@@ -1,6 +1,10 @@
+using Mechanics.Application.Utils.PagedList;
 using Mechanics.Domain.WorkOrders;
 
 namespace Mechanics.Application.WorkOrders.Responses;
+
+public class GetWorkOrdersResponse(IEnumerable<GetWorkOrderResponse> items, int totalCount)
+    : PaginatedListResponse<GetWorkOrderResponse>(items, totalCount);
 
 public class GetWorkOrderResponse
 {
@@ -15,6 +19,12 @@ public class GetWorkOrderResponse
     public string? ReportedProblem { get; init; }
     public string? Observations { get; init; }
 
-    public IEnumerable<Guid>? ProductIds { get; init; }
+    public IEnumerable<WorkOrderProductResponse>? Products { get; init; }
     public IEnumerable<Guid>? ServiceCatalogIds { get; init; }
+}
+
+public class WorkOrderProductResponse
+{
+    public Guid ProductId { get; init; }
+    public int Quantity { get; init; }
 }

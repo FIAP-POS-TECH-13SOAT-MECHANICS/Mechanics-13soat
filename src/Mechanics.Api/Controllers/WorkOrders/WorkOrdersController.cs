@@ -16,6 +16,7 @@ namespace Mechanics.Api.Controllers.WorkOrders;
 [ApiController]
 [ApiExplorerSettings(GroupName = "v1")]
 [Route("api/[controller]")]
+[Authorize]
 public class WorkOrdersController(WorkOrderAppService workOrderService)
     : ControllerBase
 {
@@ -205,6 +206,23 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
         await workOrderService.ChangeStatus(id, WorkOrderStatus.Delivered, userId,
             cancellationToken: cancellationToken);
         return NoContent();
+    }
+
+    /// <summary>
+    ///     Lista ordens de serviço com filtros opcionais e paginação.
+    /// </summary>
+    /// <param name="request">Parâmetros de filtro e paginação.</param>
+    /// <param name="cancellationToken">Token para cancelamento da operação.</param>
+    /// <response code="200">Consulta executada.</response>
+    /// <response code="400">Parâmetros inválidos.</response>
+    [HttpGet]
+    [Produces("application/json", Type = typeof(GetWorkOrdersResponse))]
+    [ProducesResponseType(typeof(GetWorkOrdersResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetWorkOrders([FromQuery] GetWorkOrdersRequest request, CancellationToken cancellationToken)
+    {
+        var response = await workOrderService.GetList(request, cancellationToken);
+        return Ok(response);
     }
 
     /// <summary>

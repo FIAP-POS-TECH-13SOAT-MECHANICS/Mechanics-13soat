@@ -1,6 +1,7 @@
 using Mechanics.Application.Products.Requests;
 using Mechanics.Domain.Base;
 using Mechanics.Domain.Products;
+using Mechanics.Domain.WorkOrders;
 
 namespace Mechanics.Tests.Unit.Mocks;
 
@@ -61,4 +62,15 @@ public static class ProductMocks
         Quantity = -1,
         Status = ProductStatusType.Active,
     };
+
+    public static WorkOrderProduct CreateWorkOrderProduct(Guid? productId = null)
+    {
+        var id = productId ?? Guid.NewGuid();
+        return new WorkOrderProduct
+        {
+            ProductId = id,
+            Product = CreateProduct(id),
+            Quantity = 1,
+        };
+    }
 }

@@ -160,7 +160,7 @@ public class EmailServiceTests
         Assert.IsNotNull(emailMessage);
         Assert.AreEqual(customer.Email, emailMessage.Recipient);
         Assert.IsNotNull(emailMessage.Subject);
-        Assert.IsTrue(emailMessage.Body.Contains("foi cancelada"));
+        Assert.Contains("foi cancelada", emailMessage.Body);
     }
 
     [TestMethod]
@@ -204,7 +204,7 @@ public class EmailServiceTests
         Assert.IsNotNull(emailMessage);
         Assert.AreEqual(mechanic.Email, emailMessage.Recipient);
         Assert.IsNotNull(emailMessage.Subject);
-        Assert.IsTrue(emailMessage.Subject.Contains("aprovado", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains("aprovado", emailMessage.Subject);
     }
 
     [TestMethod]

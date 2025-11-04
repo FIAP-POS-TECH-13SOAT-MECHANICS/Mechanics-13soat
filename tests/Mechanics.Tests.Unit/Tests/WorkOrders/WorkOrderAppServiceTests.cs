@@ -860,7 +860,7 @@ public class WorkOrderAppServiceTests
         {
             Id = someUserId, FullName = "Mec A", UserName = "meca", Email = "meca@example.com", PasswordHash = "h",
             SecurityStamp = Guid.NewGuid().ToString(), RoleId = mechanicRoleId, CreationDate = DateTime.UtcNow,
-        });
+        }, TestContext.CancellationTokenSource.Token);
         await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
 
         await ThrowsExactlyAsync<EntityNotFoundException>(() =>

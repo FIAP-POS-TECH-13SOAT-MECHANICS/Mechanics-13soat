@@ -181,6 +181,6 @@ public class ServiceCatalogControllerTests
         // Assert
         Console.WriteLine($"Status: {pagedResponse.StatusCode}, Body: {content}");
         Assert.AreEqual(HttpStatusCode.OK, pagedResponse.StatusCode);
-        Assert.IsTrue(content.Contains("\"items\""));
+        Assert.Contains("\"items\"", content);
     }
 }

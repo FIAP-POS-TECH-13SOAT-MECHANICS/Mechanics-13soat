@@ -138,23 +138,18 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
         var customer = await dbContext.Customers
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Document.Number == normalizedDocument, cancellationToken);
-
         EntityNotFoundException.ThrowIfNull(customer, document);
 
         var wo = await dbContext.WorkOrders
             .FirstOrDefaultAsync(w => w.CustomerId == customer.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
-
-        if (wo is null)
-            throw new BusinessException("Work order not found or access key invalid.");
+        EntityNotFoundException.ThrowIfNull(wo, accessKey);
 
         var budget = await dbContext.Budgets
             .Where(b => b.WorkOrderId == wo.Id && b.Status == BudgetStatus.Sent)
             .OrderByDescending(b => b.CreationDate)
             .Include(b => b.Items)
             .FirstOrDefaultAsync(cancellationToken);
-
-        if (budget is null)
-            throw new BusinessException("No pending budget found for this work order.");
+        EntityNotFoundException.ThrowIfNull(budget, budget?.WorkOrderId);
 
         if (budget.ApprovedAt != null)
             throw new BusinessException("Budget already approved.");
@@ -233,23 +228,18 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
         var customer = await dbContext.Customers
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Document.Number == normalizedDocument, cancellationToken);
-
         EntityNotFoundException.ThrowIfNull(customer, document);
 
         var wo = await dbContext.WorkOrders
             .FirstOrDefaultAsync(w => w.CustomerId == customer.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
-
-        if (wo is null)
-            throw new BusinessException("Work order not found or access key invalid.");
+        EntityNotFoundException.ThrowIfNull(wo, accessKey);
 
         var budget = await dbContext.Budgets
             .Where(b => b.WorkOrderId == wo.Id && b.Status == BudgetStatus.Sent)
             .OrderByDescending(b => b.CreationDate)
             .Include(b => b.Items)
             .FirstOrDefaultAsync(cancellationToken);
-
-        if (budget is null)
-            throw new BusinessException("No pending budget found for this work order.");
+        EntityNotFoundException.ThrowIfNull(budget, wo.Id);
 
         if (budget.ExpiresAt.HasValue && DateTime.Now > budget.ExpiresAt.Value)
         {
@@ -309,7 +299,6 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
             }
         }
     }
-
 
     private static decimal GetProductUnitPrice(Product p)
     {

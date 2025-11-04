@@ -635,16 +635,14 @@ public class WorkOrderAppServiceTests
         AreEqual(30 + 45, response.TotalAverageTime);
     }
 
-    [TestMethod("GetAverageServiceTime should return zero when work order not found")]
-    public async Task GetAverageServiceTime_ShouldReturnZeroWhenWorkOrderNotFound()
+    [TestMethod("GetAverageServiceTime should throw when work order not found")]
+    public async Task GetAverageServiceTime_ShouldThrowWhenWorkOrderNotFound()
     {
         await using var context = new DbContextTestBuilder().Build();
-
         var budgetService = new BudgetAppService(
             context,
             _emailMock,
             _loggerFactory.CreateLogger<BudgetAppService>());
-
         var service = new WorkOrderAppService(
             context,
             _mapper,
@@ -652,12 +650,8 @@ public class WorkOrderAppServiceTests
             _loggerFactory.CreateLogger<WorkOrderAppService>(),
             budgetService);
 
-        var id = Guid.NewGuid();
-        var response = await service.GetAverageServiceTime(id, TestContext.CancellationTokenSource.Token);
-
-        IsNotNull(response);
-        AreEqual(id, response.WorkOrderId);
-        AreEqual(0, response.TotalAverageTime);
+        await ThrowsAsync<EntityNotFoundException>(async () =>
+            await service.GetAverageServiceTime(Guid.NewGuid(), TestContext.CancellationTokenSource.Token));
     }
 
     [TestMethod("Assign should set mechanic, record history and auto-transition from Received")]

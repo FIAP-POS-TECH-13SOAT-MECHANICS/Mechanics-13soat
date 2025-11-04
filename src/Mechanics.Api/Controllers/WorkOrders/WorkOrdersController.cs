@@ -221,7 +221,6 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     public async Task<IActionResult> GetAverageServiceTime(Guid id, CancellationToken cancellationToken)
     {
         var response = await workOrderService.GetAverageServiceTime(id, cancellationToken);
-        if (response is null) return NotFound();
         return Ok(response);
     }
 

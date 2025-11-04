@@ -325,7 +325,7 @@ public class WorkOrderAppService(
     /// </summary>
     /// <param name="id">Identificador da WorkOrder.</param>
     /// <param name="cancellationToken">Token para cancelamento da operação.</param>
-    public async Task<GetWorkOrderAverageTimeResponse?> GetAverageServiceTime(Guid id,
+    public async Task<GetWorkOrderAverageTimeResponse> GetAverageServiceTime(Guid id,
         CancellationToken cancellationToken = default)
     {
         var workOrder = await db.WorkOrders
@@ -339,7 +339,7 @@ public class WorkOrderAppService(
         {
             WorkOrderId = workOrder.Id,
             TotalAverageTime = workOrder.ServiceCatalog?.Sum(s => s.AverageTime) ?? 0
-        };  
+        };
     }
 
     private static bool IsTransitionAllowed(WorkOrderStatus from, WorkOrderStatus to) =>

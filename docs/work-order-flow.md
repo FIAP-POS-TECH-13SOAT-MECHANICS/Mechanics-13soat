@@ -40,7 +40,7 @@ Objetivo: Receber veículo, diagnosticar, gerar orçamento, obter aprovação do
 | Análise / Orçamento | `POST /api/WorkOrders/{id}/request-approval` | Atendente ou Administrador| Sinaliza que o orçamento está pronto `PendingApproval` e aciona a notificação ao cliente. |
 | Execução | `POST /api/WorkOrders/{id}/start` | Mecânico ou Administrador | Após aprovar o orçamento, altera o status para `InProgress`, indicando início dos trabalhos. |
 | Execução | `POST /api/WorkOrders/{id}/complete` | Mecânico ou Administrador | Marca a OS como `Completed` após finalizar os reparos. |
-| Encerramento | `POST /api/WorkOrders/{id}/deliver` | Atendente ou Administrador | Registra a retirada do veículo e encerra a OS (`Delivered`). |
+| Encerramento | `POST /api/WorkOrders/{id}/deliver` | Atendente ou Administrador | Registra a retirada do veículo e encerra a OS `Delivered`. |
 | Cliente | `GET /api/WorkOrders/track?document=&accessKey=` | Anônimo (cliente) | Consulta pública da OS usando documento e chave enviados por e-mail. |
 | Cliente | `POST /api/work-orders/approve-budget` | Anônimo (cliente) | Recebe documento e chave para aprovar o orçamento. |
 | Cliente | `POST /api/work-orders/reject-budget` | Anônimo (cliente) | Registra a rejeição e possibilita comentários do cliente. |

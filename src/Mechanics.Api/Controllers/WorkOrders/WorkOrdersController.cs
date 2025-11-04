@@ -207,6 +207,23 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
         return NoContent();
     }
 
+    /// <summary>
+    ///     Obtém o tempo médio total estimado para execução dos serviços associados à ordem.
+    /// </summary>
+    /// <param name="id">Identificador da ordem.</param>
+    /// <param name="cancellationToken">Token para cancelamento da operação.</param>
+    /// <response code="200">Registro encontrado.</response>
+    /// <response code="404">Registro não encontrado.</response>
+    [HttpGet("{id:guid}/services/average-time")]
+    [Produces("application/json", Type = typeof(GetWorkOrderAverageTimeResponse))]
+    [ProducesResponseType(typeof(GetWorkOrderAverageTimeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetAverageServiceTime(Guid id, CancellationToken cancellationToken)
+    {
+        var response = await workOrderService.GetAverageServiceTime(id, cancellationToken);
+        return Ok(response);
+    }
+
     private Guid GetCurrentUserId()
     {
         var identifier = User.FindFirstValue(ClaimTypes.NameIdentifier);

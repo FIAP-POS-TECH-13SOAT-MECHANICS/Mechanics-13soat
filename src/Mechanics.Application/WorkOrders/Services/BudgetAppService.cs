@@ -47,19 +47,21 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
         var partsTotal = 0m;
         if (wo.Products?.Count > 0)
         {
-            var productIds = wo.Products.Select(p => p.Id).ToList();
+            var productIds = wo.Products.Select(p => p.ProductId).ToList();
             var products = await dbContext.Products.Where(p => productIds.Contains(p.Id)).ToListAsync(cancellationToken);
 
-            foreach (var item in products.Select(p => new BudgetItem
-                     {
-                         BudgetId = budget.Id,
-                         ProductId = p.Id,
-                         NameSnapshot = p.Name,
-                         UnitPriceSnapshot = p.UnitPrice,
-                         Quantity = 1,
-                         Subtotal = p.UnitPrice * 1,
-                     }))
+            foreach (var workOrderProduct in wo.Products)
             {
+                var product = products.First(product => product.Id == workOrderProduct.ProductId);
+                var item = new BudgetItem
+                {
+                    BudgetId = budget.Id,
+                    ProductId = product.Id,
+                    NameSnapshot = product.Name,
+                    UnitPriceSnapshot = product.UnitPrice,
+                    Quantity = workOrderProduct.Quantity,
+                    Subtotal = product.UnitPrice * workOrderProduct.Quantity,
+                };
                 partsTotal += item.Subtotal;
                 budget.Items.Add(item);
             }
@@ -69,19 +71,19 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
         if (wo.ServiceCatalog?.Count > 0)
         {
             var serviceIds = wo.ServiceCatalog.Select(s => s.Id).ToList();
-            var services = await dbContext.ServiceCatalog.Where(s => serviceIds.Contains(s.Id)).ToListAsync(cancellationToken);
+            var services = await dbContext.ServiceCatalog.Where(s => serviceIds.Contains(s.Id))
+                .ToListAsync(cancellationToken);
 
-            foreach (var s in services)
+            foreach (var item in services.Select(s => new BudgetItem
+                     {
+                         BudgetId = budget.Id,
+                         ServiceCatalogId = s.Id,
+                         NameSnapshot = s.Name,
+                         UnitPriceSnapshot = s.BasePrice,
+                         Quantity = 1, // serviços são individuais
+                         Subtotal = s.BasePrice,
+                     }))
             {
-                var item = new BudgetItem
-                {
-                    BudgetId = budget.Id,
-                    ServiceCatalogId = s.Id,
-                    NameSnapshot = s.Name,
-                    UnitPriceSnapshot = s.BasePrice,
-                    Quantity = 1,
-                    Subtotal = s.BasePrice * 1,
-                };
                 servicesTotal += item.Subtotal;
                 budget.Items.Add(item);
             }

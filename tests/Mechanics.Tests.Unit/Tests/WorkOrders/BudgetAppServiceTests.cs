@@ -46,7 +46,7 @@ public class BudgetAppServiceTests
                 ctx.ServiceCatalog.Add(service);
                 ctx.WorkOrders.Add(wo);
                 wo.ServiceCatalog = [service];
-                wo.Products = [ProductMocks.CreateProduct(Guid.NewGuid())];
+                wo.Products = [ProductMocks.CreateWorkOrderProduct()];
             })
             .Build();
 
@@ -262,7 +262,7 @@ public class BudgetAppServiceTests
         var updated = await context.Budgets.AsNoTracking()
             .FirstOrDefaultAsync(b => b.WorkOrderId == wo.Id, TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(updated);
-        Assert.AreEqual(BudgetStatus.Expired, updated!.Status);
+        Assert.AreEqual(BudgetStatus.Expired, updated.Status);
         Assert.IsNull(updated.ApprovedAt, "Não deve aprovar orçamento expirado");
     }
 
@@ -394,7 +394,7 @@ public class BudgetAppServiceTests
         var updated = await context.Budgets.AsNoTracking()
             .FirstOrDefaultAsync(b => b.WorkOrderId == wo.Id, TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(updated);
-        Assert.AreEqual(BudgetStatus.Expired, updated!.Status);
+        Assert.AreEqual(BudgetStatus.Expired, updated.Status);
         Assert.IsNull(updated.RejectedAt, "Não deve rejeitar orçamento expirado");
     }
 

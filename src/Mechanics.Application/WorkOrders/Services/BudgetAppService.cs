@@ -1,7 +1,6 @@
 using Mechanics.Application.Notification.Services;
 using Mechanics.Application.Utils;
 using Mechanics.Domain.Base.Exceptions;
-using Mechanics.Domain.Products;
 using Mechanics.Domain.WorkOrders;
 using Mechanics.Infra.Data;
 using Microsoft.EntityFrameworkCore;
@@ -51,18 +50,16 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
             var productIds = wo.Products.Select(p => p.Id).ToList();
             var products = await dbContext.Products.Where(p => productIds.Contains(p.Id)).ToListAsync(cancellationToken);
 
-            foreach (var p in products)
+            foreach (var item in products.Select(p => new BudgetItem
+                     {
+                         BudgetId = budget.Id,
+                         ProductId = p.Id,
+                         NameSnapshot = p.Name,
+                         UnitPriceSnapshot = p.UnitPrice,
+                         Quantity = 1,
+                         Subtotal = p.UnitPrice * 1,
+                     }))
             {
-                var unitPrice = GetProductUnitPrice(p);
-                var item = new BudgetItem
-                {
-                    BudgetId = budget.Id,
-                    ProductId = p.Id,
-                    NameSnapshot = p.Name,
-                    UnitPriceSnapshot = unitPrice,
-                    Quantity = 1,
-                    Subtotal = unitPrice * 1,
-                };
                 partsTotal += item.Subtotal;
                 budget.Items.Add(item);
             }
@@ -166,8 +163,6 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
         budget.ApprovedAt = DateTime.Now;
         budget.ApprovedByCustomerDocument = normalizedDocument;
         budget.Description = description;
-
-        wo.ApprovedAt ??= DateTime.Now;
         wo.LastUpdate = DateTime.Now;
 
         var hist = new WorkOrderHistory
@@ -298,16 +293,5 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
                 }
             }
         }
-    }
-
-    private static decimal GetProductUnitPrice(Product p)
-    {
-        var unitPriceProp = p.GetType().GetProperty("UnitPrice");
-        if (unitPriceProp != null && unitPriceProp.GetValue(p) is decimal up) return up;
-
-        var priceProp = p.GetType().GetProperty("Price");
-        if (priceProp != null && priceProp.GetValue(p) is decimal pr) return pr;
-
-        return 0m;
     }
 }

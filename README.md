@@ -49,6 +49,7 @@ Esse repositório contém instruções para execução local das análises com *
 - [Configuração do ambiente](./docs/configuration.md)
 - [Diagramas](./docs/diagrams.md)
 - [Diretrizes de design do projeto](./docs/design-guidelines.md)
+- [Fluxo de Ordem de Serviço](./docs/work-order-flow.md)
 - [Migrações do banco de dados](./docs/migrations.md)
 - [Objetivos](./docs/objectives.md)
 - [Relatórios](./docs/reports/README.md)

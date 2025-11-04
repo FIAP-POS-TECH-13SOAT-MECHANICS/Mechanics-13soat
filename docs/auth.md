@@ -6,7 +6,7 @@
 - **Atendente**: Possui as permissões para cadastrar novos clientes e seus veículos.
 - **Mecânico**: Possui as permissões para cadastrar e alterar produtos e serviços oferecidos.
 
-OBS.: Todos os perfis possuem acesso pada criar e atualizar as ordens de serviço.
+No fluxo de ordens de serviço, os perfis Atendente e Mecânico possuem alguns acessos específicos. Acesse [Fluxo de Ordem de Serviço](./work-order-flow.md) para mais detalhes.
 
 ## Login
 

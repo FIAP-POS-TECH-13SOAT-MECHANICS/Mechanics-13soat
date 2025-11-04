@@ -39,7 +39,7 @@ public class ProductsControllerTest
         Assert.AreEqual(HttpStatusCode.Created, httpResponse.StatusCode);
         var content = await httpResponse.Content.ReadFromJsonAsync<CreateItemResponse>(TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(content);
-        Assert.AreNotEqual(Guid.Empty, content!.CreatedId);
+        Assert.AreNotEqual(Guid.Empty, content.CreatedId);
     }
 
     [TestMethod("Cadastro de produto com erro")]

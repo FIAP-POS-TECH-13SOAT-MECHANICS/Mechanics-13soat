@@ -32,7 +32,7 @@ public class WorkOrderAppService(
            .FirstOrDefaultAsync(v => v.Id == request.VehicleId, cancellationToken);
 
         EntityNotFoundException.ThrowIfNull(vehicle, request.VehicleId);
-        EntityNotFoundException.ThrowIfNull(vehicle!.Owner, vehicle.OwnerId);
+        EntityNotFoundException.ThrowIfNull(vehicle.Owner, vehicle.OwnerId);
 
         var existingOrders = await db.WorkOrders.Where(w => w.CustomerId == vehicle.OwnerId)
             .ToListAsync(cancellationToken);
@@ -91,10 +91,10 @@ public class WorkOrderAppService(
 
         EntityNotFoundException.ThrowIfNull(assignedUser, assignedToUserId);
 
-        if (assignedUser!.Role?.Name != RoleNames.Mechanic)
+        if (assignedUser.Role?.Name != RoleNames.Mechanic)
             throw new BusinessException("Assigned user must be a mechanic.");
 
-        wo!.AssignedToUserId = assignedToUserId;
+        wo.AssignedToUserId = assignedToUserId;
         wo.LastUpdate = DateTime.Now;
 
         var hist = new WorkOrderHistory
@@ -144,7 +144,7 @@ public class WorkOrderAppService(
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Document.Number == normalizedDocument, cancellationToken);
 
-        if (customer is null) return null;
+        EntityNotFoundException.ThrowIfNull(customer, document);
 
         var wo = await db.WorkOrders
             .Include(w => w.Products)
@@ -152,7 +152,9 @@ public class WorkOrderAppService(
             .AsNoTracking()
             .FirstOrDefaultAsync(w => w.CustomerId == customer.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
 
-        return wo is null ? null : mapper.Map<GetWorkOrderResponse>(wo);
+        EntityNotFoundException.ThrowIfNull(wo, accessKey);
+
+        return mapper.Map<GetWorkOrderResponse>(wo);
     }
 
     /// <summary>
@@ -161,7 +163,7 @@ public class WorkOrderAppService(
     public async Task RequestApproval(Guid workOrderId, Guid performedByUserId, CancellationToken cancellationToken = default)
     {
         var woExists = await db.WorkOrders.AnyAsync(w => w.Id == workOrderId, cancellationToken);
-        EntityNotFoundException.ThrowIfFalse<WorkOrder>(woExists, workOrderId);
+        EntityNotFoundException.ThrowIfNotFound<WorkOrder>(woExists, workOrderId);
 
         await budgetService.CreateAndSendBudget(workOrderId, performedByUserId, cancellationToken);
     }
@@ -176,7 +178,7 @@ public class WorkOrderAppService(
         var wo = await db.WorkOrders.FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
         EntityNotFoundException.ThrowIfNull(wo, workOrderId);
 
-        var previous = wo!.Status;
+        var previous = wo.Status;
 
         if (previous == newStatus)
             throw new BusinessException($"Work order is already in {newStatus}.");
@@ -243,17 +245,17 @@ public class WorkOrderAppService(
 
         EntityNotFoundException.ThrowIfNull(wo, workOrderId);
 
-        var addedProducts = await ApplyProductsToWorkOrderAsync(wo!, request.ProductIds, cancellationToken);
-        var addedServices = await ApplyServicesToWorkOrderAsync(wo!, request.ServiceIds, cancellationToken);
+        var addedProducts = await ApplyProductsToWorkOrderAsync(wo, request.ProductIds, cancellationToken);
+        var addedServices = await ApplyServicesToWorkOrderAsync(wo, request.ServiceIds, cancellationToken);
 
-        var observationChanged = request.Observations is not null && wo!.Observations != request.Observations;
+        var observationChanged = request.Observations is not null && wo.Observations != request.Observations;
         if (observationChanged)
-            wo!.Observations = request.Observations;
+            wo.Observations = request.Observations;
 
         if (addedProducts == 0 && addedServices == 0 && !observationChanged)
             return;
 
-        wo!.LastUpdate = DateTime.Now;
+        wo.LastUpdate = DateTime.Now;
 
         var detailsParts = new List<string>();
         if (addedProducts > 0) detailsParts.Add($"AddedProducts:{addedProducts}");

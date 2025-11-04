@@ -158,9 +158,8 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     public async Task<IActionResult> Track([FromQuery] string document, [FromQuery] string accessKey,
         CancellationToken cancellationToken)
     {
-        var resp = await workOrderService.TrackByDocumentAndAccessKey(document, accessKey, cancellationToken);
-        if (resp is null) return NotFound();
-        return Ok(resp);
+        var response = await workOrderService.TrackByDocumentAndAccessKey(document, accessKey, cancellationToken);
+        return Ok(response);
     }
 
     /// <summary>

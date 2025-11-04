@@ -32,7 +32,7 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
 
         EntityNotFoundException.ThrowIfNull(wo, workOrderId);
 
-        if ((wo!.Products == null || wo.Products.Count == 0) && (wo.ServiceCatalog == null || wo.ServiceCatalog.Count == 0))
+        if ((wo.Products == null || wo.Products.Count == 0) && (wo.ServiceCatalog == null || wo.ServiceCatalog.Count == 0))
             throw new BusinessException("Order must contain at least one product or service to create a budget.");
 
         var now = DateTime.Now;
@@ -130,7 +130,8 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
     /// <summary>
     ///     Aprova um budget publicamente via documento + accessKey
     /// </summary>
-    public async Task PublicApproveBudget(string document, string accessKey, string? description = null, CancellationToken cancellationToken = default)
+    public async Task PublicApproveBudget(string document, string accessKey, string? description = null,
+        CancellationToken cancellationToken = default)
     {
         var normalizedDocument = new string(document.Where(char.IsDigit).ToArray());
         var normalizedAccessKey = accessKey.Replace(" ", "");
@@ -139,10 +140,10 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Document.Number == normalizedDocument, cancellationToken);
 
-        EntityNotFoundException.ThrowIfNull(customer, null);
+        EntityNotFoundException.ThrowIfNull(customer, document);
 
         var wo = await dbContext.WorkOrders
-            .FirstOrDefaultAsync(w => w.CustomerId == customer!.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
+            .FirstOrDefaultAsync(w => w.CustomerId == customer.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
 
         if (wo is null)
             throw new BusinessException("Work order not found or access key invalid.");
@@ -180,7 +181,9 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
             WorkOrderId = wo.Id,
             OccurredAt = DateTime.Now,
             Action = "BudgetApprovedPublic",
-            Details = description is null ? $"Budget {budget.Id} approved by customer {normalizedDocument}." : $"Budget {budget.Id} approved by customer {normalizedDocument}. Description: {description}",
+            Details = description is null
+                ? $"Budget {budget.Id} approved by customer {normalizedDocument}."
+                : $"Budget {budget.Id} approved by customer {normalizedDocument}. Description: {description}",
             PerformedByUserId = null,
         };
         await dbContext.WorkOrderHistories.AddAsync(hist, cancellationToken);
@@ -223,7 +226,8 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
     ///     Rejeita um budget publicamente via documento + accessKey.
     ///     Marca o budget como Rejected, coloca a OS novamente em UnderDiagnosis e notifica o mecânico.
     /// </summary>
-    public async Task PublicRejectBudget(string document, string accessKey, string? description = null, CancellationToken cancellationToken = default)
+    public async Task PublicRejectBudget(string document, string accessKey, string? description = null,
+        CancellationToken cancellationToken = default)
     {
         var normalizedDocument = new string(document.Where(char.IsDigit).ToArray());
         var normalizedAccessKey = accessKey.Replace(" ", "");
@@ -232,10 +236,10 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Document.Number == normalizedDocument, cancellationToken);
 
-        EntityNotFoundException.ThrowIfNull(customer, null);
+        EntityNotFoundException.ThrowIfNull(customer, document);
 
         var wo = await dbContext.WorkOrders
-            .FirstOrDefaultAsync(w => w.CustomerId == customer!.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
+            .FirstOrDefaultAsync(w => w.CustomerId == customer.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
 
         if (wo is null)
             throw new BusinessException("Work order not found or access key invalid.");
@@ -268,7 +272,9 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
             WorkOrderId = wo.Id,
             OccurredAt = DateTime.Now,
             Action = "BudgetRejectedByCustomer",
-            Details = description is null ? $"Budget {budget.Id} rejected by customer {normalizedDocument}." : $"Budget {budget.Id} rejected by customer {normalizedDocument}. Description: {description}",
+            Details = description is null
+                ? $"Budget {budget.Id} rejected by customer {normalizedDocument}."
+                : $"Budget {budget.Id} rejected by customer {normalizedDocument}. Description: {description}",
             PerformedByUserId = null,
         };
         await dbContext.WorkOrderHistories.AddAsync(hist, cancellationToken);
@@ -280,11 +286,13 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
         {
             try
             {
-                await emailService.SendWorkOrderStatusChanged(customerEntity, wo, WorkOrderStatus.PendingApproval, cancellationToken);
+                await emailService.SendWorkOrderStatusChanged(customerEntity, wo, WorkOrderStatus.PendingApproval,
+                    cancellationToken);
             }
             catch (Exception ex)
             {
-                logger.LogWarning(ex, "Failed to send status changed email after budget rejection for WorkOrder {WorkOrderId}", wo.Id);
+                logger.LogWarning(ex, "Failed to send status changed email after budget rejection for WorkOrder {WorkOrderId}",
+                    wo.Id);
             }
         }
 

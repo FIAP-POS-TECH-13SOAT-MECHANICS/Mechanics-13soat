@@ -379,7 +379,7 @@ public class WorkOrderAppServiceTests
         IsFalse(_emailMock.SendWorkOrderStatusChangedCalled, "Status change email should not be sent");
         var histories = await context.WorkOrderHistories.Where(h => h.WorkOrderId == wo.Id)
             .ToListAsync(TestContext.CancellationTokenSource.Token);
-        IsNotEmpty(histories, "No history should be recorded");
+        IsEmpty(histories, "No history should be recorded");
 
         var reloaded = await context.WorkOrders.FindAsync([wo.Id], TestContext.CancellationTokenSource.Token);
         IsNotNull(reloaded);
@@ -515,7 +515,6 @@ public class WorkOrderAppServiceTests
         AreEqual(req.Observations, reloaded.Observations);
 
         var history = await context.WorkOrderHistories.Where(h => h.WorkOrderId == wo.Id && h.Action == "DetailsUpdated")
-            .Include(orderHistory => orderHistory.Details)
             .FirstOrDefaultAsync(TestContext.CancellationTokenSource.Token);
         IsNotNull(history);
         IsNotNull(history.Details);

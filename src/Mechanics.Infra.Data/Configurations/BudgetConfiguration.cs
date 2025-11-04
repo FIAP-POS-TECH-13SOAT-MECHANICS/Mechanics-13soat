@@ -25,10 +25,6 @@ public class BudgetConfiguration : IEntityTypeConfiguration<Budget>
             .HasForeignKey(i => i.BudgetId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Property(b => b.RejectedAt)
-            .HasDefaultValueSql("SYSDATETIME()")
-            .IsRequired(false);
-
         builder.Property(b => b.Description)
             .HasMaxLength(2000)
             .IsRequired(false);

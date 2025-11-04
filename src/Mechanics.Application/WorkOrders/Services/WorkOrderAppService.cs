@@ -333,14 +333,13 @@ public class WorkOrderAppService(
             .Include(w => w.ServiceCatalog)
             .FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
 
-        if (workOrder is null)
-            return null;
+        EntityNotFoundException.ThrowIfNull(workOrder, id);
 
         return new GetWorkOrderAverageTimeResponse
         {
             WorkOrderId = workOrder.Id,
             TotalAverageTime = workOrder.ServiceCatalog?.Sum(s => s.AverageTime) ?? 0
-        };
+        };  
     }
 
     private static bool IsTransitionAllowed(WorkOrderStatus from, WorkOrderStatus to) =>

@@ -320,6 +320,26 @@ public class WorkOrderAppService(
         return added;
     }
 
+    /// <summary>
+    ///     Obtém o tempo médio total estimado para execução dos serviços associados a uma WorkOrder.
+    /// </summary>
+    /// <param name="id">Identificador da WorkOrder.</param>
+    /// <param name="cancellationToken">Token para cancelamento da operação.</param>
+    public async Task<GetWorkOrderAverageTimeResponse?> GetAverageServiceTime(Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var workOrder = await db.WorkOrders
+            .AsNoTracking()
+            .Include(w => w.ServiceCatalog)
+            .FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
+
+        return new GetWorkOrderAverageTimeResponse
+        {
+            WorkOrderId = workOrder?.Id ?? id,
+            TotalAverageTime = workOrder?.ServiceCatalog?.Sum(s => s.AverageTime) ?? 0
+        };
+    }
+
     private static bool IsTransitionAllowed(WorkOrderStatus from, WorkOrderStatus to) =>
         (from, to) switch
         {

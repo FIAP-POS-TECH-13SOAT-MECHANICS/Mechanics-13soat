@@ -523,4 +523,120 @@ public class WorkOrderAppServiceTests
         Contains("AddedServices:1", history.Details);
         Contains("ObservationsUpdated", history.Details);
     }
+
+    // New tests for GetAverageServiceTime
+    [TestMethod("GetAverageServiceTime should return total average time for associated services")]
+    public async Task GetAverageServiceTime_ShouldReturnSumOfAverageTimes()
+    {
+        var customerId = Guid.NewGuid();
+        var vehicleId = Guid.NewGuid();
+        var svc1Id = Guid.NewGuid();
+        var svc2Id = Guid.NewGuid();
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(ctx =>
+            {
+                ctx.Customers.Add(new Customer
+                {
+                    Id = customerId,
+                    Name = "Client",
+                    Email = "client@example.com",
+                    Document = new PersonalDocument(DocumentType.Cpf, "12312312312")
+                });
+
+                ctx.Vehicles.Add(new Vehicle
+                {
+                    Id = vehicleId,
+                    Manufacturer = "Make",
+                    Model = "Model",
+                    Color = VehicleColor.White,
+                    Year = "2020",
+                    LicensePlate = new LicensePlate("AVG1234"),
+                    Chassis = "CHAVG",
+                    OwnerId = customerId
+                });
+
+                ctx.ServiceCatalog.Add(new ServiceCatalog
+                {
+                    Id = svc1Id,
+                    Name = "Service 1",
+                    Description = "S1",
+                    BasePrice = 10m,
+                    AverageTime = 30,
+                    Status = ServiceCatalogStatusType.Active
+                });
+
+                ctx.ServiceCatalog.Add(new ServiceCatalog
+                {
+                    Id = svc2Id,
+                    Name = "Service 2",
+                    Description = "S2",
+                    BasePrice = 20m,
+                    AverageTime = 45,
+                    Status = ServiceCatalogStatusType.Active
+                });
+            })
+            .Build();
+
+        var svc1 = await context.ServiceCatalog.FindAsync([svc1Id], TestContext.CancellationTokenSource.Token);
+        var svc2 = await context.ServiceCatalog.FindAsync([svc2Id], TestContext.CancellationTokenSource.Token);
+
+        var wo = new WorkOrder
+        {
+            Id = Guid.NewGuid(),
+            CustomerId = customerId,
+            VehicleId = vehicleId,
+            AccessKey = WorkOrder.GenerateNewAccessKey([]),
+            Status = WorkOrderStatus.Received,
+            CreationDate = DateTime.Now,
+            LastUpdate = DateTime.Now,
+            ServiceCatalog = new List<ServiceCatalog> { svc1!, svc2! }
+        };
+
+        context.WorkOrders.Add(wo);
+        await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
+
+        var budgetService = new BudgetAppService(
+            context,
+            _emailMock,
+            _loggerFactory.CreateLogger<BudgetAppService>());
+
+        var service = new WorkOrderAppService(
+            context,
+            _mapper,
+            _emailMock,
+            _loggerFactory.CreateLogger<WorkOrderAppService>(),
+            budgetService);
+
+        var response = await service.GetAverageServiceTime(wo.Id, TestContext.CancellationTokenSource.Token);
+
+        IsNotNull(response);
+        AreEqual(wo.Id, response.WorkOrderId);
+        AreEqual(30 + 45, response.TotalAverageTime);
+    }
+
+    [TestMethod("GetAverageServiceTime should return zero when work order not found")]
+    public async Task GetAverageServiceTime_ShouldReturnZeroWhenWorkOrderNotFound()
+    {
+        await using var context = new DbContextTestBuilder().Build();
+
+        var budgetService = new BudgetAppService(
+            context,
+            _emailMock,
+            _loggerFactory.CreateLogger<BudgetAppService>());
+
+        var service = new WorkOrderAppService(
+            context,
+            _mapper,
+            _emailMock, 
+            _loggerFactory.CreateLogger<WorkOrderAppService>(),
+            budgetService);
+
+        var id = Guid.NewGuid();
+        var response = await service.GetAverageServiceTime(id, TestContext.CancellationTokenSource.Token);
+
+        IsNotNull(response);
+        AreEqual(id, response.WorkOrderId);
+        AreEqual(0, response.TotalAverageTime);
+    }
 }

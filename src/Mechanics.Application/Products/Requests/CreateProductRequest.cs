@@ -26,6 +26,11 @@ public class CreateProductRequest
     public required int Quantity { get; init; }
 
     /// <summary>
+    ///     Preço unitário do produto.
+    /// </summary>
+    public required decimal UnitPrice { get; init; }
+
+    /// <summary>
     ///     Status do produto. Opcional para atualização.
     /// </summary>
     public ProductStatusType? Status { get; init; }

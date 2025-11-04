@@ -13,6 +13,7 @@ public static class ProductMocks
         Type = ProductType.Part,
         Quantity = 10,
         Status = ProductStatusType.Active,
+        UnitPrice = 249.99m,
     };
 
     public static CreateProductRequest BuildInvalidCreateRequest() => new()
@@ -22,6 +23,7 @@ public static class ProductMocks
         Type = ProductType.Part,
         Quantity = -1,
         Status = ProductStatusType.Active,
+        UnitPrice = 50,
     };
 
     public static UpdateProductRequest BuildUpdateRequest() => new()

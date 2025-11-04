@@ -11,5 +11,6 @@ public class CreateProductRequestValidator : AbstractValidator<CreateProductRequ
         RuleFor(request => request.Description).NotEmpty();
         RuleFor(request => request.Type).IsInEnum();
         RuleFor(request => request.Quantity).GreaterThanOrEqualTo(0);
+        RuleFor(request => request.UnitPrice).GreaterThanOrEqualTo(0);
     }
 }

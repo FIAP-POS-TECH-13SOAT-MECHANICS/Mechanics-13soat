@@ -14,6 +14,7 @@ public class Product : AbstractEntity, IValidatable
 
     public required ProductStatusType Status { get; set; }
     public IEnumerable<WorkOrder>? WorkOrders { get; init; }
+    public decimal UnitPrice { get; init; }
 
 
     public void Validate(ValidationBuilder builder) =>

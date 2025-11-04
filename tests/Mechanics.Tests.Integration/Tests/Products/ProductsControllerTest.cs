@@ -28,8 +28,9 @@ public class ProductsControllerTest
             Name = "Pneu",
             Description = "Pneu Pirelli",
             Type = ProductType.Part,
-            Quantity = 10,
+            Quantity = 4,
             Status = ProductStatusType.Active,
+            UnitPrice = 199,
         };
 
         // Act
@@ -56,6 +57,7 @@ public class ProductsControllerTest
             Type = ProductType.Part,
             Quantity = -1,
             Status = ProductStatusType.Active,
+            UnitPrice = 199m,
         };
 
         // Act

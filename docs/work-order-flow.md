@@ -3,33 +3,34 @@
 Atores: Cliente, Atendente, Mecânico, Sistema e Serviço de Notificação.
 Objetivo: Receber veículo, diagnosticar, gerar orçamento, obter aprovação do cliente, executar e finalizar serviço e, por fim, devolver veículo. 
 
-### Descrição
+### Descrição detalhada
+1. Cadastro
+- O atendente cadastra o cliente e o veículo no sistema.
+- É obrigatório informar um endereço de e‑mail válido para envio das notificações.
 
-Quando um novo cliente chega ao estabelecimento, o atendente realiza o cadastro do cliente e do veículo no sistema.
+2. Abertura da OS
+- O atendente registra a OS com o problema relatado.
+- O sistema gera automaticamente uma chave/código de acesso e envia um e‑mail ao cliente com o código e instruções para acompanhamento.
 
-É obrigatório informar um endereço de e‑mail válido para que o cliente receba as notificações referentes à ordem de serviço.
+3. Análise / Orçamento
+- O mecânico realiza o diagnóstico e registra no sistema os produtos e serviços necessários (itens do orçamento).
+- Ao finalizar a análise, o sistema envia um e‑mail ao cliente informando que a OS está aguardando aprovação, com resumo do orçamento.
 
-Em seguida, o atendente gera a Ordem de Serviço (OS) registrando o problema relatado.
+4. Aprovação
+- O cliente acessa a OS usando CPF/CNPJ e a chave de acesso enviada por e‑mail.
+- O cliente aprova ou rejeita o orçamento:
+- Se aprovar, o sistema notifica a oficina e libera a execução.
+- Se rejeitar, o cliente pode registrar observações e a OS retorna para nova análise.
 
-Automaticamente é gerada uma chave/código de acesso e o sistema envia um e‑mail para o cliente contendo esse código e instruções para acompanhamento da OS.
+5. Execução
+- Com o orçamento aprovado, o mecânico atualiza a OS e começa a realizar o serviço.
+- Ao concluir, o mecânico registra a finalização no sistema.
+- O sistema notifica o cliente que o veículo está pronto para retirada.
 
-O veículo passa então para análise do mecânico, que realiza o diagnóstico e registra no sistema os produtos e serviços necessários, formando o orçamento. 
+6. Devolução / Encerramento
+- O cliente retira o veículo; o atendente confere e encerra a OS.
+- O sistema envia um e‑mail final ao cliente confirmando a entrega.
 
-Ao finalizar a análise, o sistema envia um novo e‑mail ao cliente informando que a OS está aguardando aprovação, com o resumo do orçamento e como proceder para aprovar ou rejeitar.
-
-O cliente acessa a OS utilizando seu documento (CPF/CNPJ) e a chave de acesso enviada por e‑mail, e opta por aprovar ou rejeitar o orçamento. 
-
-Em caso de aprovação, o sistema notifica a oficina e libera o início do serviço. 
-
-Se rejeitado, o cliente pode registrar observações. Dessa forma à mecânica pode reavaliar a OS, logo, volta para análise.
-
-Com o orçamento aprovado, o mecânico executa o serviço e, quando concluído, registra a finalização no sistema. 
-
-O cliente recebe uma nova notificação informando que o veículo está pronto para retirada.
-
-Por fim, o cliente retira o veículo; o atendente confere a entrega e encerra a OS no sistema. 
-
-Ao encerrar a ordem, é enviado um e‑mail final ao cliente sinalizando entrega do véiculo.
 ### Diagrama
 ![FluxodaOS](images/d.png)
 

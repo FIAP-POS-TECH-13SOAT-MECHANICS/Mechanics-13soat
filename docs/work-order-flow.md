@@ -1,9 +1,10 @@
-### Resumo do fluxo de Ordem de Serviço.
+# Resumo do fluxo de Ordem de Serviço.
 
-Atores: Cliente, Atendente, Mecânico, Sistema e Serviço de Notificação.
-Objetivo: Receber veículo, diagnosticar, gerar orçamento, obter aprovação do cliente, executar e finalizar serviço e, por fim, devolver veículo. 
+- Atores: Cliente, Atendente, Mecânico, Sistema e Serviço de Notificação.
+- Objetivo: Receber veículo, diagnosticar, gerar orçamento, obter aprovação do cliente, executar e finalizar serviço e, por fim, devolver veículo. 
 
-### Descrição detalhada
+## Descrição detalhada
+
 1. Cadastro
 - O usuário cadastra o cliente e o veículo no sistema.
 - É obrigatório informar um endereço de e‑mail válido para envio das notificações.
@@ -31,9 +32,9 @@ Objetivo: Receber veículo, diagnosticar, gerar orçamento, obter aprovação do
 - O cliente retira o veículo; o atendente confere e encerra a OS.
 - O sistema envia um e‑mail final ao cliente confirmando a entrega.
 
-### Endpoints e roles por etapa
+## Endpoints e perfis por etapa
 
-| fluxo OS | endpoint | role | observações |
+| Fluxo OS | Endpoint | Perfil | Observações |
 | --- | --- | --- | --- |
 | Cadastro e abertura | `POST /api/WorkOrders` | Usuários autenticados* | Cria a OS, status `Received` e dispara o e-mail com a chave de acesso. |
 | Análise / Orçamento | `POST /api/WorkOrders/{id}/assign` | Atendente ou Administrador | Atribui a OS a um mecânico e pode avançar o status para `UnderDiagnosis`. |
@@ -52,6 +53,6 @@ Objetivo: Receber veículo, diagnosticar, gerar orçamento, obter aprovação do
 
 * Usuários autenticados: (Atendente, Administrador ou Mecânico)
 
-### Diagrama
+## Diagrama
 ![FluxodaOS](images/d.png)
 

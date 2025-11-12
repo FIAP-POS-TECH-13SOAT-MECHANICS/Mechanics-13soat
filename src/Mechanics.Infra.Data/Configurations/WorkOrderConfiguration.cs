@@ -8,39 +8,26 @@ public class WorkOrderConfiguration : IEntityTypeConfiguration<WorkOrder>
 {
     public void Configure(EntityTypeBuilder<WorkOrder> builder)
     {
-        builder.Property(entity => entity.Status).IsRequired();
+        builder.Property(entity => entity.Status);
 
-        builder.Property(entity => entity.LastUpdate).IsRequired()
+        builder.Property(entity => entity.LastUpdate)
             .HasDefaultValueSql("SYSDATETIME()")
             .ValueGeneratedOnAdd();
 
-        builder.Property(entity => entity.AccessKey).HasMaxLength(8).IsRequired();
+        builder.Property(entity => entity.AccessKey).HasMaxLength(8).IsFixedLength();
         builder.HasIndex(entity => new { entity.CustomerId, entity.AccessKey }).IsUnique();
 
-        builder.HasOne(entity => entity.Customer)
-            .WithMany()
-            .HasForeignKey(entity => entity.CustomerId)
-            .OnDelete(DeleteBehavior.NoAction)
-            .IsRequired();
+        builder.HasOne(entity => entity.Customer).WithMany().OnDelete(DeleteBehavior.NoAction);
 
-        builder.HasOne(entity => entity.Vehicle)
-            .WithMany()
-            .HasForeignKey(entity => entity.VehicleId)
-            .OnDelete(DeleteBehavior.NoAction)
-            .IsRequired();
+        builder.HasOne(entity => entity.Vehicle).WithMany().OnDelete(DeleteBehavior.NoAction);
 
         builder.HasMany(entity => entity.ServiceCatalog)
-            .WithMany(entity => entity.WorkOrders)
-            .UsingEntity("ServiceCatalogWorkOrder");
+            .WithMany(entity => entity.WorkOrders);
 
         builder.Property(e => e.ReportedProblem).HasMaxLength(1000);
         builder.Property(e => e.Observations).HasMaxLength(2000);
 
-        builder.HasOne(e => e.AssignedToUser)
-            .WithMany()
-            .HasForeignKey(e => e.AssignedToUserId)
-            .OnDelete(DeleteBehavior.NoAction);
-
+        builder.HasOne(e => e.AssignedToUser).WithMany();
         builder.HasIndex(e => e.AssignedToUserId);
     }
 }

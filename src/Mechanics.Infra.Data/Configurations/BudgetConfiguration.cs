@@ -8,26 +8,16 @@ public class BudgetConfiguration : IEntityTypeConfiguration<Budget>
 {
     public void Configure(EntityTypeBuilder<Budget> builder)
     {
-        builder.ToTable("Budgets");
-
-        builder.Property(b => b.WorkOrderId).IsRequired();
-        builder.Property(b => b.Status).IsRequired();
-        builder.Property(b => b.Total).HasColumnType("decimal(18,2)");
+        builder.Property(b => b.Total).HasPrecision(18, 2);
         builder.Property(b => b.ApprovedByCustomerDocument).HasMaxLength(20);
+        builder.Property(b => b.Description).HasMaxLength(2000);
 
         builder.HasOne(b => b.WorkOrder)
             .WithMany()
-            .HasForeignKey(b => b.WorkOrderId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(b => b.Items)
             .WithOne(i => i.Budget)
-            .HasForeignKey(i => i.BudgetId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        builder.Property(b => b.Description)
-            .HasMaxLength(2000)
-            .IsRequired(false);
-
     }
 }

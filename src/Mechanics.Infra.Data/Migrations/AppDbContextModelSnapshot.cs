@@ -204,8 +204,8 @@ namespace Mechanics.Infra.Data.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -221,8 +221,8 @@ namespace Mechanics.Infra.Data.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("UnitPrice")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
@@ -240,8 +240,8 @@ namespace Mechanics.Infra.Data.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("BasePrice")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("CreationDate")
                         .ValueGeneratedOnAdd()
@@ -352,6 +352,7 @@ namespace Mechanics.Infra.Data.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("Total")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid>("WorkOrderId")
@@ -381,8 +382,8 @@ namespace Mechanics.Infra.Data.Migrations
 
                     b.Property<string>("NameSnapshot")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<Guid?>("ProductId")
                         .HasColumnType("uniqueidentifier");
@@ -394,9 +395,11 @@ namespace Mechanics.Infra.Data.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Subtotal")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("UnitPriceSnapshot")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
@@ -416,7 +419,8 @@ namespace Mechanics.Infra.Data.Migrations
                     b.Property<string>("AccessKey")
                         .IsRequired()
                         .HasMaxLength(8)
-                        .HasColumnType("nvarchar(8)");
+                        .HasColumnType("nchar(8)")
+                        .IsFixedLength();
 
                     b.Property<DateTime?>("ApprovalRequestedAt")
                         .HasColumnType("datetime2");
@@ -593,7 +597,7 @@ namespace Mechanics.Infra.Data.Migrations
                     b.HasOne("Mechanics.Domain.Customers.Customer", "Owner")
                         .WithMany("Vehicles")
                         .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.OwnsOne("Mechanics.Domain.Vehicles.LicensePlate", "LicensePlate", b1 =>
@@ -605,8 +609,9 @@ namespace Mechanics.Infra.Data.Migrations
                             b1.Property<string>("Number")
                                 .IsRequired()
                                 .HasMaxLength(7)
-                                .HasColumnType("nvarchar(7)")
-                                .HasColumnName("LicensePlate");
+                                .HasColumnType("nchar(7)")
+                                .HasColumnName("LicensePlate")
+                                .IsFixedLength();
 
                             b1.HasKey("VehicleId");
 
@@ -651,8 +656,7 @@ namespace Mechanics.Infra.Data.Migrations
                 {
                     b.HasOne("Mechanics.Domain.Auth.User", "AssignedToUser")
                         .WithMany()
-                        .HasForeignKey("AssignedToUserId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .HasForeignKey("AssignedToUserId");
 
                     b.HasOne("Mechanics.Domain.Customers.Customer", "Customer")
                         .WithMany()

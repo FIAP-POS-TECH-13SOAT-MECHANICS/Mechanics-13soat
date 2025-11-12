@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Mechanics.Infra.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251102224923_RemoveBudgetAndWorkOrderCreatedAt")]
-    partial class RemoveBudgetAndWorkOrderCreatedAt
+    [Migration("20251112224454_Init")]
+    partial class Init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -207,8 +207,8 @@ namespace Mechanics.Infra.Data.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -222,6 +222,10 @@ namespace Mechanics.Infra.Data.Migrations
 
                     b.Property<int>("Type")
                         .HasColumnType("int");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
 
@@ -239,8 +243,8 @@ namespace Mechanics.Infra.Data.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("BasePrice")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("CreationDate")
                         .ValueGeneratedOnAdd()
@@ -337,13 +341,21 @@ namespace Mechanics.Infra.Data.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("SYSDATETIME()");
 
+                    b.Property<string>("Description")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
                     b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("RejectedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
                     b.Property<decimal>("Total")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid>("WorkOrderId")
@@ -373,8 +385,8 @@ namespace Mechanics.Infra.Data.Migrations
 
                     b.Property<string>("NameSnapshot")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<Guid?>("ProductId")
                         .HasColumnType("uniqueidentifier");
@@ -386,9 +398,11 @@ namespace Mechanics.Infra.Data.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Subtotal")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("UnitPriceSnapshot")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
@@ -408,13 +422,17 @@ namespace Mechanics.Infra.Data.Migrations
                     b.Property<string>("AccessKey")
                         .IsRequired()
                         .HasMaxLength(8)
-                        .HasColumnType("nvarchar(8)");
+                        .HasColumnType("nchar(8)")
+                        .IsFixedLength();
 
                     b.Property<DateTime?>("ApprovalRequestedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("ApprovedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("AssignedToUserId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreationDate")
                         .ValueGeneratedOnAdd()
@@ -428,9 +446,7 @@ namespace Mechanics.Infra.Data.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsCancelled")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
+                        .HasColumnType("bit");
 
                     b.Property<Guid?>("LastStatusChangeBy")
                         .HasColumnType("uniqueidentifier");
@@ -455,6 +471,8 @@ namespace Mechanics.Infra.Data.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("AssignedToUserId");
 
                     b.HasIndex("VehicleId");
 
@@ -485,11 +503,6 @@ namespace Mechanics.Infra.Data.Migrations
                         .HasMaxLength(2000)
                         .HasColumnType("nvarchar(2000)");
 
-                    b.Property<DateTime>("OccurredAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("SYSDATETIME()");
-
                     b.Property<Guid?>("PerformedByUserId")
                         .HasColumnType("uniqueidentifier");
 
@@ -501,6 +514,24 @@ namespace Mechanics.Infra.Data.Migrations
                     b.HasIndex("WorkOrderId");
 
                     b.ToTable("WorkOrderHistories", "Mechanics");
+                });
+
+            modelBuilder.Entity("Mechanics.Domain.WorkOrders.WorkOrderProduct", b =>
+                {
+                    b.Property<Guid>("WorkOrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("WorkOrderId", "ProductId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("WorkOrderProduct", "Mechanics");
                 });
 
             modelBuilder.Entity("ServiceCatalogWorkOrder", b =>
@@ -516,21 +547,6 @@ namespace Mechanics.Infra.Data.Migrations
                     b.HasIndex("WorkOrdersId");
 
                     b.ToTable("ServiceCatalogWorkOrder", "Mechanics");
-                });
-
-            modelBuilder.Entity("WorkOrderProducts", b =>
-                {
-                    b.Property<Guid>("ProductsId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("WorkOrdersId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("ProductsId", "WorkOrdersId");
-
-                    b.HasIndex("WorkOrdersId");
-
-                    b.ToTable("WorkOrderProducts", "Mechanics");
                 });
 
             modelBuilder.Entity("Mechanics.Domain.Auth.User", b =>
@@ -584,7 +600,7 @@ namespace Mechanics.Infra.Data.Migrations
                     b.HasOne("Mechanics.Domain.Customers.Customer", "Owner")
                         .WithMany("Vehicles")
                         .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.OwnsOne("Mechanics.Domain.Vehicles.LicensePlate", "LicensePlate", b1 =>
@@ -596,8 +612,9 @@ namespace Mechanics.Infra.Data.Migrations
                             b1.Property<string>("Number")
                                 .IsRequired()
                                 .HasMaxLength(7)
-                                .HasColumnType("nvarchar(7)")
-                                .HasColumnName("LicensePlate");
+                                .HasColumnType("nchar(7)")
+                                .HasColumnName("LicensePlate")
+                                .IsFixedLength();
 
                             b1.HasKey("VehicleId");
 
@@ -640,6 +657,10 @@ namespace Mechanics.Infra.Data.Migrations
 
             modelBuilder.Entity("Mechanics.Domain.WorkOrders.WorkOrder", b =>
                 {
+                    b.HasOne("Mechanics.Domain.Auth.User", "AssignedToUser")
+                        .WithMany()
+                        .HasForeignKey("AssignedToUserId");
+
                     b.HasOne("Mechanics.Domain.Customers.Customer", "Customer")
                         .WithMany()
                         .HasForeignKey("CustomerId")
@@ -651,6 +672,8 @@ namespace Mechanics.Infra.Data.Migrations
                         .HasForeignKey("VehicleId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.Navigation("AssignedToUser");
 
                     b.Navigation("Customer");
 
@@ -664,6 +687,25 @@ namespace Mechanics.Infra.Data.Migrations
                         .HasForeignKey("WorkOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("WorkOrder");
+                });
+
+            modelBuilder.Entity("Mechanics.Domain.WorkOrders.WorkOrderProduct", b =>
+                {
+                    b.HasOne("Mechanics.Domain.Products.Product", "Product")
+                        .WithMany("WorkOrders")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Mechanics.Domain.WorkOrders.WorkOrder", "WorkOrder")
+                        .WithMany("Products")
+                        .HasForeignKey("WorkOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
 
                     b.Navigation("WorkOrder");
                 });
@@ -683,29 +725,24 @@ namespace Mechanics.Infra.Data.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("WorkOrderProducts", b =>
-                {
-                    b.HasOne("Mechanics.Domain.Products.Product", null)
-                        .WithMany()
-                        .HasForeignKey("ProductsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Mechanics.Domain.WorkOrders.WorkOrder", null)
-                        .WithMany()
-                        .HasForeignKey("WorkOrdersId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Mechanics.Domain.Customers.Customer", b =>
                 {
                     b.Navigation("Vehicles");
                 });
 
+            modelBuilder.Entity("Mechanics.Domain.Products.Product", b =>
+                {
+                    b.Navigation("WorkOrders");
+                });
+
             modelBuilder.Entity("Mechanics.Domain.WorkOrders.Budget", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("Mechanics.Domain.WorkOrders.WorkOrder", b =>
+                {
+                    b.Navigation("Products");
                 });
 #pragma warning restore 612, 618
         }

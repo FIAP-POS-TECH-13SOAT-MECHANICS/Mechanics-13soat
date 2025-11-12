@@ -8,17 +8,11 @@ public class WorkOrderHistoryConfiguration : IEntityTypeConfiguration<WorkOrderH
 {
     public void Configure(EntityTypeBuilder<WorkOrderHistory> builder)
     {
-        builder.ToTable("WorkOrderHistories");
-
-        builder.HasOne(h => h.WorkOrder)
-            .WithMany()
-            .HasForeignKey(h => h.WorkOrderId)
+        builder.HasOne(h => h.WorkOrder).WithMany()
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Property(h => h.Action)
-            .IsRequired()
-            .HasMaxLength(100);
-        builder.Property(h => h.Details)
-            .HasMaxLength(2000);
+        builder.Property(h => h.Action).HasMaxLength(100);
+
+        builder.Property(h => h.Details).HasMaxLength(2000);
     }
 }

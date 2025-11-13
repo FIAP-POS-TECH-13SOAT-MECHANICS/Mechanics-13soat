@@ -1,4 +1,4 @@
-namespace Mechanics.Domain.Base;
+namespace Mechanics.Domain.ServicesCatalog;
 
 public enum ServiceCatalogStatusType
 {

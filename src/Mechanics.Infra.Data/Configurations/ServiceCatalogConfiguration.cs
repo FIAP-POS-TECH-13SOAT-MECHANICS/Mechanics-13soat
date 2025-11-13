@@ -8,7 +8,7 @@ public class ServiceCatalogConfiguration : IEntityTypeConfiguration<ServiceCatal
 {
     public void Configure(EntityTypeBuilder<ServiceCatalog> builder)
     {
-        builder.Property(entity => entity.Name).HasMaxLength(100).IsRequired();
+        builder.Property(entity => entity.Name).HasMaxLength(100);
         builder.HasIndex(entity => entity.Name).IsUnique();
 
         builder.Property(entity => entity.Description).HasMaxLength(255);

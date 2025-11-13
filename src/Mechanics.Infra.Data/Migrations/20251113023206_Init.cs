@@ -39,7 +39,7 @@ namespace Mechanics.Infra.Data.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false, defaultValueSql: "NEWID()"),
-                    Name = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Description = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
                     Type = table.Column<int>(type: "int", nullable: false),
                     Quantity = table.Column<int>(type: "int", nullable: false),
@@ -367,6 +367,13 @@ namespace Mechanics.Infra.Data.Migrations
                 schema: "Mechanics",
                 table: "Customers",
                 column: "Name");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Products_Name",
+                schema: "Mechanics",
+                table: "Products",
+                column: "Name",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Roles_Name",

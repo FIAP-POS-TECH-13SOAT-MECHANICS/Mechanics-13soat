@@ -28,7 +28,7 @@ services:
       - mssql:/var/opt/mssql
     healthcheck:
       test: '/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -Q "SELECT 1"'
-      interval: 10s
+      interval: 5s
       timeout: 5s
       retries: 10
       start_period: 10s

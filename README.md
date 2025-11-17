@@ -62,6 +62,7 @@ Esse repositório contém instruções para execução local das análises com *
 
 - [Autenticação e autorização](./docs/auth.md)
 - [Configuração do ambiente](./docs/configuration.md)
+- [Dados de exemplo](./dev-seeds/README.md)
 - [Diagramas](./docs/diagrams.md)
 - [Diretrizes de design do projeto](./docs/design-guidelines.md)
 - [Fluxo de Ordem de Serviço](./docs/work-order-flow.md)

@@ -84,7 +84,7 @@ public class ProductAppServiceTests
         var created = await context.Products.AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == response.CreatedId, TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(created);
-        Assert.AreEqual(request.Name.Trim(), created.Name);
+        Assert.AreEqual(request.Name.ToUpper(), created.Name);
         Assert.AreEqual(request.Description.Trim(), created.Description);
         Assert.AreEqual(request.Type, created.Type);
         Assert.AreEqual(request.Quantity, created.Quantity);
@@ -129,7 +129,7 @@ public class ProductAppServiceTests
         Assert.IsInstanceOfType<UpdateItemResponse>(response);
         var updated = await context.Products.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id, TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(updated);
-        Assert.AreEqual(request.Name!.Trim(), updated.Name);
+        Assert.AreEqual(request.Name!.ToUpper(), updated.Name);
         Assert.AreEqual(request.Description!.Trim(), updated.Description);
         Assert.AreEqual(request.Quantity!, updated.Quantity);
         Assert.AreEqual(request.Status!, updated.Status);

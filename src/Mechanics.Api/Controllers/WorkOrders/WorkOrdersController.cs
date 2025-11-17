@@ -32,10 +32,10 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     [Produces("application/json", Type = typeof(object))]
     [ProducesResponseType(typeof(object), (int)HttpStatusCode.Created)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Create([FromBody] CreateWorkOrderRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Create(CreateWorkOrderRequest request, CancellationToken cancellationToken)
     {
-        var id = await workOrderService.Create(request, cancellationToken);
-        return CreatedAtAction(nameof(Get), new { id }, new { id });
+        var response = await workOrderService.Create(request, cancellationToken);
+        return CreatedAtAction(nameof(Get), new { id = response.CreatedId }, response);
     }
 
     /// <summary>
@@ -160,7 +160,7 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
         CancellationToken cancellationToken)
     {
         var response = await workOrderService.TrackByDocumentAndAccessKey(document, accessKey, cancellationToken);
-        return Ok(response);
+        return response is not null ? Ok(response) : NotFound();
     }
 
     /// <summary>

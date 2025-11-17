@@ -102,7 +102,7 @@ public class WorkOrderAppServiceTests
 
         var id = await service.Create(request, TestContext.CancellationTokenSource.Token);
 
-        var wo = await context.WorkOrders.FindAsync([id], TestContext.CancellationTokenSource.Token);
+        var wo = await context.WorkOrders.FindAsync([id.CreatedId], TestContext.CancellationTokenSource.Token);
         IsNotNull(wo, "Work order should be persisted");
         AreEqual(customerId, wo.CustomerId, "CustomerId persisted");
         IsTrue(_emailMock.SendWorkOrderCreatedCalled, "SendWorkOrderCreated should be called");

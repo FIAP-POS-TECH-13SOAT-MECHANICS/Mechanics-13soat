@@ -1,6 +1,7 @@
 using AutoMapper;
 using Mechanics.Application.Notification.Services;
 using Mechanics.Application.Utils;
+using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Application.Utils.PagedList;
 using Mechanics.Application.WorkOrders.Requests;
 using Mechanics.Application.WorkOrders.Responses;
@@ -26,7 +27,7 @@ public class WorkOrderAppService(
     /// <summary>
     ///     Cria uma nova WorkOrder.
     /// </summary>
-    public async Task<Guid> Create(CreateWorkOrderRequest request, CancellationToken cancellationToken = default)
+    public async Task<CreateItemResponse> Create(CreateWorkOrderRequest request, CancellationToken cancellationToken = default)
     {
         var vehicle = await db.Vehicles
             .Include(v => v.Owner)
@@ -79,7 +80,7 @@ public class WorkOrderAppService(
             logger.LogWarning(ex, "Failed to send WorkOrder created email for {WorkOrderId}", wo.Id);
         }
 
-        return wo.Id;
+        return new CreateItemResponse { CreatedId = wo.Id };
     }
 
     public async Task Assign(Guid workOrderId, Guid assignedToUserId, Guid performedByUserId, string? comment = null,
@@ -168,7 +169,8 @@ public class WorkOrderAppService(
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Document.Number == normalizedDocument, cancellationToken);
 
-        EntityNotFoundException.ThrowIfNull(customer, document);
+        if (customer is null)
+            return null;
 
         var wo = await db.WorkOrders
             .Include(w => w.Products)
@@ -176,9 +178,7 @@ public class WorkOrderAppService(
             .AsNoTracking()
             .FirstOrDefaultAsync(w => w.CustomerId == customer.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
 
-        EntityNotFoundException.ThrowIfNull(wo, accessKey);
-
-        return mapper.Map<GetWorkOrderResponse>(wo);
+        return wo is null ? null : mapper.Map<GetWorkOrderResponse>(wo);
     }
 
     /// <summary>

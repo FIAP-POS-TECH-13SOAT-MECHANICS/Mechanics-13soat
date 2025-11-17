@@ -1,5 +1,4 @@
 using Mechanics.Application.WorkOrders.Requests;
-using Mechanics.Application.WorkOrders.Responses;
 using Mechanics.Domain.Auth;
 using Mechanics.Domain.Base;
 using Mechanics.Domain.Customers;
@@ -65,12 +64,12 @@ public class WorkOrdersControllerTests
             await createResp.Content.ReadFromJsonAsync<Dictionary<string, Guid>>(TestContext.CancellationTokenSource.Token);
         if (createdBody is null)
         {
-            Assert.Fail("Response body deserializado é nulo.");
+            Assert.Fail("Response body desserializado é nulo.");
             return;
         }
 
-        Assert.IsTrue(createdBody.ContainsKey("id"));
-        var woId = createdBody["id"];
+        Assert.IsTrue(createdBody.ContainsKey("createdId"));
+        var woId = createdBody["createdId"];
 
         using (var scope = TestProperties.Factory.Services.CreateScope())
         {

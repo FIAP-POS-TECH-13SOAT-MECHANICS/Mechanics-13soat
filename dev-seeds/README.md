@@ -16,3 +16,4 @@ O script irá popular as seguintes tabelas:
 | Product        | 40        |
 | ServiceCatalog | 20        |
 | WorkOrders     | 37        |
+| Budgets        | 33        |

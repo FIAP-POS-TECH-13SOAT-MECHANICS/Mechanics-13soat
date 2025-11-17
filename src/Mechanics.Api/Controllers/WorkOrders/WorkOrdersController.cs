@@ -160,7 +160,7 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
         CancellationToken cancellationToken)
     {
         var response = await workOrderService.TrackByDocumentAndAccessKey(document, accessKey, cancellationToken);
-        return Ok(response);
+        return response is not null ? Ok(response) : NotFound();
     }
 
     /// <summary>

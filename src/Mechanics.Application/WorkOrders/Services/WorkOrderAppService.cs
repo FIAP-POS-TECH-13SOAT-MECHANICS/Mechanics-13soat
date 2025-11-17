@@ -169,7 +169,8 @@ public class WorkOrderAppService(
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Document.Number == normalizedDocument, cancellationToken);
 
-        EntityNotFoundException.ThrowIfNull(customer, document);
+        if (customer is null)
+            return null;
 
         var wo = await db.WorkOrders
             .Include(w => w.Products)
@@ -177,9 +178,7 @@ public class WorkOrderAppService(
             .AsNoTracking()
             .FirstOrDefaultAsync(w => w.CustomerId == customer.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
 
-        EntityNotFoundException.ThrowIfNull(wo, accessKey);
-
-        return mapper.Map<GetWorkOrderResponse>(wo);
+        return wo is null ? null : mapper.Map<GetWorkOrderResponse>(wo);
     }
 
     /// <summary>

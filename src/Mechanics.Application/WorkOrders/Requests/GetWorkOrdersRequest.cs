@@ -1,4 +1,5 @@
 ﻿using Mechanics.Application.Utils.PagedList;
+using Mechanics.Domain.WorkOrders;
 
 namespace Mechanics.Application.WorkOrders.Requests;
 
@@ -13,4 +14,9 @@ public class GetWorkOrdersRequest : PaginatedListRequest
     ///     Filtro por ID do veículo.
     /// </summary>
     public Guid? VehicleId { get; init; }
+
+    /// <summary>
+    ///     Incluir OSs com status <see cref="WorkOrderStatus.Completed"/> ou <see cref="WorkOrderStatus.Delivered"/>.
+    /// </summary>
+    public bool IncludeCompleted { get; init; }
 }

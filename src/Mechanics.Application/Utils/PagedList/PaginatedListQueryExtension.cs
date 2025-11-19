@@ -12,7 +12,7 @@ public static class PaginatedListQueryExtension
         var count = await queryable.CountAsync(cancellationToken);
         var items = count > 0
             ? await queryable
-                .OrderBy(t => t.Id)
+                .AddDefaultOrdering()
                 .Skip(request.ItemsPerPage * (request.Page - 1))
                 .Take(request.ItemsPerPage)
                 .ToListAsync(cancellationToken)
@@ -20,4 +20,10 @@ public static class PaginatedListQueryExtension
 
         return (items, count);
     }
+
+    /// <summary>
+    ///     Se a lista não estiver ordenada, ordena por ID.
+    /// </summary>
+    private static IQueryable<T> AddDefaultOrdering<T>(this IQueryable<T> queryable) where T : AbstractEntity =>
+        queryable.Expression.ToString().Contains("OrderBy") ? queryable : queryable.OrderBy(t => t.Id);
 }

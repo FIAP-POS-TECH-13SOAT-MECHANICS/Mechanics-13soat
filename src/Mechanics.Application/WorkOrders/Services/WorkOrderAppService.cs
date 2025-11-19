@@ -147,7 +147,10 @@ public class WorkOrderAppService(
             .Include(w => w.Products)
             .Include(w => w.ServiceCatalog)
             .Where(w => !hasCustomer || w.CustomerId == request.CustomerId!.Value)
-            .Where(w => !hasVehicle || w.VehicleId == request.VehicleId!.Value);
+            .Where(w => !hasVehicle || w.VehicleId == request.VehicleId!.Value)
+            .Where(w => request.IncludeCompleted || w.Status != WorkOrderStatus.Completed && w.Status != WorkOrderStatus.Delivered)
+            .OrderByDescending(w => w.Status).ThenBy(w => w.CreationDate)
+            .AsSplitQuery();
 
         var (items, count) = await query.GetPaginatedList(request, cancellationToken);
 

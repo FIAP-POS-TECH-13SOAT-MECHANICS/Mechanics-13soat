@@ -1,3 +1,5 @@
+-- inicie o projeto primeiro para executar as migrações
+
 INSERT INTO Mechanics.Customers (Id, Name, Email, DocumentType, Document, CreationDate)
 VALUES  (N'66c1bfec-5967-4c6e-9748-1fef42d442ef', N'PEDRO OLIVEIRA', N'pedro.oliveira@email.com', N'Cpf', N'87641286011', N'2025-11-12 23:46:57.2950060'),
         (N'c6869936-4ac2-4ab9-b66b-2831ab6b80ca', N'FROTA EXPRESS LOGÍSTICA', N'financeiro@frotaexpress.com.br', N'Cnpj', N'04109464000191', N'2025-11-12 23:46:57.4993136'),

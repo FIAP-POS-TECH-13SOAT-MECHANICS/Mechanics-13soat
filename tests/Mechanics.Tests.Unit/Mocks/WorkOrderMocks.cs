@@ -24,6 +24,14 @@ public static class WorkOrderMocks
         };
     }
 
+    public static WorkOrder CreateWorkOrderEntity(WorkOrderStatus status)
+    {
+        var workOrder = CreateWorkOrderEntity(Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid());
+        workOrder.Status = status;
+
+        return workOrder;
+    }
+
     public static WorkOrder CreateWorkOrderWithServices(Guid id, Guid customerId, Guid vehicleId, ServiceCatalog service)
     {
         var now = DateTime.Now;

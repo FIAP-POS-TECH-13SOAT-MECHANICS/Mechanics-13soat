@@ -2,7 +2,6 @@ using AutoMapper;
 using Mechanics.Application.WorkOrders.Requests;
 using Mechanics.Application.WorkOrders.Services;
 using Mechanics.Domain.Auth;
-using Mechanics.Domain.Base;
 using Mechanics.Domain.Base.Exceptions;
 using Mechanics.Domain.Customers;
 using Mechanics.Domain.Products;
@@ -37,6 +36,8 @@ public class WorkOrderAppServiceTests
         _emailMock = new EmailServiceMock();
         _loggerFactory = new NullLoggerFactory();
     }
+
+    #region Criar OSs
 
     [TestMethod("Create should persist work order and send created email")]
     public async Task Create_ShouldPersistAndSendEmail()
@@ -151,6 +152,10 @@ public class WorkOrderAppServiceTests
         await ThrowsExactlyAsync<EntityNotFoundException>(() =>
             service.Create(request, TestContext.CancellationTokenSource.Token));
     }
+
+    #endregion
+
+    #region Alterar status
 
     [TestMethod("RequestApproval should calculate estimate, set PendingApproval and send email")]
     public async Task RequestApproval_ShouldCalculateEstimateAndSendEmail()
@@ -406,34 +411,33 @@ public class WorkOrderAppServiceTests
         AreEqual(WorkOrderStatus.Received, reloaded.Status);
     }
 
-    [TestClass]
-    [TestCategory("WorkOrder")]
-    public class WorkOrderAppServiceTransitionsTests
+    [TestMethod("IsTransitionAllowed deve permitir o fluxo principal e rejeitar transições inválidas ou iguais")]
+    public void IsTransitionAllowed_ValidAndInvalidTransitions()
     {
-        [TestMethod("IsTransitionAllowed deve permitir o fluxo principal e rejeitar transições inválidas ou iguais")]
-        public void IsTransitionAllowed_ValidAndInvalidTransitions()
-        {
-            IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.Received, WorkOrderStatus.UnderDiagnosis));
-            IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.UnderDiagnosis, WorkOrderStatus.PendingApproval));
-            IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.PendingApproval, WorkOrderStatus.InProgress));
-            IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.InProgress, WorkOrderStatus.Completed));
-            IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.Completed, WorkOrderStatus.Delivered));
+        IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.Received, WorkOrderStatus.UnderDiagnosis));
+        IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.UnderDiagnosis, WorkOrderStatus.PendingApproval));
+        IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.PendingApproval, WorkOrderStatus.InProgress));
+        IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.InProgress, WorkOrderStatus.Completed));
+        IsTrue(InvokeIsTransitionAllowed(WorkOrderStatus.Completed, WorkOrderStatus.Delivered));
 
-            // transição inválida (pular etapas)
-            IsFalse(InvokeIsTransitionAllowed(WorkOrderStatus.Received, WorkOrderStatus.InProgress));
+        // transição inválida (pular etapas)
+        IsFalse(InvokeIsTransitionAllowed(WorkOrderStatus.Received, WorkOrderStatus.InProgress));
 
-            // transição para o mesmo status deve ser considerada inválida no método
-            IsFalse(InvokeIsTransitionAllowed(WorkOrderStatus.Received, WorkOrderStatus.Received));
-            IsFalse(InvokeIsTransitionAllowed(WorkOrderStatus.Completed, WorkOrderStatus.Completed));
-        }
-
-        private static bool InvokeIsTransitionAllowed(WorkOrderStatus from, WorkOrderStatus to)
-        {
-            var method = typeof(WorkOrderAppService).GetMethod("IsTransitionAllowed", BindingFlags.NonPublic | BindingFlags.Static);
-            IsNotNull(method, "Método IsTransitionAllowed não encontrado. Verifique a assinatura e a visibilidade.");
-            return (bool)method.Invoke(null, [from, to])!;
-        }
+        // transição para o mesmo status deve ser considerada inválida no método
+        IsFalse(InvokeIsTransitionAllowed(WorkOrderStatus.Received, WorkOrderStatus.Received));
+        IsFalse(InvokeIsTransitionAllowed(WorkOrderStatus.Completed, WorkOrderStatus.Completed));
     }
+
+    private static bool InvokeIsTransitionAllowed(WorkOrderStatus from, WorkOrderStatus to)
+    {
+        var method = typeof(WorkOrderAppService).GetMethod("IsTransitionAllowed", BindingFlags.NonPublic | BindingFlags.Static);
+        IsNotNull(method, "Método IsTransitionAllowed não encontrado. Verifique a assinatura e a visibilidade.");
+        return (bool)method.Invoke(null, [from, to])!;
+    }
+
+    #endregion
+
+    #region Alterar detalhes
 
     [TestMethod("UpdateDetails should add products, services and observations and record history")]
     public async Task UpdateDetails_ShouldAddProductsServicesAndObservations()
@@ -542,116 +546,6 @@ public class WorkOrderAppServiceTests
         Contains("AddedProducts:1", history.Details);
         Contains("AddedServices:1", history.Details);
         Contains("ObservationsUpdated", history.Details);
-    }
-
-    // New tests for GetAverageServiceTime
-    [TestMethod("GetAverageServiceTime should return total average time for associated services")]
-    public async Task GetAverageServiceTime_ShouldReturnSumOfAverageTimes()
-    {
-        var customerId = Guid.NewGuid();
-        var vehicleId = Guid.NewGuid();
-        var svc1Id = Guid.NewGuid();
-        var svc2Id = Guid.NewGuid();
-
-        await using var context = new DbContextTestBuilder()
-            .WithData(ctx =>
-            {
-                ctx.Customers.Add(new Customer
-                {
-                    Id = customerId,
-                    Name = "Client",
-                    Email = "client@example.com",
-                    Document = new PersonalDocument(DocumentType.Cpf, "12312312312"),
-                });
-
-                ctx.Vehicles.Add(new Vehicle
-                {
-                    Id = vehicleId,
-                    Manufacturer = "Make",
-                    Model = "Model",
-                    Color = VehicleColor.White,
-                    Year = "2020",
-                    LicensePlate = new LicensePlate("AVG1234"),
-                    Chassis = "CHAVG",
-                    OwnerId = customerId,
-                });
-
-                ctx.ServiceCatalog.Add(new ServiceCatalog
-                {
-                    Id = svc1Id,
-                    Name = "Service 1",
-                    Description = "S1",
-                    BasePrice = 10m,
-                    AverageTime = 30,
-                    Status = ServiceCatalogStatusType.Active,
-                });
-
-                ctx.ServiceCatalog.Add(new ServiceCatalog
-                {
-                    Id = svc2Id,
-                    Name = "Service 2",
-                    Description = "S2",
-                    BasePrice = 20m,
-                    AverageTime = 45,
-                    Status = ServiceCatalogStatusType.Active,
-                });
-            })
-            .Build();
-
-        var svc1 = await context.ServiceCatalog.FindAsync([svc1Id], TestContext.CancellationTokenSource.Token);
-        var svc2 = await context.ServiceCatalog.FindAsync([svc2Id], TestContext.CancellationTokenSource.Token);
-
-        var wo = new WorkOrder
-        {
-            Id = Guid.NewGuid(),
-            CustomerId = customerId,
-            VehicleId = vehicleId,
-            AccessKey = WorkOrder.GenerateNewAccessKey([]),
-            Status = WorkOrderStatus.Received,
-            CreationDate = DateTime.Now,
-            LastUpdate = DateTime.Now,
-            ServiceCatalog = new List<ServiceCatalog> { svc1!, svc2! },
-        };
-
-        context.WorkOrders.Add(wo);
-        await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
-
-        var budgetService = new BudgetAppService(
-            context,
-            _emailMock,
-            _loggerFactory.CreateLogger<BudgetAppService>());
-
-        var service = new WorkOrderAppService(
-            context,
-            _mapper,
-            _emailMock,
-            _loggerFactory.CreateLogger<WorkOrderAppService>(),
-            budgetService);
-
-        var response = await service.GetAverageServiceTime(wo.Id, TestContext.CancellationTokenSource.Token);
-
-        IsNotNull(response);
-        AreEqual(wo.Id, response.WorkOrderId);
-        AreEqual(30 + 45, response.TotalAverageTime);
-    }
-
-    [TestMethod("GetAverageServiceTime should throw when work order not found")]
-    public async Task GetAverageServiceTime_ShouldThrowWhenWorkOrderNotFound()
-    {
-        await using var context = new DbContextTestBuilder().Build();
-        var budgetService = new BudgetAppService(
-            context,
-            _emailMock,
-            _loggerFactory.CreateLogger<BudgetAppService>());
-        var service = new WorkOrderAppService(
-            context,
-            _mapper,
-            _emailMock,
-            _loggerFactory.CreateLogger<WorkOrderAppService>(),
-            budgetService);
-
-        await ThrowsAsync<EntityNotFoundException>(async () =>
-            await service.GetAverageServiceTime(Guid.NewGuid(), TestContext.CancellationTokenSource.Token));
     }
 
     [TestMethod("Assign should set mechanic, record history and auto-transition from Received")]
@@ -879,6 +773,10 @@ public class WorkOrderAppServiceTests
             service.Assign(wo.Id, Guid.NewGuid(), someUserId, null, TestContext.CancellationTokenSource.Token));
     }
 
+    #endregion
+
+    #region Consultar por ID ou documento
+
     [TestMethod("Get should return mapped response with ProductIds and ServiceCatalogIds")]
     public async Task Get_ShouldReturnMappedResponse_WithProductsAndServices()
     {
@@ -1022,7 +920,122 @@ public class WorkOrderAppServiceTests
         AreEqual(vehicleId, resp.VehicleId, "VehicleId should match");
     }
 
-    #region list work orders
+    #endregion
+
+    #region Consultar tempo médio
+
+    [TestMethod("GetAverageServiceTime should return total average time for associated services")]
+    public async Task GetAverageServiceTime_ShouldReturnSumOfAverageTimes()
+    {
+        var customerId = Guid.NewGuid();
+        var vehicleId = Guid.NewGuid();
+        var svc1Id = Guid.NewGuid();
+        var svc2Id = Guid.NewGuid();
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(ctx =>
+            {
+                ctx.Customers.Add(new Customer
+                {
+                    Id = customerId,
+                    Name = "Client",
+                    Email = "client@example.com",
+                    Document = new PersonalDocument(DocumentType.Cpf, "12312312312"),
+                });
+
+                ctx.Vehicles.Add(new Vehicle
+                {
+                    Id = vehicleId,
+                    Manufacturer = "Make",
+                    Model = "Model",
+                    Color = VehicleColor.White,
+                    Year = "2020",
+                    LicensePlate = new LicensePlate("AVG1234"),
+                    Chassis = "CHAVG",
+                    OwnerId = customerId,
+                });
+
+                ctx.ServiceCatalog.Add(new ServiceCatalog
+                {
+                    Id = svc1Id,
+                    Name = "Service 1",
+                    Description = "S1",
+                    BasePrice = 10m,
+                    AverageTime = 30,
+                    Status = ServiceCatalogStatusType.Active,
+                });
+
+                ctx.ServiceCatalog.Add(new ServiceCatalog
+                {
+                    Id = svc2Id,
+                    Name = "Service 2",
+                    Description = "S2",
+                    BasePrice = 20m,
+                    AverageTime = 45,
+                    Status = ServiceCatalogStatusType.Active,
+                });
+            })
+            .Build();
+
+        var svc1 = await context.ServiceCatalog.FindAsync([svc1Id], TestContext.CancellationTokenSource.Token);
+        var svc2 = await context.ServiceCatalog.FindAsync([svc2Id], TestContext.CancellationTokenSource.Token);
+
+        var wo = new WorkOrder
+        {
+            Id = Guid.NewGuid(),
+            CustomerId = customerId,
+            VehicleId = vehicleId,
+            AccessKey = WorkOrder.GenerateNewAccessKey([]),
+            Status = WorkOrderStatus.Received,
+            CreationDate = DateTime.Now,
+            LastUpdate = DateTime.Now,
+            ServiceCatalog = new List<ServiceCatalog> { svc1!, svc2! },
+        };
+
+        context.WorkOrders.Add(wo);
+        await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
+
+        var budgetService = new BudgetAppService(
+            context,
+            _emailMock,
+            _loggerFactory.CreateLogger<BudgetAppService>());
+
+        var service = new WorkOrderAppService(
+            context,
+            _mapper,
+            _emailMock,
+            _loggerFactory.CreateLogger<WorkOrderAppService>(),
+            budgetService);
+
+        var response = await service.GetAverageServiceTime(wo.Id, TestContext.CancellationTokenSource.Token);
+
+        IsNotNull(response);
+        AreEqual(wo.Id, response.WorkOrderId);
+        AreEqual(30 + 45, response.TotalAverageTime);
+    }
+
+    [TestMethod("GetAverageServiceTime should throw when work order not found")]
+    public async Task GetAverageServiceTime_ShouldThrowWhenWorkOrderNotFound()
+    {
+        await using var context = new DbContextTestBuilder().Build();
+        var budgetService = new BudgetAppService(
+            context,
+            _emailMock,
+            _loggerFactory.CreateLogger<BudgetAppService>());
+        var service = new WorkOrderAppService(
+            context,
+            _mapper,
+            _emailMock,
+            _loggerFactory.CreateLogger<WorkOrderAppService>(),
+            budgetService);
+
+        await ThrowsAsync<EntityNotFoundException>(async () =>
+            await service.GetAverageServiceTime(Guid.NewGuid(), TestContext.CancellationTokenSource.Token));
+    }
+
+    #endregion
+
+    #region Listar OSs
 
     [TestMethod("GetList should filter by CustomerId")]
     public async Task GetList_ShouldFilterByCustomerId()
@@ -1126,6 +1139,25 @@ public class WorkOrderAppServiceTests
 
         AreEqual(25, response.TotalCount);
         AreEqual(10, response.Items.Count());
+    }
+
+    [TestMethod("GetList should filter completed")]
+    public async Task GetList_ShouldFilterCompleted()
+    {
+        await using var context = new DbContextTestBuilder()
+            .WithData(Enum.GetValues<WorkOrderStatus>().Select(WorkOrderMocks.CreateWorkOrderEntity))
+            .Build();
+
+        var budgetService = new BudgetAppService(context, _emailMock, _loggerFactory.CreateLogger<BudgetAppService>());
+        var service = new WorkOrderAppService(context, _mapper, _emailMock, _loggerFactory.CreateLogger<WorkOrderAppService>(),
+            budgetService);
+
+        var request = new GetWorkOrdersRequest { Page = 1, ItemsPerPage = 10 };
+        var response = await service.GetList(request, TestContext.CancellationTokenSource.Token);
+
+        AreEqual(4, response.TotalCount);
+        AreEqual(4, response.Items.Count());
+        AreEqual(WorkOrderStatus.InProgress, response.Items.First().Status);
     }
 
     #endregion

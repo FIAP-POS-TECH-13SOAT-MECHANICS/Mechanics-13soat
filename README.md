@@ -29,6 +29,9 @@ Após o processo concluir, o projeto estará disponível nas seguintes URLs:
 - Swagger do projeto: http://localhost:5000/swagger
 - Cliente de e-mail: http://localhost:8025
 
+> **Opcional**
+> Utilize o script [dev-seeds](./dev-seeds/README.md) para popular o banco com dados de exemplo.
+
 ## Usuários padrão
 
 Utilize o endpoint `/api/auth/login` para gerar um token.

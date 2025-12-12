@@ -5,17 +5,15 @@ variable "aws_region" {
 
 variable "project_name" {
   type    = string
-  default = "soat-mechanics"
+  default = "fiap-mechanics"
 }
 
 variable "db" {
   type = object({
-    db_name  = string
     username = string
     password = string
   })
   default = {
-    db_name  = "soat-mechanics"
     username = "sa"
     password = "$Y:2]SB$YoRu$jq"
   }

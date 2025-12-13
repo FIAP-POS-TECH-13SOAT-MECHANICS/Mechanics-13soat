@@ -1,6 +1,6 @@
 # Configuração do ambiente
 
-Siga os passos abaixo para executar o projeto em uma IDE ou via terminal.
+Siga os passos alterar as configurações do projeto.
 
 1. [Defina as configurações locais](#configurações-locais)
 2. [Inicie os serviços](#serviços)
@@ -8,7 +8,9 @@ Siga os passos abaixo para executar o projeto em uma IDE ou via terminal.
 
 ## Configurações locais
 
-O arquivo `appsettings.json` está configurado para permitir a execução via Docker e não deve ser alterado. Para rodar o projeto, é necessário criar um arquivo de configuração que aponte para `localhost`.
+O arquivo `appsettings.json` está configurado para permitir a execução via Docker e não deve ser alterado.
+Para alterar a connectionString (por exemplo, um banco RDS da AWS Academy), é necessário criar um arquivo de
+configuração local. Também pode ser útil para alterar outras configurações como o tempo de expiração do token JWT.
 
 Primeiro crie uma cópia do
 arquivo [appsettings.json](/src/Mechanics.Api/appsettings.json) chamada `appsettings.Development.json` na pasta
@@ -31,27 +33,28 @@ O exemplo abaixo contém algumas configurações comuns:
         "AccessTokenLifetime": 30
     },
     "ConnectionStrings": {
-        // acessar o banco de fora do container Docker (necessário para migrações)
-        "DefaultConnection": "Server=localhost;User Id=sa;Password=2%r6dZ6Xk@g3;TrustServerCertificate=True;"
+        // acessar outro banco de dados
+        "Default": "Server=xxx.rds.amazonaws.com;Database=fiap-mechanics;User Id=sa;Password=2%r6dZ6Xk@g3;TrustServerCertificate=True;"
     },
     "EmailSenderOptions": {
         // desabilitar envio de email
         "Enabled": false,
-        // acessar servidor SMTP de fora do container Docker
-        "SmtpServer": "localhost"
+        // alterar servidor SMTP
+        "SmtpServer": "xxx.elb.amazonaws.com"
     }
 }
 ```
 
 ## Serviços
 
-Você pode iniciar os serviços usando o Docker Compose. Certifique-se que o Docker está em execução e rode o seguinte comando na raiz do projeto:
+Caso não esteja rodando os serviços externos (banco de dados e servidor SMTP) remotamente, você pode iniciar via Docker Compose.
+
+Certifique-se que o Docker está em execução e rode o seguinte comando na raiz do projeto.
+Pode levar algum tempo até o SQL Server iniciar totalmente.
 
 ```cmd
 docker compose up mssql mailpit -d
 ```
-
-Pode levar algum tempo até o SQL Server iniciar totalmente.
 
 ## Execução do projeto
 

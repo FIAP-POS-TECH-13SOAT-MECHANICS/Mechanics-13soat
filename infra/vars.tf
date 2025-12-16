@@ -12,14 +12,28 @@ variable "db" {
   type = object({
     username = string
     password = string
-    public   = bool
   })
   default = {
     username = "sa"
     password = "$Y:2]SB$YoRu$jq"
-    public = true
   }
-  sensitive = true
+}
+
+variable "email" {
+  type = object({
+    image = string
+    auth  = string
+  })
+  default = {
+    image = "axllent/mailpit:v1.28"
+    auth  = "postmaster@mechanics.com:xFCsMj6a4NWbZgr5"
+  }
+}
+
+variable "public" {
+  type        = bool
+  default     = false
+  description = "If internal services - like database and SMTP server - will be publicly accessible"
 }
 
 variable "availability_zones" {
@@ -29,6 +43,6 @@ variable "availability_zones" {
 }
 
 variable "vpc_cidr" {
-  type        = string
-  default     = "10.0.0.0/16"
+  type    = string
+  default = "10.0.0.0/16"
 }

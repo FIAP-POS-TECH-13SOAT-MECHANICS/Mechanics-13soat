@@ -9,8 +9,8 @@ Siga os passos alterar as configurações do projeto.
 ## Configurações locais
 
 O arquivo `appsettings.json` está configurado para permitir a execução via Docker e não deve ser alterado.
-Para alterar a connectionString (por exemplo, um banco RDS da AWS Academy), é necessário criar um arquivo de
-configuração local. Também pode ser útil para alterar outras configurações como o tempo de expiração do token JWT.
+Para alterar a connectionString (por exemplo, usando um banco RDS da AWS Academy), é necessário criar um arquivo de
+configuração local. Também pode ser útil para alterar configurações como logs ou o tempo de expiração do token JWT.
 
 Primeiro crie uma cópia do
 arquivo [appsettings.json](/src/Mechanics.Api/appsettings.json) chamada `appsettings.Development.json` na pasta
@@ -40,14 +40,16 @@ O exemplo abaixo contém algumas configurações comuns:
         // desabilitar envio de email
         "Enabled": false,
         // alterar servidor SMTP
-        "SmtpServer": "xxx.elb.amazonaws.com"
+        "SmtpServer": "xxx.elb.amazonaws.com",
+        "SmtpPort": 25
     }
 }
 ```
 
 ## Serviços
 
-Caso não esteja rodando os serviços externos (banco de dados e servidor SMTP) remotamente, você pode iniciar via Docker Compose.
+Caso não esteja rodando os serviços externos (banco de dados e servidor SMTP) remotamente, você pode iniciar via Docker
+Compose.
 
 Certifique-se que o Docker está em execução e rode o seguinte comando na raiz do projeto.
 Pode levar algum tempo até o SQL Server iniciar totalmente.

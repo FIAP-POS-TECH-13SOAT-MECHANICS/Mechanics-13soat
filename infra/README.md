@@ -34,6 +34,13 @@ Primeiro crie um bucket no S3 para servir de backend do Terraform:
 aws s3 mb s3://fiap-mechanics-tf --region us-east-1
 ```
 
+Caso queira permitir o acesso público (de fora do EKS) para o banco de dados de servidor SMTP, defina a variável `public` como `true`.
+No Powershell, use o seguinte comando:
+
+```powershell
+$ENV:TF_VAR_public = 'true'
+```
+
 Após a criação do Bucket, acesse a pasta `infra` e aplique os scripts do Terraform.
 O processo leva cerca de 10 minutos.
 
@@ -44,6 +51,8 @@ terraform apply -auto-approve
 
 São exibidas algumas informações úteis sobre o ambiente.
 Caso precise desses dados novamente, utilize o comando `terraform output`.
+
+Para rodar o projeto com os serviços criados pelo Terraform, crie um [arquivo de configuração local](./../docs/configuration.md) e use as informações exibidas no terminal. Observe que essas informações só são exibidas se o projeto estiver definido como público (`TF_VAR_public = 'true'`).
 
 ### Upload de imagens para o ECR
 

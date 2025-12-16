@@ -9,7 +9,7 @@ resource "aws_db_instance" "database" {
   storage_encrypted       = true
   timezone                = "E. South America Standard Time"
   storage_type            = "gp3"
-  publicly_accessible     = var.db.public
+  publicly_accessible     = var.public
   skip_final_snapshot     = true
   apply_immediately       = true
   backup_retention_period = 0
@@ -26,7 +26,7 @@ resource "aws_db_subnet_group" "mssql" {
   name        = "${var.project_name}-db"
   description = "Subnet group for RDS"
 
-  subnet_ids = var.db.public ? aws_subnet.public[*].id : aws_subnet.private[*].id
+  subnet_ids = var.public ? aws_subnet.public[*].id : aws_subnet.private[*].id
 
   tags = {
     Project = var.project_name
@@ -42,8 +42,8 @@ resource "aws_security_group" "mssql" {
     from_port   = 1433
     to_port     = 1433
     protocol    = "tcp"
-    cidr_blocks = var.db.public ? ["0.0.0.0/0"] : [var.vpc_cidr]
-    description = var.db.public ? "SQL Server - Public Access" : "SQL Server - Internal VPC Only"
+    cidr_blocks = var.public ? ["0.0.0.0/0"] : [var.vpc_cidr]
+    description = var.public ? "SQL Server - Public Access" : "SQL Server - Internal VPC Only"
   }
 
   egress {

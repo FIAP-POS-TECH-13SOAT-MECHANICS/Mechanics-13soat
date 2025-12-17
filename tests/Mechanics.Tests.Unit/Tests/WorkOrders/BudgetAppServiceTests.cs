@@ -45,6 +45,8 @@ public class BudgetAppServiceTests
                 ctx.Customers.Add(CustomerMocks.CreateCustomerPf(customerId));
                 ctx.ServiceCatalog.Add(service);
                 ctx.WorkOrders.Add(wo);
+                wo.ServiceCatalog = [service];
+                wo.Products = [ProductMocks.CreateWorkOrderProduct()];
             })
             .Build();
 
@@ -215,6 +217,55 @@ public class BudgetAppServiceTests
         });
     }
 
+    [TestMethod("deve lançar exceção quando o orçamento estiver expirado ao tentar aprovar")]
+    public async Task It_ShouldThrow_WhenApprovingExpiredBudget()
+    {
+        // Arrange
+        var customer = CustomerMocks.CreateCustomerPf(Guid.NewGuid());
+        var vehicleId = Guid.NewGuid();
+        var wo = WorkOrderMocks.CreateWorkOrderEntity(Guid.NewGuid(), customer.Id, vehicleId);
+        var budget = new Budget
+        {
+            WorkOrderId = wo.Id,
+            Status = BudgetStatus.Sent,
+            CreationDate = DateTime.Now.AddDays(-5),
+            ExpiresAt = DateTime.Now.AddMinutes(-1), // expirado
+            Items = new List<BudgetItem>
+            {
+                new()
+                {
+                    BudgetId = Guid.NewGuid(), NameSnapshot = "Serviço", Quantity = 1, UnitPriceSnapshot = 50,
+                    Subtotal = 50,
+                },
+            },
+        };
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(ctx =>
+            {
+                ctx.Customers.Add(customer);
+                ctx.WorkOrders.Add(wo);
+                ctx.Budgets.Add(budget);
+            })
+            .Build();
+
+        var handler = new BudgetAppService(context, _emailMock, _loggerFactory.CreateLogger<BudgetAppService>());
+
+        // Act + Assert
+        await Assert.ThrowsExactlyAsync<BusinessException>(async () =>
+        {
+            await handler.PublicApproveBudget(customer.Document.Number, wo.AccessKey, "trying after expired",
+                TestContext.CancellationTokenSource.Token);
+        });
+
+        // Verifica que status foi marcado como Expired
+        var updated = await context.Budgets.AsNoTracking()
+            .FirstOrDefaultAsync(b => b.WorkOrderId == wo.Id, TestContext.CancellationTokenSource.Token);
+        Assert.IsNotNull(updated);
+        Assert.AreEqual(BudgetStatus.Expired, updated.Status);
+        Assert.IsNull(updated.ApprovedAt, "Não deve aprovar orçamento expirado");
+    }
+
     #endregion
 
     #region rejeitar orçamento
@@ -296,6 +347,55 @@ public class BudgetAppServiceTests
             .Where(h => h.WorkOrderId == wo.Id && h.Action == "BudgetRejectedByCustomer")
             .ToListAsync(TestContext.CancellationTokenSource.Token);
         Assert.HasCount(1, histories, "Deve registrar histórico de rejeição");
+    }
+
+    [TestMethod("deve lançar exceção quando o orçamento estiver expirado ao tentar rejeitar")]
+    public async Task It_ShouldThrow_WhenRejectingExpiredBudget()
+    {
+        // Arrange
+        var customer = CustomerMocks.CreateCustomerPf(Guid.NewGuid());
+        var vehicleId = Guid.NewGuid();
+        var wo = WorkOrderMocks.CreateWorkOrderEntity(Guid.NewGuid(), customer.Id, vehicleId);
+        var budget = new Budget
+        {
+            WorkOrderId = wo.Id,
+            Status = BudgetStatus.Sent,
+            CreationDate = DateTime.Now.AddDays(-4),
+            ExpiresAt = DateTime.Now.AddMinutes(-1), // expirado
+            Items = new List<BudgetItem>
+            {
+                new()
+                {
+                    BudgetId = Guid.NewGuid(), NameSnapshot = "Serviço", Quantity = 1, UnitPriceSnapshot = 80,
+                    Subtotal = 80,
+                },
+            },
+        };
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(ctx =>
+            {
+                ctx.Customers.Add(customer);
+                ctx.WorkOrders.Add(wo);
+                ctx.Budgets.Add(budget);
+            })
+            .Build();
+
+        var handler = new BudgetAppService(context, _emailMock, _loggerFactory.CreateLogger<BudgetAppService>());
+
+        // Act + Assert
+        await Assert.ThrowsExactlyAsync<BusinessException>(async () =>
+        {
+            await handler.PublicRejectBudget(customer.Document.Number, wo.AccessKey, "reject after expired",
+                TestContext.CancellationTokenSource.Token);
+        });
+
+        // Verifica que status foi marcado como Expired
+        var updated = await context.Budgets.AsNoTracking()
+            .FirstOrDefaultAsync(b => b.WorkOrderId == wo.Id, TestContext.CancellationTokenSource.Token);
+        Assert.IsNotNull(updated);
+        Assert.AreEqual(BudgetStatus.Expired, updated.Status);
+        Assert.IsNull(updated.RejectedAt, "Não deve rejeitar orçamento expirado");
     }
 
     #endregion

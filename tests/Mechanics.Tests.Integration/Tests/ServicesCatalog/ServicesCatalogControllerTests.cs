@@ -1,7 +1,7 @@
 using Mechanics.Application.ServicesCatalog.Requests;
 using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Domain.Auth;
-using Mechanics.Domain.Base;
+using Mechanics.Domain.ServicesCatalog;
 using Mechanics.Tests.Integration.Helpers;
 using System.Net;
 using System.Net.Http.Json;
@@ -181,6 +181,6 @@ public class ServiceCatalogControllerTests
         // Assert
         Console.WriteLine($"Status: {pagedResponse.StatusCode}, Body: {content}");
         Assert.AreEqual(HttpStatusCode.OK, pagedResponse.StatusCode);
-        Assert.IsTrue(content.Contains("\"items\""));
+        Assert.Contains("\"items\"", content);
     }
 }

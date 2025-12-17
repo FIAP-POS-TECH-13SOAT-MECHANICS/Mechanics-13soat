@@ -16,7 +16,7 @@ public class ExceptionHandlerMiddleware(RequestDelegate next)
         }
         catch (EntityNotFoundException e)
         {
-            await WriteProblemDetails(context, StatusCodes.Status404NotFound, e);
+            await WriteProblemDetails(context, StatusCodes.Status400BadRequest, e);
         }
         catch (BusinessException e)
         {
@@ -28,7 +28,7 @@ public class ExceptionHandlerMiddleware(RequestDelegate next)
             await WriteProblemDetails(context, StatusCodes.Status500InternalServerError, e);
         }
     }
-    
+
     private static async Task WriteProblemDetails(HttpContext context, int statusCode, Exception e)
     {
         context.Response.StatusCode = statusCode;
@@ -42,15 +42,15 @@ public class ExceptionHandlerMiddleware(RequestDelegate next)
 #if DEBUG
             Detail = JsonSerializer.Serialize(new ExceptionDetails(e), SerializerOptions),
 #endif
-            };
-            await context.Response.WriteAsync(JsonSerializer.Serialize(response, SerializerOptions));
-        }
-    
+        };
+        await context.Response.WriteAsync(JsonSerializer.Serialize(response, SerializerOptions));
+    }
 
-        public class ExceptionDetails(Exception e)
-        {
-            public string Name { get; } = e.GetType().Name;
-            public string Message { get; } = e.Message;
-            public ExceptionDetails? InnerException { get; } = e.InnerException != null ? new ExceptionDetails(e.InnerException) : null;
-        }
+
+    public class ExceptionDetails(Exception e)
+    {
+        public string Name { get; } = e.GetType().Name;
+        public string Message { get; } = e.Message;
+        public ExceptionDetails? InnerException { get; } = e.InnerException != null ? new ExceptionDetails(e.InnerException) : null;
+    }
 }

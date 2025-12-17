@@ -8,10 +8,10 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
 {
     public void Configure(EntityTypeBuilder<Customer> builder)
     {
-        builder.Property(entity => entity.Name).HasMaxLength(100).IsRequired();
+        builder.Property(entity => entity.Name).HasMaxLength(100);
         builder.HasIndex(entity => entity.Name);
 
-        builder.Property(entity => entity.Email).HasMaxLength(100).IsRequired();
+        builder.Property(entity => entity.Email).HasMaxLength(100);
         builder.HasIndex(entity => entity.Email).IsUnique();
 
         builder.OwnsOne(entity => entity.Document, document =>
@@ -24,7 +24,5 @@ public class CustomerConfiguration : IEntityTypeConfiguration<Customer>
                 .HasMaxLength(4);
             document.HasIndex(d => d.Number).IsUnique();
         });
-
-        builder.Navigation(entity => entity.Document).IsRequired();
     }
 }

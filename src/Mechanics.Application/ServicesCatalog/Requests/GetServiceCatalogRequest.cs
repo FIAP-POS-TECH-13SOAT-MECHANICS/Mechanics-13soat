@@ -1,5 +1,5 @@
 using Mechanics.Application.Utils.PagedList;
-using Mechanics.Domain.Base;
+using Mechanics.Domain.ServicesCatalog;
 
 namespace Mechanics.Application.ServicesCatalog.Requests;
 

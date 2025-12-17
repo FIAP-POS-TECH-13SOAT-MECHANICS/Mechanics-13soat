@@ -9,11 +9,28 @@ Repositório do projeto destinado aos Tech Challenges da Oficina Mecânica da FI
 - SDK: .NET 8.0
 - Banco de dados: MSSQL 2025
 
-## Execução via Docker
+## Execução do projeto
 
-1. Rode o comando `docker compose up -d --build` na raiz do projeto.
-2. Aguarde o processo concluir e acesse `http://localhost:5000/swagger`.
-3. Acesse o cliente de e-mail em `http://localhost:8025`.
+Em cada nova fase do projeto, é recomendável apagar os volumes do Docker para evitar conflitos com a estrutura do banco
+de dados criado em fases anteriores. Para fazer isso, execute o seguinte comando na raiz do projeto:
+
+```bash
+docker compose down -v
+```
+
+Inicie o projeto via Docker Compose:
+
+```bash
+docker compose up -d --build
+```
+
+Após o processo concluir, o projeto estará disponível nas seguintes URLs:
+
+- Swagger do projeto: http://localhost:5000/swagger
+- Cliente de e-mail: http://localhost:8025
+
+> **Opcional**
+> Utilize o script [dev-seeds](./dev-seeds/README.md) para popular o banco com dados de exemplo.
 
 ## Usuários padrão
 
@@ -39,7 +56,8 @@ Acesse o repositório pelo link abaixo.
 
 [Mechanics Sonar](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/Mechanics-Sonar)
 
-Esse repositório contém instruções para execução local das análises com **SonarQube**, **OWASP Dependency Check** e **OWASP ZAP**.
+Esse repositório contém instruções para execução local das análises com **SonarQube**, **OWASP Dependency Check** e *
+*OWASP ZAP**.
 
 ## Links úteis
 
@@ -47,7 +65,10 @@ Esse repositório contém instruções para execução local das análises com *
 
 - [Autenticação e autorização](./docs/auth.md)
 - [Configuração do ambiente](./docs/configuration.md)
+- [Dados de exemplo](./dev-seeds/README.md)
 - [Diagramas](./docs/diagrams.md)
 - [Diretrizes de design do projeto](./docs/design-guidelines.md)
+- [Fluxo de Ordem de Serviço](./docs/work-order-flow.md)
 - [Migrações do banco de dados](./docs/migrations.md)
 - [Objetivos](./docs/objectives.md)
+- [Relatórios](./docs/reports/README.md)

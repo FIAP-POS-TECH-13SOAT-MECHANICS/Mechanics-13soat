@@ -1,6 +1,8 @@
 using AutoMapper;
 using Mechanics.Application.Notification.Services;
 using Mechanics.Application.Utils;
+using Mechanics.Application.Utils.CommonResponses;
+using Mechanics.Application.Utils.PagedList;
 using Mechanics.Application.WorkOrders.Requests;
 using Mechanics.Application.WorkOrders.Responses;
 using Mechanics.Domain.Auth;
@@ -25,11 +27,11 @@ public class WorkOrderAppService(
     /// <summary>
     ///     Cria uma nova WorkOrder.
     /// </summary>
-    public async Task<Guid> Create(CreateWorkOrderRequest request, CancellationToken cancellationToken = default)
+    public async Task<CreateItemResponse> Create(CreateWorkOrderRequest request, CancellationToken cancellationToken = default)
     {
         var vehicle = await db.Vehicles
-           .Include(v => v.Owner)
-           .FirstOrDefaultAsync(v => v.Id == request.VehicleId, cancellationToken);
+            .Include(v => v.Owner)
+            .FirstOrDefaultAsync(v => v.Id == request.VehicleId, cancellationToken);
 
         EntityNotFoundException.ThrowIfNull(vehicle, request.VehicleId);
         EntityNotFoundException.ThrowIfNull(vehicle.Owner, vehicle.OwnerId);
@@ -50,17 +52,20 @@ public class WorkOrderAppService(
             ReportedProblem = request.ReportedProblem,
         };
 
-        if (request.ProductIds?.Any() == true)
+        if (request.Products?.Any() == true)
         {
-            var products = await db.Products.Where(p => request.ProductIds.Contains(p.Id)).ToListAsync(cancellationToken);
-            wo.Products = products;
+            wo.Products = request.Products.Select(product => new WorkOrderProduct
+            {
+                ProductId = product.ProductId,
+                Quantity = product.Quantity,
+            }).ToList();
         }
 
         if (request.ServiceCatalogIds?.Any() == true)
         {
             var services = await db.ServiceCatalog.Where(s => request.ServiceCatalogIds.Contains(s.Id))
                 .ToListAsync(cancellationToken);
-                wo.ServiceCatalog = services;
+            wo.ServiceCatalog = services;
         }
 
         await db.WorkOrders.AddAsync(wo, cancellationToken);
@@ -75,11 +80,11 @@ public class WorkOrderAppService(
             logger.LogWarning(ex, "Failed to send WorkOrder created email for {WorkOrderId}", wo.Id);
         }
 
-        return wo.Id;
+        return new CreateItemResponse { CreatedId = wo.Id };
     }
 
     public async Task Assign(Guid workOrderId, Guid assignedToUserId, Guid performedByUserId, string? comment = null,
-       CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default)
     {
         var wo = await db.WorkOrders.FirstOrDefaultAsync(w => w.Id == workOrderId, cancellationToken);
         EntityNotFoundException.ThrowIfNull(wo, workOrderId);
@@ -130,6 +135,30 @@ public class WorkOrderAppService(
     }
 
     /// <summary>
+    ///     Lista WorkOrders com filtros opcionais e paginação.
+    /// </summary>
+    public async Task<GetWorkOrdersResponse> GetList(GetWorkOrdersRequest request, CancellationToken cancellationToken = default)
+    {
+        var hasCustomer = request.CustomerId.HasValue;
+        var hasVehicle = request.VehicleId.HasValue;
+
+        var query = db.WorkOrders
+            .AsNoTracking()
+            .Include(w => w.Products)
+            .Include(w => w.ServiceCatalog)
+            .Where(w => !hasCustomer || w.CustomerId == request.CustomerId!.Value)
+            .Where(w => !hasVehicle || w.VehicleId == request.VehicleId!.Value)
+            .Where(w => request.IncludeCompleted || w.Status != WorkOrderStatus.Completed && w.Status != WorkOrderStatus.Delivered)
+            .OrderByDescending(w => w.Status).ThenBy(w => w.CreationDate)
+            .AsSplitQuery();
+
+        var (items, count) = await query.GetPaginatedList(request, cancellationToken);
+
+        var mapped = mapper.Map<IEnumerable<GetWorkOrderResponse>>(items);
+        return new GetWorkOrdersResponse(mapped, count);
+    }
+
+    /// <summary>
     ///     Consulta pública por documento do cliente e accessKey.
     ///     Usado pelo cliente para acompanhar o progresso da OS.
     /// </summary>
@@ -143,7 +172,8 @@ public class WorkOrderAppService(
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Document.Number == normalizedDocument, cancellationToken);
 
-        EntityNotFoundException.ThrowIfNull(customer, document);
+        if (customer is null)
+            return null;
 
         var wo = await db.WorkOrders
             .Include(w => w.Products)
@@ -151,9 +181,7 @@ public class WorkOrderAppService(
             .AsNoTracking()
             .FirstOrDefaultAsync(w => w.CustomerId == customer.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
 
-        EntityNotFoundException.ThrowIfNull(wo, accessKey);
-
-        return mapper.Map<GetWorkOrderResponse>(wo);
+        return wo is null ? null : mapper.Map<GetWorkOrderResponse>(wo);
     }
 
     /// <summary>
@@ -243,7 +271,7 @@ public class WorkOrderAppService(
 
         EntityNotFoundException.ThrowIfNull(wo, workOrderId);
 
-        var addedProducts = await ApplyProductsToWorkOrderAsync(wo, request.ProductIds, cancellationToken);
+        var addedProducts = await ApplyProductsToWorkOrderAsync(wo, request.Products?.ToList(), cancellationToken);
         var addedServices = await ApplyServicesToWorkOrderAsync(wo, request.ServiceIds, cancellationToken);
 
         var observationChanged = request.Observations is not null && wo.Observations != request.Observations;
@@ -275,31 +303,52 @@ public class WorkOrderAppService(
     /// <summary>
     ///     Helper: aplica produtos retorna quantidade adicionada.
     /// </summary>
-    private async Task<int> ApplyProductsToWorkOrderAsync(WorkOrder wo, IEnumerable<Guid>? productIds, CancellationToken cancellationToken)
+    private async Task<int> ApplyProductsToWorkOrderAsync(WorkOrder wo, IReadOnlyList<WorkOrderProductRequest>? products,
+        CancellationToken cancellationToken)
     {
-        if (productIds is null) return 0;
-        var ids = productIds as IList<Guid> ?? productIds.ToArray();
-        if (!ids.Any()) return 0;
+        if (products is null || !products.Any())
+            return 0;
 
-        var products = await db.Products.Where(p => ids.Contains(p.Id)).ToListAsync(cancellationToken);
-        if (products.Count == 0) return 0;
+        var productIds = products.Select(p => p.ProductId).ToArray();
+        var existingIds = await db.Products
+            .Where(product => productIds.Contains(product.Id))
+            .Select(product => product.Id)
+            .ToListAsync(cancellationToken);
 
-        wo.Products ??= new List<Product>();
+        var notFoundId = productIds.Except(existingIds).FirstOrDefault();
+        EntityNotFoundException.ThrowIfNotFound<Product>(notFoundId == Guid.Empty, notFoundId);
+
+        var productsToChange = wo.Products?.ToDictionary(p => p.ProductId, p => p) ?? new Dictionary<Guid, WorkOrderProduct>();
 
         var added = 0;
-        foreach (var p in products.Where(p => wo.Products.All(x => x.Id != p.Id)))
+        foreach (var product in products)
         {
-            wo.Products.Add(p);
+            var existing = productsToChange.TryGetValue(product.ProductId, out var existingProduct);
+            if (existing)
+            {
+                if (existingProduct!.Quantity != product.Quantity)
+                    existingProduct.Quantity = product.Quantity;
+
+                continue;
+            }
+
+            productsToChange.Add(product.ProductId, new WorkOrderProduct
+            {
+                ProductId = product.ProductId,
+                Quantity = product.Quantity,
+            });
             added++;
         }
 
+        wo.Products = productsToChange.Values.ToList();
         return added;
     }
 
     /// <summary>
     ///     Helper: aplica serviços retorna quantidade adicionada.
     /// </summary>
-    private async Task<int> ApplyServicesToWorkOrderAsync(WorkOrder wo, IEnumerable<Guid>? serviceIds, CancellationToken cancellationToken)
+    private async Task<int> ApplyServicesToWorkOrderAsync(WorkOrder wo, IEnumerable<Guid>? serviceIds,
+        CancellationToken cancellationToken)
     {
         if (serviceIds is null) return 0;
         var ids = serviceIds as IList<Guid> ?? serviceIds.ToArray();
@@ -318,6 +367,28 @@ public class WorkOrderAppService(
         }
 
         return added;
+    }
+
+    /// <summary>
+    ///     Obtém o tempo médio total estimado para execução dos serviços associados a uma WorkOrder.
+    /// </summary>
+    /// <param name="id">Identificador da WorkOrder.</param>
+    /// <param name="cancellationToken">Token para cancelamento da operação.</param>
+    public async Task<GetWorkOrderAverageTimeResponse> GetAverageServiceTime(Guid id,
+        CancellationToken cancellationToken = default)
+    {
+        var workOrder = await db.WorkOrders
+            .AsNoTracking()
+            .Include(w => w.ServiceCatalog)
+            .FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
+
+        EntityNotFoundException.ThrowIfNull(workOrder, id);
+
+        return new GetWorkOrderAverageTimeResponse
+        {
+            WorkOrderId = workOrder.Id,
+            TotalAverageTime = workOrder.ServiceCatalog?.Sum(s => s.AverageTime) ?? 0
+        };
     }
 
     private static bool IsTransitionAllowed(WorkOrderStatus from, WorkOrderStatus to) =>

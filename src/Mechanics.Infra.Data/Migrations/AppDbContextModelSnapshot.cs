@@ -204,12 +204,13 @@ namespace Mechanics.Infra.Data.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
@@ -221,10 +222,13 @@ namespace Mechanics.Infra.Data.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("UnitPrice")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
 
                     b.ToTable("Products", "Mechanics");
                 });
@@ -240,8 +244,8 @@ namespace Mechanics.Infra.Data.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("BasePrice")
-                        .HasPrecision(10, 2)
-                        .HasColumnType("decimal(10,2)");
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("CreationDate")
                         .ValueGeneratedOnAdd()
@@ -352,6 +356,7 @@ namespace Mechanics.Infra.Data.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal>("Total")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<Guid>("WorkOrderId")
@@ -381,8 +386,8 @@ namespace Mechanics.Infra.Data.Migrations
 
                     b.Property<string>("NameSnapshot")
                         .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<Guid?>("ProductId")
                         .HasColumnType("uniqueidentifier");
@@ -394,9 +399,11 @@ namespace Mechanics.Infra.Data.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal>("Subtotal")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<decimal>("UnitPriceSnapshot")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.HasKey("Id");
@@ -416,7 +423,8 @@ namespace Mechanics.Infra.Data.Migrations
                     b.Property<string>("AccessKey")
                         .IsRequired()
                         .HasMaxLength(8)
-                        .HasColumnType("nvarchar(8)");
+                        .HasColumnType("nchar(8)")
+                        .IsFixedLength();
 
                     b.Property<DateTime?>("ApprovalRequestedAt")
                         .HasColumnType("datetime2");
@@ -509,6 +517,24 @@ namespace Mechanics.Infra.Data.Migrations
                     b.ToTable("WorkOrderHistories", "Mechanics");
                 });
 
+            modelBuilder.Entity("Mechanics.Domain.WorkOrders.WorkOrderProduct", b =>
+                {
+                    b.Property<Guid>("WorkOrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.HasKey("WorkOrderId", "ProductId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("WorkOrderProduct", "Mechanics");
+                });
+
             modelBuilder.Entity("ServiceCatalogWorkOrder", b =>
                 {
                     b.Property<Guid>("ServiceCatalogId")
@@ -522,21 +548,6 @@ namespace Mechanics.Infra.Data.Migrations
                     b.HasIndex("WorkOrdersId");
 
                     b.ToTable("ServiceCatalogWorkOrder", "Mechanics");
-                });
-
-            modelBuilder.Entity("WorkOrderProducts", b =>
-                {
-                    b.Property<Guid>("ProductsId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("WorkOrdersId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("ProductsId", "WorkOrdersId");
-
-                    b.HasIndex("WorkOrdersId");
-
-                    b.ToTable("WorkOrderProducts", "Mechanics");
                 });
 
             modelBuilder.Entity("Mechanics.Domain.Auth.User", b =>
@@ -590,7 +601,7 @@ namespace Mechanics.Infra.Data.Migrations
                     b.HasOne("Mechanics.Domain.Customers.Customer", "Owner")
                         .WithMany("Vehicles")
                         .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.OwnsOne("Mechanics.Domain.Vehicles.LicensePlate", "LicensePlate", b1 =>
@@ -602,8 +613,9 @@ namespace Mechanics.Infra.Data.Migrations
                             b1.Property<string>("Number")
                                 .IsRequired()
                                 .HasMaxLength(7)
-                                .HasColumnType("nvarchar(7)")
-                                .HasColumnName("LicensePlate");
+                                .HasColumnType("nchar(7)")
+                                .HasColumnName("LicensePlate")
+                                .IsFixedLength();
 
                             b1.HasKey("VehicleId");
 
@@ -648,8 +660,7 @@ namespace Mechanics.Infra.Data.Migrations
                 {
                     b.HasOne("Mechanics.Domain.Auth.User", "AssignedToUser")
                         .WithMany()
-                        .HasForeignKey("AssignedToUserId")
-                        .OnDelete(DeleteBehavior.NoAction);
+                        .HasForeignKey("AssignedToUserId");
 
                     b.HasOne("Mechanics.Domain.Customers.Customer", "Customer")
                         .WithMany()
@@ -681,6 +692,25 @@ namespace Mechanics.Infra.Data.Migrations
                     b.Navigation("WorkOrder");
                 });
 
+            modelBuilder.Entity("Mechanics.Domain.WorkOrders.WorkOrderProduct", b =>
+                {
+                    b.HasOne("Mechanics.Domain.Products.Product", "Product")
+                        .WithMany("WorkOrders")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Mechanics.Domain.WorkOrders.WorkOrder", "WorkOrder")
+                        .WithMany("Products")
+                        .HasForeignKey("WorkOrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Product");
+
+                    b.Navigation("WorkOrder");
+                });
+
             modelBuilder.Entity("ServiceCatalogWorkOrder", b =>
                 {
                     b.HasOne("Mechanics.Domain.ServicesCatalog.ServiceCatalog", null)
@@ -696,29 +726,24 @@ namespace Mechanics.Infra.Data.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("WorkOrderProducts", b =>
-                {
-                    b.HasOne("Mechanics.Domain.Products.Product", null)
-                        .WithMany()
-                        .HasForeignKey("ProductsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Mechanics.Domain.WorkOrders.WorkOrder", null)
-                        .WithMany()
-                        .HasForeignKey("WorkOrdersId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-                });
-
             modelBuilder.Entity("Mechanics.Domain.Customers.Customer", b =>
                 {
                     b.Navigation("Vehicles");
                 });
 
+            modelBuilder.Entity("Mechanics.Domain.Products.Product", b =>
+                {
+                    b.Navigation("WorkOrders");
+                });
+
             modelBuilder.Entity("Mechanics.Domain.WorkOrders.Budget", b =>
                 {
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("Mechanics.Domain.WorkOrders.WorkOrder", b =>
+                {
+                    b.Navigation("Products");
                 });
 #pragma warning restore 612, 618
         }

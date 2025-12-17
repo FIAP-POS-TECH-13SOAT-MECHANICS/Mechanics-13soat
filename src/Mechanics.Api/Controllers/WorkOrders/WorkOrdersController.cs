@@ -16,6 +16,7 @@ namespace Mechanics.Api.Controllers.WorkOrders;
 [ApiController]
 [ApiExplorerSettings(GroupName = "v1")]
 [Route("api/[controller]")]
+[Authorize]
 public class WorkOrdersController(WorkOrderAppService workOrderService)
     : ControllerBase
 {
@@ -31,10 +32,10 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     [Produces("application/json", Type = typeof(object))]
     [ProducesResponseType(typeof(object), (int)HttpStatusCode.Created)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> Create([FromBody] CreateWorkOrderRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Create(CreateWorkOrderRequest request, CancellationToken cancellationToken)
     {
-        var id = await workOrderService.Create(request, cancellationToken);
-        return CreatedAtAction(nameof(Get), new { id }, new { id });
+        var response = await workOrderService.Create(request, cancellationToken);
+        return CreatedAtAction(nameof(Get), new { id = response.CreatedId }, response);
     }
 
     /// <summary>
@@ -159,7 +160,7 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
         CancellationToken cancellationToken)
     {
         var response = await workOrderService.TrackByDocumentAndAccessKey(document, accessKey, cancellationToken);
-        return Ok(response);
+        return response is not null ? Ok(response) : NotFound();
     }
 
     /// <summary>
@@ -205,6 +206,40 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
         await workOrderService.ChangeStatus(id, WorkOrderStatus.Delivered, userId,
             cancellationToken: cancellationToken);
         return NoContent();
+    }
+
+    /// <summary>
+    ///     Lista ordens de serviço com filtros opcionais e paginação.
+    /// </summary>
+    /// <param name="request">Parâmetros de filtro e paginação.</param>
+    /// <param name="cancellationToken">Token para cancelamento da operação.</param>
+    /// <response code="200">Consulta executada.</response>
+    /// <response code="400">Parâmetros inválidos.</response>
+    [HttpGet]
+    [Produces("application/json", Type = typeof(GetWorkOrdersResponse))]
+    [ProducesResponseType(typeof(GetWorkOrdersResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetWorkOrders([FromQuery] GetWorkOrdersRequest request, CancellationToken cancellationToken)
+    {
+        var response = await workOrderService.GetList(request, cancellationToken);
+        return Ok(response);
+    }
+
+    /// <summary>
+    ///     Obtém o tempo médio total estimado para execução dos serviços associados à ordem.
+    /// </summary>
+    /// <param name="id">Identificador da ordem.</param>
+    /// <param name="cancellationToken">Token para cancelamento da operação.</param>
+    /// <response code="200">Registro encontrado.</response>
+    /// <response code="404">Registro não encontrado.</response>
+    [HttpGet("{id:guid}/services/average-time")]
+    [Produces("application/json", Type = typeof(GetWorkOrderAverageTimeResponse))]
+    [ProducesResponseType(typeof(GetWorkOrderAverageTimeResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetAverageServiceTime(Guid id, CancellationToken cancellationToken)
+    {
+        var response = await workOrderService.GetAverageServiceTime(id, cancellationToken);
+        return Ok(response);
     }
 
     private Guid GetCurrentUserId()

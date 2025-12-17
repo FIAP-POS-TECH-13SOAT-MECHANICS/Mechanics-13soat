@@ -9,9 +9,7 @@ public class RoleConfiguration : IEntityTypeConfiguration<Role>
 {
     public void Configure(EntityTypeBuilder<Role> builder)
     {
-        builder.Property(entity => entity.Name)
-            .HasMaxLength(50)
-            .IsRequired();
+        builder.Property(entity => entity.Name).HasMaxLength(50);
         builder.HasIndex(entity => entity.Name).IsUnique();
 
         builder.HasData(RoleSeeds.GetSeeds());

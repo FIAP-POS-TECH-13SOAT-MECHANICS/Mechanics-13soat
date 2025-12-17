@@ -1,4 +1,4 @@
-using Mechanics.Domain.Base;
+using Mechanics.Domain.Products;
 
 namespace Mechanics.Application.Products.Requests;
 

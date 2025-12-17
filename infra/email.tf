@@ -1,10 +1,10 @@
 resource "aws_ecs_cluster" "email" {
-  name = "${var.project_name}-email"
+  name = "${local.prefix}-email"
 }
 
 # security group
 resource "aws_security_group" "mailpit" {
-  name        = "${var.project_name}-mailpit-sg"
+  name        = "${local.prefix}-mailpit-sg"
   description = "Security group for MailPit"
   vpc_id      = aws_vpc.main.id
 
@@ -22,7 +22,7 @@ resource "aws_security_group" "mailpit" {
     from_port   = 1025
     to_port     = 1025
     protocol    = "tcp"
-    cidr_blocks = var.public ? ["0.0.0.0/0"] : [var.vpc_cidr]
+    cidr_blocks = local.public ? ["0.0.0.0/0"] : [var.vpc_cidr]
     description = "MailPit SMTP"
   }
 
@@ -42,28 +42,22 @@ resource "aws_security_group" "mailpit" {
     cidr_blocks = ["0.0.0.0/0"]
     description = "Allow all outbound traffic"
   }
-
+  
   tags = {
-    Project = var.project_name
-    Service = "mailpit"
+    Name = local.public ? "mailpit-public-${var.environment}" : "mailpit-private-${var.environment}"
   }
 }
 
 # load balancer for web client
 resource "aws_lb" "mailpit_client" {
-  name               = "${var.project_name}-mailpit-client-lb"
+  name               = "${local.prefix}-email-web-lb"
   load_balancer_type = "application"
   subnets            = aws_subnet.public[*].id
   security_groups    = [aws_security_group.mailpit.id]
-
-  tags = {
-    Project = var.project_name
-    Service = "mailpit"
-  }
 }
 
 resource "aws_lb_target_group" "mailpit_client" {
-  name        = "${var.project_name}-mailpit-client-tg"
+  name        = "${local.prefix}-email-web-tg"
   port        = 8025
   protocol    = "HTTP"
   target_type = "ip"
@@ -72,11 +66,6 @@ resource "aws_lb_target_group" "mailpit_client" {
   health_check {
     path = "/api/v1/info"
     port = "8025"
-  }
-
-  tags = {
-    Project = var.project_name
-    Service = "mailpit"
   }
 }
 
@@ -89,43 +78,28 @@ resource "aws_lb_listener" "mailpit_client" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.mailpit_client.arn
   }
-
-  tags = {
-    Project = var.project_name
-    Service = "mailpit"
-  }
 }
 
 # load balancer for SMTP (only if public)
 resource "aws_lb" "mailpit_smtp" {
-  count              = var.public ? 1 : 0
-  name               = "${var.project_name}-mailpit-smtp-lb"
+  count              = local.public ? 1 : 0
+  name               = "${local.prefix}-email-smtp-lb"
   load_balancer_type = "network"
-  subnets            = var.public ? aws_subnet.public[*].id : aws_subnet.private[*].id
+  subnets            = local.public ? aws_subnet.public[*].id : aws_subnet.private[*].id
   security_groups    = [aws_security_group.mailpit.id]
-
-  tags = {
-    Project = var.project_name
-    Service = "mailpit"
-  }
 }
 
 resource "aws_lb_target_group" "mailpit_smtp" {
-  count       = var.public ? 1 : 0
-  name        = "${var.project_name}-mailpit-smtp-tg"
+  count       = local.public ? 1 : 0
+  name        = "${local.prefix}-email-smtp-tg"
   port        = 1025
   protocol    = "TCP"
   target_type = "ip"
   vpc_id      = aws_vpc.main.id
-
-  tags = {
-    Project = var.project_name
-    Service = "mailpit"
-  }
 }
 
 resource "aws_lb_listener" "mailpit_smtp" {
-  count = var.public ? 1 : 0
+  count = local.public ? 1 : 0
 
   load_balancer_arn = aws_lb.mailpit_smtp[0].arn
   port              = 1025
@@ -135,16 +109,11 @@ resource "aws_lb_listener" "mailpit_smtp" {
     type             = "forward"
     target_group_arn = aws_lb_target_group.mailpit_smtp[count.index].arn
   }
-
-  tags = {
-    Project = var.project_name
-    Service = "mailpit"
-  }
 }
 
 # ECS Service
 resource "aws_ecs_service" "email" {
-  name            = "${var.project_name}-email-service"
+  name            = "${local.prefix}-email-service"
   cluster         = aws_ecs_cluster.email.id
   task_definition = aws_ecs_task_definition.email.arn
   launch_type     = "FARGATE"
@@ -163,7 +132,7 @@ resource "aws_ecs_service" "email" {
   }
 
   dynamic "load_balancer" {
-    for_each = var.public ? [1] : []
+    for_each = local.public ? [1] : []
 
     content {
       target_group_arn = aws_lb_target_group.mailpit_smtp[0].arn
@@ -173,15 +142,10 @@ resource "aws_ecs_service" "email" {
   }
 
   depends_on = [aws_lb_listener.mailpit_client, aws_lb_listener.mailpit_smtp]
-
-  tags = {
-    Project = var.project_name
-    Service = "mailpit"
-  }
 }
 
 resource "aws_ecs_task_definition" "email" {
-  family                   = "${var.project_name}-email"
+  family                   = "${local.prefix}-email"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256"
@@ -225,9 +189,4 @@ resource "aws_ecs_task_definition" "email" {
       }
     }
   ])
-
-  tags = {
-    Project = var.project_name
-    Service = "mailpit"
-  }
 }

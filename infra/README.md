@@ -36,28 +36,40 @@ Primeiro crie um bucket no S3 para servir de backend do Terraform:
 aws s3 mb s3://fiap-mechanics-tf --region us-east-1
 ```
 
-Caso queira permitir o acesso público (de fora do EKS) para o banco de dados de servidor SMTP, defina a variável
-`public` como `true`.
-No Powershell, use o seguinte comando:
+Por padrão, será gerado um ambiente de desenvolvimento (dev).
+O sistema permite o acesso público para o banco de dados e servidor SMTP em ambientes que não sejam de produção (prod).
+
+No Powershell, use os seguintes comandos para alterar o ambiente ou a permissão de acesso:
 
 ```powershell
-$ENV:TF_VAR_public = 'true'
+$ENV:TF_VAR_environment = 'prod'    # dev, stg ou prod
+$ENV:TF_VAR_public_access = 'true'  # padrão é "true" quando environment != "prod"
 ```
 
-Após a criação do Bucket, acesse a pasta `infra` e aplique os scripts do Terraform.
-O processo leva cerca de 10 minutos.
+Após a criação do Bucket, acesse a pasta `infra`.
+Passe a chave do backend de acordo com o ambiente desejado (dev, stg ou prod) e aplique os scripts.
 
-```cmd
-terraform init
+```powershell
+terraform init -backend-config="key=dev.tfstate"
 terraform apply -auto-approve
 ```
 
-São exibidas algumas informações úteis sobre o ambiente.
+>Observação: evite usar `-auto-approve` em ambientes reais.
+
+O processo leva de 10 a 15 minutos.
+Serão exibidas algumas informações úteis sobre o ambiente.
 Caso precise desses dados novamente, utilize o comando `terraform output`.
 
 Para rodar o projeto com os serviços criados pelo Terraform, crie
 um [arquivo de configuração local](./../docs/configuration.md) e use as informações exibidas no terminal. Observe que
-várias dessas informações só são exibidas se o projeto estiver definido como público (`TF_VAR_public = 'true'`).
+várias dessas informações só são exibidas se o projeto estiver definido como público (`public_access = 'true'`).
+
+Se quiser gerenciar outros ambientes, altere a variável `environment` e reconfigure o terraform para usar o state correto.
+
+```powershell
+$ENV:TF_VAR_environment = 'stg'
+terraform init -backend-config="key=$ENV:TF_VAR_environment.tfstate" -reconfigure
+```
 
 ### Upload de imagens para o ECR
 

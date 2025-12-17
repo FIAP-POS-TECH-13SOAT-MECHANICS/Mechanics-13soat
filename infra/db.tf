@@ -1,5 +1,5 @@
 resource "aws_db_instance" "database" {
-  identifier              = "${var.project_name}-db"
+  identifier              = "${local.prefix}-db"
   allocated_storage       = 20
   engine                  = "sqlserver-ex"
   engine_version          = "15.00"
@@ -9,32 +9,24 @@ resource "aws_db_instance" "database" {
   storage_encrypted       = true
   timezone                = "E. South America Standard Time"
   storage_type            = "gp3"
-  publicly_accessible     = var.public
+  publicly_accessible     = local.public
   skip_final_snapshot     = true
   apply_immediately       = true
   backup_retention_period = 0
 
   db_subnet_group_name   = aws_db_subnet_group.mssql.name
   vpc_security_group_ids = [aws_security_group.mssql.id]
-
-  tags = {
-    Project = var.project_name
-  }
 }
 
 resource "aws_db_subnet_group" "mssql" {
-  name        = "${var.project_name}-db"
+  name        = "${local.prefix}-db"
   description = "Subnet group for RDS"
 
-  subnet_ids = var.public ? aws_subnet.public[*].id : aws_subnet.private[*].id
-
-  tags = {
-    Project = var.project_name
-  }
+  subnet_ids = local.public ? aws_subnet.public[*].id : aws_subnet.private[*].id
 }
 
 resource "aws_security_group" "mssql" {
-  name        = "${var.project_name}-mssql-sg"
+  name        = "${local.prefix}-mssql-sg"
   description = "Security group for SQL Server"
   vpc_id      = aws_vpc.main.id
 
@@ -42,8 +34,8 @@ resource "aws_security_group" "mssql" {
     from_port   = 1433
     to_port     = 1433
     protocol    = "tcp"
-    cidr_blocks = var.public ? ["0.0.0.0/0"] : [var.vpc_cidr]
-    description = var.public ? "SQL Server - Public Access" : "SQL Server - Internal VPC Only"
+    cidr_blocks = local.public ? ["0.0.0.0/0"] : [var.vpc_cidr]
+    description = local.public ? "SQL Server - Public Access" : "SQL Server - Internal VPC Only"
   }
 
   egress {
@@ -55,7 +47,6 @@ resource "aws_security_group" "mssql" {
   }
 
   tags = {
-    Project = var.project_name
-    Service = "mssql"
+    Name = local.public ? "mssql-public-${var.environment}" : "mssql-private-${var.environment}"
   }
 }

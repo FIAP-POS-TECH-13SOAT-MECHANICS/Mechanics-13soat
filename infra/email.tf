@@ -204,22 +204,25 @@ resource "aws_ecs_task_definition" "email" {
       ]
       environment = [
         {
-          name  = "MP_MAX_AGE"
-          value = "7d"
-        },
-        {
           name  = "TZ"
           value = "America/Sao_Paulo"
         },
         {
           name  = "MP_SMTP_AUTH"
-          value = var.email.auth
+          value = local.email_smtp_auth
         },
         {
           name  = "MP_SMTP_AUTH_ALLOW_INSECURE"
           value = "true"
         }
       ]
+      healthCheck = {
+        command     = ["CMD-SHELL", "wget --spider -q http://localhost:8025/api/v1/info || exit 1"]
+        interval    = 10
+        timeout     = 5
+        retries     = 3
+        startPeriod = 5
+      }
     }
   ])
 

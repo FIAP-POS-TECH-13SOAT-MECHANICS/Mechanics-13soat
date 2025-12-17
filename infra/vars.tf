@@ -8,25 +8,14 @@ variable "project_name" {
   default = "fiap-mechanics"
 }
 
-variable "db" {
-  type = object({
-    username = string
-    password = string
-  })
-  default = {
-    username = "sa"
-    password = "$Y:2]SB$YoRu$jq"
-  }
-}
-
 variable "email" {
   type = object({
-    image = string
-    auth  = string
+    image     = string
+    domain    = string
   })
   default = {
-    image = "axllent/mailpit:v1.28"
-    auth  = "postmaster@mechanics.com:xFCsMj6a4NWbZgr5"
+    image  = "axllent/mailpit:v1.28"
+    domain = "mechanics.com"
   }
 }
 

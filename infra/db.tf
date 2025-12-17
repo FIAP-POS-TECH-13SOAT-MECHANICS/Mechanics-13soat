@@ -4,8 +4,8 @@ resource "aws_db_instance" "database" {
   engine                  = "sqlserver-ex"
   engine_version          = "15.00"
   instance_class          = "db.t3.small"
-  username                = var.db.username
-  password                = var.db.password
+  username                = random_string.database_user.result
+  password                = random_string.database_password.result
   storage_encrypted       = true
   timezone                = "E. South America Standard Time"
   storage_type            = "gp3"

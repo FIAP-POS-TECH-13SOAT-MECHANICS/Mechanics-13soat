@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using KebabCaseParameterTransformer = Mechanics.Api.Extensions.KebabCaseParameterTransformer;
 
 namespace Mechanics.Api;
 

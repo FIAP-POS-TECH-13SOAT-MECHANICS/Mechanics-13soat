@@ -209,7 +209,7 @@ resource "aws_ecs_task_definition" "email" {
         },
         {
           name  = "MP_SMTP_AUTH"
-          value = local.email_smtp_auth
+          value = "${random_string.email_smtp_user.result}@${var.email.domain}:${random_string.email_smtp_password.result}"
         },
         {
           name  = "MP_SMTP_AUTH_ALLOW_INSECURE"

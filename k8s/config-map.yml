@@ -1,0 +1,13 @@
+﻿apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: fiap-mechanics-config
+
+data:
+  ASPNETCORE_ENVIRONMENT: "Development" # TODO: rodar migrations pela pipeline e alterar pra PROD
+  EmailSenderOptions__SmtpServer: "localhost"
+  EmailSenderOptions__SmtpPort: "1025"
+  EmailSenderOptions__SslRequired: "false"
+  EmailSenderOptions__SenderInformation__Name: "FIAP Mechanics"
+  EmailSenderOptions__SenderInformation__Address: "postmaster@mechanics.com"

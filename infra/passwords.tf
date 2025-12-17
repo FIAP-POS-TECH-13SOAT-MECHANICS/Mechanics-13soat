@@ -24,7 +24,3 @@ resource "random_string" "email_smtp_password" {
   length  = 16
   special = false
 }
-
-locals {
-  email_smtp_auth = "${random_string.email_smtp_user.result}@${var.email.domain}:${random_string.email_smtp_password.result}"
-}

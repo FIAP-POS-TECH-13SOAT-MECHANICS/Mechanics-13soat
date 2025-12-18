@@ -1,0 +1,13 @@
+﻿apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: {{ .Values.app.name }}-configMap
+
+data:
+  ASPNETCORE_ENVIRONMENT: {{ .Values.app.environmentName | quote }}
+  EmailSenderOptions__SmtpServer: {{ .Values.email.smtpServer | quote }}
+  EmailSenderOptions__SmtpPort: {{ .Values.email.smtpPort | quote }}
+  EmailSenderOptions__SslRequired: {{ .Values.email.sslRequired | quote }}
+  EmailSenderOptions__SenderInformation__Name: {{ .Values.email.senderName | quote }}
+  EmailSenderOptions__SenderInformation__Address: {{ .Values.email.senderAddress | quote }}

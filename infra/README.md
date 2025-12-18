@@ -1,18 +1,22 @@
 # Infraestrutura
 
+<!-- TODO: descrição da infra, como recursos criados e fluxo de acesso -->
+
 ## Criação via Terraform
 
 As instruções abaixo servem para rodar o projeto em um ambiente da AWS Academy.
 
 ### Instalação das ferramentas
 
-Instale o [Terraform](https://developer.hashicorp.com/terraform/install)
-e [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html).
+Instale
+o [Terraform](https://developer.hashicorp.com/terraform/install), [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
+e [Helm](https://helm.sh/docs/intro/install/).
 No Windows, é possível baixar via [WinGet](https://learn.microsoft.com/pt-br/windows/package-manager/winget/).
 
 ```cmd
 winget install --id Hashicorp.Terraform
 winget install --id Amazon.AWSCLI
+winget install --id Helm.Helm
 ```
 
 Reinicie o terminal após a instalação para atualizar a variável PATH.
@@ -54,7 +58,7 @@ terraform init -backend-config="key=dev.tfstate"
 terraform apply -auto-approve
 ```
 
->Observação: evite usar `-auto-approve` em ambientes reais.
+> Observação: evite usar `-auto-approve` em ambientes reais.
 
 O processo leva de 10 a 15 minutos.
 Serão exibidas algumas informações úteis sobre o ambiente.
@@ -64,7 +68,8 @@ Para rodar o projeto com os serviços criados pelo Terraform, crie
 um [arquivo de configuração local](./../docs/configuration.md) e use as informações exibidas no terminal. Observe que
 várias dessas informações só são exibidas se o projeto estiver definido como público (`public_access = 'true'`).
 
-Se quiser gerenciar outros ambientes, altere a variável `environment` e reconfigure o terraform para usar o state correto.
+Se quiser gerenciar outros ambientes, altere a variável `environment` e reconfigure o terraform para usar o state
+correto.
 
 ```powershell
 $ENV:TF_VAR_environment = 'stg'
@@ -82,4 +87,12 @@ aws ecr get-login-password --region us-east-1 | docker login --username AWS --pa
 docker build -t fiap-mechanics .
 docker tag fiap-mechanics:latest "$($repositoryUrl):latest"
 docker push "$($repositoryUrl):latest"
+```
+
+### Geração do ambiente via Helm
+
+Na raiz do projeto, execute o comando abaixo para instalar o Chart:
+
+```powershell
+helm upgrade --install fiap-mechanics ./k8s
 ```

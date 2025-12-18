@@ -1,0 +1,18 @@
+app:
+  name: fiap-mechanics
+  version: 1.0.0
+  env: dev
+  environmentName: Development
+  port: 5000
+  autoRunMigrations: true
+
+image:
+  repository: 000.dkr.ecr.us-east-1.amazonaws.com/fiap-mechanics-cr
+  tag: latest
+
+email:
+  smtpServer: localhost
+  smtpPort: 1025
+  sslRequired: false
+  senderName: FIAP Mechanics
+  senderAddress: "postmaster@mechanics.com"

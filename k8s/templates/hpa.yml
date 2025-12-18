@@ -2,13 +2,13 @@
 kind: HorizontalPodAutoscaler
 
 metadata:
-  name: fiap-mechanics-hpa
+  name: {{ .Values.app.name }}-hpa
 
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: fiap-mechanics
+    name: {{ .Values.app.name }}
   minReplicas: 2
   maxReplicas: 10
   metrics:

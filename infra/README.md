@@ -78,11 +78,11 @@ terraform init -backend-config="key=$ENV:TF_VAR_environment.tfstate" -reconfigur
 
 ### Upload de imagens para o ECR
 
-Após a execução do script Terraform, copie o valor do campo `cr_repository_url`.
+Após a execução do script Terraform, copie o valor do campo `cr_repository_url` ou use o AWS CLI (exemplo abaixo).
 Retorne à raiz do projeto para compilar a imagem Docker e fazer upload para o ECR:
 
 ```powershell
-$repositoryUrl = URL_DO_REPOSITORIO_ENTRE_ASPAS
+$repositoryUrl = aws ecr describe-repositories --repository-names fiap-mechanics-dev-cr --query "repositories[0].repositoryUri" --output text
 aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $repositoryUrl
 docker build -t fiap-mechanics .
 docker tag fiap-mechanics:latest "$($repositoryUrl):latest"
@@ -91,8 +91,16 @@ docker push "$($repositoryUrl):latest"
 
 ### Geração do ambiente via Helm
 
+Utilize o AWS CLI para baixar as configurações do cluster EKS no kubectl.
+Ajuste o nome do cluster de acordo com o ambiente.
+
+```powershell
+aws eks update-kubeconfig --name fiap-mechanics-dev-cluster --region us-east-1
+```
+
 Na raiz do projeto, execute o comando abaixo para instalar o Chart:
 
 ```powershell
-helm upgrade --install fiap-mechanics ./k8s
+# $repositoryUrl = aws ecr describe-repositories --repository-names fiap-mechanics-dev-cr --query "repositories[0].repositoryUri" --output text
+helm upgrade --install --set image.repository=$repositoryUrl fiap-mechanics-dev ./k8s
 ```

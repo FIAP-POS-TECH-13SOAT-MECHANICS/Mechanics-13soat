@@ -53,10 +53,10 @@ public class Program
             .UseMiddleware<DomainValidationMiddleware>();
 
         if (app.Environment.IsDevelopment())
-        {
-            app.UseSwaggerDocumentation();
             await app.ApplyMigrations();
-        }
+
+        if (!app.Environment.IsProduction())
+            app.UseSwaggerDocumentation();
 
         app.UseHealthChecks("/health");
 

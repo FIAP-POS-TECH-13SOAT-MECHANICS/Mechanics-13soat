@@ -42,7 +42,7 @@ resource "aws_security_group" "mailpit" {
     cidr_blocks = ["0.0.0.0/0"]
     description = "Allow all outbound traffic"
   }
-  
+
   tags = {
     Name = local.public ? "mailpit-public-${var.environment}" : "mailpit-private-${var.environment}"
   }

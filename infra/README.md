@@ -98,9 +98,77 @@ Ajuste o nome do cluster de acordo com o ambiente.
 aws eks update-kubeconfig --name fiap-mechanics-dev-cluster --region us-east-1
 ```
 
+Instale/atualize [External Secrets Operator (ESO)](https://external-secrets.io):
+
+```powershell
+helm repo add external-secrets https://charts.external-secrets.io && helm repo update
+helm upgrade --install external-secrets external-secrets/external-secrets --namespace external-secrets --create-namespace
+```
+
+Adicione outra secret com as credenciais da AWS para o ESO:
+
+```powershell
+kubectl create secret generic aws-credentials `
+  --namespace external-secrets `
+  --from-literal=access-key-id="$(aws configure get aws_access_key_id)" `
+  --from-literal=secret-access-key="$(aws configure get aws_secret_access_key)" `
+  --from-literal=session-token="$(aws configure get aws_session_token)"
+```
+
+Aguarde até o pod `external-secrets-webhook` ser criado e estar pronto.
+Utilize o comando `kubectl get pods -A` para monitorar o progresso.
+
 Na raiz do projeto, execute o comando abaixo para instalar o Chart:
 
 ```powershell
-# $repositoryUrl = aws ecr describe-repositories --repository-names fiap-mechanics-dev-cr --query "repositories[0].repositoryUri" --output text
-helm upgrade --install --set image.repository=$repositoryUrl fiap-mechanics-dev ./k8s
+helm upgrade --install `
+  --set image.repository=$repositoryUrl `
+  --set app.env=dev `
+  --set app.environmentName=Development `
+  fiap-mechanics-dev ./k8s
+```
+
+### Mapeamento de portas
+
+Após o deploy, será possível acessar o ambiente usando port-forward.
+
+```powershell
+kubectl port-forward service/fiap-mechanics 5000:5000
+```
+
+Acesse o Swagger pela URL [localhost:5000/swagger](http://localhost:5000/swagger) ou
+teste a conexão pelo [localhost:5000/health](http://localhost:5000/health).
+Observe que o Swagger não está disponível se o ambiente for `prod`.
+
+#### Comandos úteis
+
+Buscar a URL do repositório:
+
+```powershell
+$repositoryUrl = aws ecr describe-repositories --repository-names fiap-mechanics-dev-cr --query "repositories[0].repositoryUri" --output text
+```
+
+Remover charts antigos:
+
+```powershell
+helm uninstall fiap-mechanics-dev && kubectl delete job fiap-mechanics-migrations
+```
+
+Remover secrets da AWS:
+
+```powershell
+aws secretsmanager delete-secret --secret-id fiap-mechanics-dev-database --force-delete-without-recovery
+aws secretsmanager delete-secret --secret-id fiap-mechanics-dev-email --force-delete-without-recovery
+```
+
+Adicionar manualmente as secrets (útil para execução local):
+
+```powershell
+kubectl create secret generic fiap-mechanics-database `
+  --from-literal=connectionString="Server=fiap-mechanics-dev-db.000.us-east-1.rds.amazonaws.com,1433;Database=fiap-mechanics;User Id=xxx;Password=xxx;TrustServerCertificate=True;"
+kubectl create secret generic fiap-mechanics-email `
+  --from-literal=host="fiap-mechanics-dev-email-smtp-lb-000.elb.us-east-1.amazonaws.com" `
+  --from-literal=port="1025" `
+  --from-literal=userName="xxx@mechanics.com" `
+  --from-literal=password="xxx"
 ```

@@ -22,8 +22,8 @@ spec:
         - name: CONNECTION_STRING
           valueFrom:
             secretKeyRef:
-              name: "{{ .Values.app.name }}-{{ .Values.app.env }}-database"
-              key: value
+              name: "{{ .Values.app.name }}-database"
+              key: connectionString
         resources:
           requests:
             memory: "128Mi"

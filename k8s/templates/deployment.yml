@@ -28,11 +28,40 @@ spec:
               cpu: "1000m"
               memory: "1Gi"
 
+          env:
+            - name: ConnectionStrings__Default
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.name }}-database
+                  key: connectionString
+            - name: EmailSenderOptions__SmtpServer
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.name }}-email
+                  key: host
+            - name: EmailSenderOptions__SmtpPort
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.name }}-email
+                  key: port
+            - name: EmailSenderOptions__UserName
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.name }}-email
+                  key: userName
+            - name: EmailSenderOptions__Password
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.app.name }}-email
+                  key: password
+
           envFrom:
             - configMapRef:
-                name: {{ .Values.app.name }}-configMap
+                name: {{ .Values.app.name }}-configs
             - secretRef:
-                name: {{ .Values.app.name }}-secrets
+                name: {{ .Values.app.name }}-database
+            - secretRef:
+                name: {{ .Values.app.name }}-email
 
           readinessProbe:
             httpGet:

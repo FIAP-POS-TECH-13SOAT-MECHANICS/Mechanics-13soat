@@ -1,0 +1,29 @@
+name: Tests
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --no-restore
+      - name: Test
+        run: dotnet test --no-build --logger trx
+      - name: Publish test results
+        uses: dorny/test-reporter@v2.1.1
+        if: success() || failure()
+        with:
+          name: Tests
+          path: tests/**/TestResults/*.trx
+          reporter: dotnet-trx

@@ -98,7 +98,7 @@ Ajuste o nome do cluster de acordo com o ambiente.
 aws eks update-kubeconfig --name fiap-mechanics-dev-cluster --region us-east-1
 ```
 
-Instale/atualize [External Secrets Operator (ESO)](https://external-secrets.io):
+Instale o [External Secrets Operator (ESO)](https://external-secrets.io):
 
 ```powershell
 helm repo add external-secrets https://charts.external-secrets.io && helm repo update
@@ -115,17 +115,39 @@ kubectl create secret generic aws-credentials `
   --from-literal=session-token="$(aws configure get aws_session_token)"
 ```
 
+Instale também o controller do Nginx para gerar os load balancers:
+
+```powershell
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx && helm repo update
+helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --create-namespace --set controller.service.annotations."service\.beta\.kubernetes\.io/aws-load-balancer-type"="alb" --set controller.service.annotations."service\.beta\.kubernetes\.io/aws-load-balancer-scheme"=internet-facing
+```
+
 Aguarde até o pod `external-secrets-webhook` ser criado e estar pronto.
 Utilize o comando `kubectl get pods -A` para monitorar o progresso.
 
 Na raiz do projeto, execute o comando abaixo para instalar o Chart:
 
 ```powershell
-helm upgrade --install `
-  --set image.repository=$repositoryUrl `
-  --set app.env=dev `
-  --set app.environmentName=Development `
-  fiap-mechanics-dev ./k8s
+helm upgrade --install --set image.repository=$repositoryUrl --set app.env=dev fiap-mechanics ./k8s
+```
+
+Pode levar alguns minutos para o load balancer ser criado.
+Utilize o comando abaixo para obter a URL do Swagger:
+
+```powershell
+"$(kubectl get ingress fiap-mechanics-dev -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')/swagger"
+```
+
+### Atualização (nova release)
+
+Para atualizar o ambiente, é necessário recompilar a imagem Docker, subir no ECR e lançar uma nova release via Helm.
+
+```powershell
+docker build -t fiap-mechanics .
+docker tag fiap-mechanics:latest "$($repositoryUrl):latest"
+docker push "$($repositoryUrl):latest"
+
+helm upgrade --set image.repository=$repositoryUrl --set app.env=dev fiap-mechanics ./k8s
 ```
 
 ### Mapeamento de portas

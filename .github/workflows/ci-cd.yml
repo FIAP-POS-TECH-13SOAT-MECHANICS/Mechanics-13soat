@@ -21,7 +21,7 @@ jobs:
     uses: ./.github/workflows/dotnet.yml
 # 
   deploy-ecr:
-    needs: test
+    needs: tests
 
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
 

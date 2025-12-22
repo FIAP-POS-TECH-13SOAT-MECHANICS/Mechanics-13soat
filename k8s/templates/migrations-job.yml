@@ -6,7 +6,7 @@ metadata:
   annotations:
     "helm.sh/hook": {{ ternary "pre-install,pre-upgrade" "pre-install" .Values.app.autoRunMigrations }}
     "helm.sh/hook-weight": "-5"
-    "helm.sh/hook-delete-policy": hook-succeeded
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 
 spec:
   backoffLimit: 3

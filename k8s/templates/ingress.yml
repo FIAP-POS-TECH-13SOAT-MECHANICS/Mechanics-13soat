@@ -2,9 +2,10 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 
 metadata:
-  name: {{ .Values.app.name }}{{ ternary "" (printf "-%s" .Values.app.env) (eq .Values.app.env "prod") }}
+  name: {{ .Values.app.name }}
 
 spec:
+  ingressClassName: nginx
   rules:
     - http:
         paths:

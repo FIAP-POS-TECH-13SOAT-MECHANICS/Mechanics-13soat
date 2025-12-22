@@ -115,27 +115,13 @@ kubectl create secret generic aws-credentials `
   --from-literal=session-token="$(aws configure get aws_session_token)"
 ```
 
-Instale também o controller do Nginx para gerar os load balancers:
-
-```powershell
-helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx && helm repo update
-helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --create-namespace --set controller.service.annotations."service\.beta\.kubernetes\.io/aws-load-balancer-type"="alb" --set controller.service.annotations."service\.beta\.kubernetes\.io/aws-load-balancer-scheme"=internet-facing
-```
-
 Aguarde até o pod `external-secrets-webhook` ser criado e estar pronto.
-Utilize o comando `kubectl get pods -A` para monitorar o progresso.
+Utilize o comando `kubectl get pods -n external-secrets --watch` para monitorar o progresso.
 
 Na raiz do projeto, execute o comando abaixo para instalar o Chart:
 
 ```powershell
 helm upgrade --install --set image.repository=$repositoryUrl --set app.env=dev fiap-mechanics ./k8s
-```
-
-Pode levar alguns minutos para o load balancer ser criado.
-Utilize o comando abaixo para obter a URL do Swagger:
-
-```powershell
-"$(kubectl get ingress fiap-mechanics-dev -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')/swagger"
 ```
 
 ### Atualização (nova release)
@@ -150,9 +136,13 @@ docker push "$($repositoryUrl):latest"
 helm upgrade --set image.repository=$repositoryUrl --set app.env=dev fiap-mechanics ./k8s
 ```
 
-### Mapeamento de portas
+### Acessando a aplicação
 
-Após o deploy, será possível acessar o ambiente usando port-forward.
+Há duas opções: mapear a porta via `kubectl` ou criar uma rota pública usando Nginx Controller. 
+
+#### Mapeamento de porta
+
+Utilize o seguinte comando para mapear a porta.
 
 ```powershell
 kubectl port-forward service/fiap-mechanics 5000:5000
@@ -161,6 +151,24 @@ kubectl port-forward service/fiap-mechanics 5000:5000
 Acesse o Swagger pela URL [localhost:5000/swagger](http://localhost:5000/swagger) ou
 teste a conexão pelo [localhost:5000/health](http://localhost:5000/health).
 Observe que o Swagger não está disponível se o ambiente for `prod`.
+
+#### Instalar Nginx Controller
+
+Com um Ingress Controller, são gerados URLs públicas para o serviço, de forma que seja possível acessar diretamente pelo navegador.
+
+```powershell
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx && helm repo update
+helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --create-namespace --set controller.service.annotations."service\.beta\.kubernetes\.io/aws-load-balancer-type"="alb" --set controller.service.annotations."service\.beta\.kubernetes\.io/aws-load-balancer-scheme"=internet-facing
+```
+
+Utilize o comando abaixo para obter a URL do Swagger:
+
+```powershell
+"http://$(kubectl get ingress fiap-mechanics -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')/swagger"
+```
+
+Levará alguns minutos para o load balancer ser criado e o DNS ser propagado.
+
 
 #### Comandos úteis
 
@@ -173,7 +181,7 @@ $repositoryUrl = aws ecr describe-repositories --repository-names fiap-mechanics
 Remover charts antigos:
 
 ```powershell
-helm uninstall fiap-mechanics-dev && kubectl delete job fiap-mechanics-migrations
+helm uninstall fiap-mechanics-dev
 ```
 
 Remover secrets da AWS:

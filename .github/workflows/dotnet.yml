@@ -1,15 +1,7 @@
 name: Tests
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main", "develop" ]
-
-permissions:
-  contents: read
-  actions: read
-  checks: write
+  workflow_call:
 
 jobs:
   build:

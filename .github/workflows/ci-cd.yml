@@ -1,0 +1,30 @@
+name: CI/CD Pipeline
+
+on:
+  workflow_dispatch:
+  push:
+    branches: 
+      - main
+      - develop
+  pull_request:
+    branches: 
+      - main
+      - develop
+
+permissions:
+  contents: read
+  actions: read
+  checks: write
+
+jobs:
+  tests:
+    uses: ./.github/workflows/dotnet.yml
+# 
+  deploy-ecr:
+    needs: tests
+
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+
+    uses: ./.github/workflows/deploy-ecr.yml
+
+    secrets: inherit

@@ -11,15 +11,15 @@ output "cr_repository_url" {
 }
 
 output "email_client_url" {
-  value = aws_lb.mailpit_client.dns_name
+  value = "http://${aws_lb.mailpit_client.dns_name}"
 }
 
 output "email_smtp_url" {
-  value = one(aws_lb.mailpit_smtp[*].dns_name)
+  value = local.public ? aws_lb.mailpit_smtp.dns_name : null
 }
 
 output "email_smtp_port" {
-  value = one(aws_lb_listener.mailpit_smtp[*].port)
+  value = local.public ? aws_lb_listener.mailpit_smtp.port : null
 }
 
 output "email_smtp_user" {

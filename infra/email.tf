@@ -3,36 +3,65 @@ resource "aws_ecs_cluster" "email" {
 }
 
 # security group
-resource "aws_security_group" "mailpit" {
-  name        = "${local.prefix}-mailpit-sg"
-  description = "Security group for MailPit"
+resource "aws_security_group" "mailpit_web" {
+  name        = "${local.prefix}-mailpit-web"
+  description = "Security group for MailPit Web Client"
   vpc_id      = aws_vpc.main.id
 
-  # web-client
   ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-    description = "MailPit Web Client"
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+resource "aws_security_group" "mailpit_ecs" {
+  name        = "${local.prefix}-mailpit-sg"
+  description = "Security group for MailPit ECS tasks"
+  vpc_id      = aws_vpc.main.id
+
+  # web-client
+  ingress {
+    from_port       = 80
+    to_port         = 80
+    protocol        = "tcp"
+    security_groups = [aws_security_group.mailpit_web.id]
+    description     = "MailPit Web Client"
   }
 
   # SMTP port
   ingress {
+    from_port       = 1025
+    to_port         = 1025
+    protocol        = "tcp"
+    security_groups = !local.public ? [data.aws_security_group.eks_cluster.id] : null
+    cidr_blocks     = local.public ? ["0.0.0.0/0"] : null
+    description     = "MailPit SMTP"
+  }
+
+  # health checks
+  ingress {
     from_port   = 1025
     to_port     = 1025
     protocol    = "tcp"
-    cidr_blocks = local.public ? ["0.0.0.0/0"] : [var.vpc_cidr]
-    description = "MailPit SMTP"
+    cidr_blocks = [var.vpc_cidr]
+    description = "MailPit SMTP health check"
   }
 
-  # health check and redirects
   ingress {
     from_port   = 8025
     to_port     = 8025
     protocol    = "tcp"
     cidr_blocks = [var.vpc_cidr]
-    description = "Internal access"
+    description = "MailPit Web Client health check"
   }
 
   egress {
@@ -50,14 +79,14 @@ resource "aws_security_group" "mailpit" {
 
 # load balancer for web client
 resource "aws_lb" "mailpit_client" {
-  name               = "${local.prefix}-email-web-lb"
+  name               = "${local.prefix}-mail-web-lb"
   load_balancer_type = "application"
   subnets            = aws_subnet.public[*].id
-  security_groups    = [aws_security_group.mailpit.id]
+  security_groups    = [aws_security_group.mailpit_web.id]
 }
 
 resource "aws_lb_target_group" "mailpit_client" {
-  name        = "${local.prefix}-email-web-tg"
+  name        = "${local.prefix}-mail-web-tg"
   port        = 8025
   protocol    = "HTTP"
   target_type = "ip"
@@ -80,34 +109,35 @@ resource "aws_lb_listener" "mailpit_client" {
   }
 }
 
-# load balancer for SMTP (only if public)
+# load balancer for SMTP
 resource "aws_lb" "mailpit_smtp" {
-  count              = local.public ? 1 : 0
-  name               = "${local.prefix}-email-smtp-lb"
+  name               = "${local.prefix}-mail-smtp-lb"
   load_balancer_type = "network"
+  internal           = !local.public
   subnets            = local.public ? aws_subnet.public[*].id : aws_subnet.private[*].id
-  security_groups    = [aws_security_group.mailpit.id]
 }
 
 resource "aws_lb_target_group" "mailpit_smtp" {
-  count       = local.public ? 1 : 0
-  name        = "${local.prefix}-email-smtp-tg"
+  name        = "${local.prefix}-mail-smtp-tg"
   port        = 1025
   protocol    = "TCP"
   target_type = "ip"
   vpc_id      = aws_vpc.main.id
+
+  health_check {
+    protocol = "TCP"
+    port     = "1025"
+  }
 }
 
 resource "aws_lb_listener" "mailpit_smtp" {
-  count = local.public ? 1 : 0
-
-  load_balancer_arn = aws_lb.mailpit_smtp[0].arn
+  load_balancer_arn = aws_lb.mailpit_smtp.arn
   port              = 1025
   protocol          = "TCP"
 
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.mailpit_smtp[count.index].arn
+    target_group_arn = aws_lb_target_group.mailpit_smtp.arn
   }
 }
 
@@ -120,9 +150,8 @@ resource "aws_ecs_service" "email" {
   desired_count   = 1
 
   network_configuration {
-    subnets          = aws_subnet.public[*].id
-    security_groups  = [aws_security_group.mailpit.id]
-    assign_public_ip = true
+    subnets         = aws_subnet.private[*].id
+    security_groups = [aws_security_group.mailpit_ecs.id]
   }
 
   load_balancer {
@@ -131,14 +160,10 @@ resource "aws_ecs_service" "email" {
     container_port   = 8025
   }
 
-  dynamic "load_balancer" {
-    for_each = local.public ? [1] : []
-
-    content {
-      target_group_arn = aws_lb_target_group.mailpit_smtp[0].arn
-      container_name   = "mailpit-service"
-      container_port   = 1025
-    }
+  load_balancer {
+    target_group_arn = aws_lb_target_group.mailpit_smtp.arn
+    container_name   = "mailpit-service"
+    container_port   = 1025
   }
 
   depends_on = [aws_lb_listener.mailpit_client, aws_lb_listener.mailpit_smtp]

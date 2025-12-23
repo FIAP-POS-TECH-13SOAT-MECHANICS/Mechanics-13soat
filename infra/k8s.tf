@@ -19,7 +19,8 @@ resource "aws_eks_cluster" "cluster" {
   role_arn = data.aws_iam_role.lab_cluster_role.arn
 
   access_config {
-    authentication_mode                         = "API_AND_CONFIG_MAP"
+    authentication_mode = "API_AND_CONFIG_MAP"
+
     bootstrap_cluster_creator_admin_permissions = true
   }
 
@@ -44,10 +45,7 @@ resource "aws_eks_cluster" "cluster" {
   }
 
   vpc_config {
-    subnet_ids = concat(
-      aws_subnet.private.*.id,
-      aws_subnet.public.*.id,
-    )
+    subnet_ids = aws_subnet.private.*.id
 
     endpoint_private_access = true
     endpoint_public_access  = true
@@ -56,4 +54,15 @@ resource "aws_eks_cluster" "cluster" {
   upgrade_policy {
     support_type = "STANDARD"
   }
+}
+
+data "aws_security_group" "eks_cluster" {
+  vpc_id = aws_vpc.main.id
+
+  filter {
+    name   = "tag:aws:eks:cluster-name"
+    values = [aws_eks_cluster.cluster.name]
+  }
+
+  depends_on = [aws_eks_cluster.cluster]
 }

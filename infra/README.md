@@ -83,11 +83,14 @@ Retorne à raiz do projeto para compilar a imagem Docker e fazer upload para o E
 
 ```powershell
 $repositoryUrl = aws ecr describe-repositories --repository-names fiap-mechanics-dev-cr --query "repositories[0].repositoryUri" --output text
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin $repositoryUrl
+$password = aws ecr get-login-password --region us-east-1
+docker login --username AWS --password $password $repositoryUrl
 docker build -t fiap-mechanics .
 docker tag fiap-mechanics:latest "$($repositoryUrl):latest"
 docker push "$($repositoryUrl):latest"
 ```
+
+>Não foi utilizado login via `--password-stdin` para garantir compatibilidade com Windows PowerShell (legado)
 
 ### Geração do ambiente via Helm
 
@@ -101,7 +104,7 @@ aws eks update-kubeconfig --name fiap-mechanics-dev-cluster --region us-east-1
 Instale o [External Secrets Operator (ESO)](https://external-secrets.io):
 
 ```powershell
-helm repo add external-secrets https://charts.external-secrets.io && helm repo update
+helm repo add external-secrets https://charts.external-secrets.io; helm repo update
 helm upgrade --install external-secrets external-secrets/external-secrets --namespace external-secrets --create-namespace
 ```
 
@@ -126,14 +129,14 @@ helm upgrade --install --set image.repository=$repositoryUrl --set app.env=dev f
 
 ### Atualização (nova release)
 
-Para atualizar o ambiente, é necessário recompilar a imagem Docker, subir no ECR e lançar uma nova release via Helm.
+Para atualizar o ambiente, é necessário recompilar a imagem Docker, subir no ECR utilizando outra tag e lançar uma nova release via Helm.
 
 ```powershell
 docker build -t fiap-mechanics .
-docker tag fiap-mechanics:latest "$($repositoryUrl):latest"
-docker push "$($repositoryUrl):latest"
+docker tag fiap-mechanics:latest "$($repositoryUrl):new-tag"
+docker push "$($repositoryUrl):new-tag"
 
-helm upgrade --set image.repository=$repositoryUrl --set app.env=dev fiap-mechanics ./k8s
+helm upgrade --set image.repository=$repositoryUrl --set image.tag="new-tag" --set app.env=dev fiap-mechanics ./k8s
 ```
 
 ### Acessando a aplicação
@@ -152,12 +155,12 @@ Acesse o Swagger pela URL [localhost:5000/swagger](http://localhost:5000/swagger
 teste a conexão pelo [localhost:5000/health](http://localhost:5000/health).
 Observe que o Swagger não está disponível se o ambiente for `prod`.
 
-#### Instalar Nginx Controller
+#### Ingress Controller
 
 Com um Ingress Controller, são gerados URLs públicas para o serviço, de forma que seja possível acessar diretamente pelo navegador.
 
 ```powershell
-helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx && helm repo update
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx; helm repo update
 helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --create-namespace --set controller.service.annotations."service\.beta\.kubernetes\.io/aws-load-balancer-type"="alb" --set controller.service.annotations."service\.beta\.kubernetes\.io/aws-load-balancer-scheme"=internet-facing
 ```
 
@@ -167,8 +170,7 @@ Utilize o comando abaixo para obter a URL do Swagger:
 "http://$(kubectl get ingress fiap-mechanics -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')/swagger"
 ```
 
-Levará alguns minutos para o load balancer ser criado e o DNS ser propagado.
-
+Aguarde alguns minutos até o load balancer ser criado e o DNS ser propagado.
 
 #### Comandos úteis
 
@@ -181,7 +183,7 @@ $repositoryUrl = aws ecr describe-repositories --repository-names fiap-mechanics
 Remover charts antigos:
 
 ```powershell
-helm uninstall fiap-mechanics-dev
+helm uninstall fiap-mechanics
 ```
 
 Remover secrets da AWS:

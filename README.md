@@ -73,3 +73,4 @@ Esse repositório contém instruções para execução local das análises com *
 - [Migrações do banco de dados](./docs/migrations.md)
 - [Objetivos](./docs/objectives.md)
 - [Relatórios](./docs/reports/README.md)
+- [Scripts para deploy](./scripts/README.md)

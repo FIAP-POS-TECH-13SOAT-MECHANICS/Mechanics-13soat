@@ -2,6 +2,7 @@ param ([string]$environment)
 . "$PSScriptRoot/get-environment.ps1"
 $environment = Get-Environment $environment
 
+Write-Host -ForegroundColor Yellow "Retrieving information for environment '$environment'..."
 $repositoryUrl = aws ecr describe-repositories --repository-names fiap-mechanics-$environment-cr --query "repositories[0].repositoryUri" --output text
 $tag = (new-guid).Guid
 
@@ -10,10 +11,12 @@ aws eks update-kubeconfig --name fiap-mechanics-$environment-cluster --region us
 $password = aws ecr get-login-password --region us-east-1
 docker login --username AWS --password $password $repositoryUrl
 
+Write-Host -ForegroundColor Yellow "Building and pushing image with tag '$tag'..."
 docker build -t fiap-mechanics .
 docker tag fiap-mechanics:latest "$($repositoryUrl):$tag"
 docker push "$($repositoryUrl):$tag"
 
+Write-Host -ForegroundColor Yellow "Deploying application..."
 helm upgrade --install `
     --set image.repository=$repositoryUrl `
     --set image.tag="$tag" `

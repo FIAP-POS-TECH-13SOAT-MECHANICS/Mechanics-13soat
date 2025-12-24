@@ -34,20 +34,24 @@ aws configure
 
 ### Execução dos scripts
 
-Primeiro crie um bucket no S3 para servir de backend do Terraform:
+Primeiro crie um bucket no S3 e uma tabela no DynamoDB para servirem de backend pro Terraform.
 
 ```cmd
 aws s3 mb s3://fiap-mechanics-tf --region us-east-1
+aws dynamodb create-table --table-name fiap-mechanics-tf `
+  --attribute-definitions AttributeName=LockID,AttributeType=S `
+  --key-schema AttributeName=LockID,KeyType=HASH `
+  --billing-mode PAY_PER_REQUEST | Out-Null
 ```
 
 Por padrão, será gerado um ambiente de desenvolvimento (dev).
 O sistema permite o acesso público para o banco de dados e servidor SMTP em ambientes que não sejam de produção (prod).
 
-No Powershell, use os seguintes comandos para alterar o ambiente ou a permissão de acesso:
+No Powershell, adicione os seguintes parâmetros aos comandos do Terraform para alterar o ambiente ou a permissão de acesso:
 
 ```powershell
-$ENV:TF_VAR_environment = 'prod'    # dev, stg ou prod
-$ENV:TF_VAR_public_access = 'true'  # padrão é "true" quando environment != "prod"
+-var="environment=prod"    # dev, stg ou prod
+-var="public_access=true"  # padrão é "true" quando environment != "prod"
 ```
 
 Após a criação do Bucket, acesse a pasta `infra`.
@@ -68,12 +72,11 @@ Para rodar o projeto com os serviços criados pelo Terraform, crie
 um [arquivo de configuração local](./../docs/configuration.md) e use as informações exibidas no terminal. Observe que
 várias dessas informações só são exibidas se o projeto estiver definido como público (`public_access = 'true'`).
 
-Se quiser gerenciar outros ambientes, altere a variável `environment` e reconfigure o terraform para usar o state
-correto.
+Se quiser gerenciar outros ambientes, altere o state e reconfigure o Terraform.
 
 ```powershell
-$ENV:TF_VAR_environment = 'stg'
-terraform init -backend-config="key=$ENV:TF_VAR_environment.tfstate" -reconfigure
+terraform init -backend-config="key=stg.tfstate" -reconfigure
+terraform apply -var="environment=stg"
 ```
 
 ### Upload de imagens para o ECR

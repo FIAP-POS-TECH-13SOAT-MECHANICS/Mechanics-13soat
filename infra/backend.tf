@@ -34,5 +34,7 @@ terraform {
     bucket  = "fiap-mechanics-tf"
     region  = "us-east-1"
     encrypt = true
+
+    dynamodb_table = "fiap-mechanics-tf"
   }
 }

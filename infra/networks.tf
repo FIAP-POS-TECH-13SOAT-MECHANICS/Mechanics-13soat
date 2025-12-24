@@ -151,3 +151,18 @@ resource "aws_route" "private_nat" {
   destination_cidr_block = "0.0.0.0/0"
   network_interface_id   = aws_instance.nat.primary_network_interface_id
 }
+
+resource "aws_eip" "nat" {
+  domain = "vpc"
+
+  tags = {
+    Name = "${local.prefix}-nat-eip"
+  }
+}
+
+resource "aws_eip_association" "nat" {
+  instance_id   = aws_instance.nat.id
+  allocation_id = aws_eip.nat.id
+
+  depends_on = [aws_instance.nat]
+}

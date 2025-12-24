@@ -2,4 +2,11 @@ data "aws_caller_identity" "current" {}
 
 resource "aws_ecr_repository" "container_registry" {
   name = "${local.prefix}-cr"
+
+  image_tag_mutability = "IMMUTABLE_WITH_EXCLUSION"
+
+  image_tag_mutability_exclusion_filter {
+    filter      = "latest*"
+    filter_type = "WILDCARD"
+  }
 }

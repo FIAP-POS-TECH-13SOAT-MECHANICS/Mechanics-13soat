@@ -121,6 +121,15 @@ kubectl create secret generic aws-credentials `
 Aguarde até o pod `external-secrets-webhook` ser criado e estar pronto.
 Utilize o comando `kubectl get pods -n external-secrets --watch` para monitorar o progresso.
 
+Instale também o [Metrics Server](https://github.com/kubernetes/metrics) para habilitar o Horizontal Pod Autoscaling:
+
+```powershell
+helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server; helm repo update
+helm upgrade --install metrics-server metrics-server/metrics-server --namespace kube-system  `
+  --set args[0]=--kubelet-insecure-tls `
+  --set args[1]=--kubelet-preferred-address-types=InternalIP
+```
+
 Na raiz do projeto, execute o comando abaixo para instalar o Chart:
 
 ```powershell

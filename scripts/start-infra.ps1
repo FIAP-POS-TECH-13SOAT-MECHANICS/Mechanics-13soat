@@ -3,12 +3,12 @@ param ([string]$environment)
 $environment = Get-Environment $environment
 
 # back-end do Terraform
-Write-Host -ForegroundColor Yellow "Creating dynamo 'fiap-mechanics-tf'..."
+Write-Host -ForegroundColor Yellow "Creating DynamoDB 'fiap-mechanics-tf'..."
 aws dynamodb create-table `
   --table-name fiap-mechanics-tf `
-  --attribute-definitions AttributeName=LockID, AttributeType=S `
-  --key-schema AttributeName=LockID, KeyType=HASH `
-  --billing-mode PAY_PER_REQUEST | Out-Null
+  --attribute-definitions AttributeName=LockID,AttributeType=S `
+  --key-schema AttributeName=LockID,KeyType=HASH `
+  --billing-mode PAY_PER_REQUEST 
 Write-Host -ForegroundColor Yellow "Creating bucket 'fiap-mechanics-tf'..."
 aws s3 mb s3://fiap-mechanics-tf --region us-east-1
 

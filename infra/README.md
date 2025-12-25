@@ -2,9 +2,36 @@
 
 <!-- TODO: descrição da infra, como recursos criados e fluxo de acesso -->
 
-## Criação via Terraform
+## Criação via Terraform e Helm
 
-As instruções abaixo servem para rodar o projeto em um ambiente da AWS Academy.
+Os scripts foram projetados para que o projeto rode em um ambiente da AWS Academy.
+
+Antes de prosseguir, certifique-se de ter instalado as ferramentas necessárias e ter atualizado as credenciais da AWS.
+
+### Resumo
+
+O processo pode ser definido em duas etapas: Criação do ambiente e deploy da aplicação.
+Ambos podem ser executados através dos scripts Powershell da pasta [scripts](./../scripts/README.md).
+
+Os comandos para cada passo (incluindo a instalação das ferramentas) estão nas seções seguintes.
+
+#### Criação do ambiente
+
+1. Crie um bucket no S3 e uma tabela no DynamoDB com o nome `fiap-mechanics-tf`
+2. Aplique os scripts do Terraform
+3. Configure o kubectl com `aws eks update-kubeconfig`
+4. Execute os charts Helm para os add-ons do kubernetes
+   - External Secrets Operator
+   - Metrics Server
+   - Nginx Controller (opcional)
+5. Crie uma secret chamada `aws-credentials` no namespace `external-secrets`
+
+#### Deploy da aplicação
+
+1. Compile a imagem Docker
+2. Faça login no repositório ECR gerado pelo Terraform
+3. Faça upload para o repositório
+4. Execute o helm para aplicar a nova imagem
 
 ### Instalação das ferramentas
 
@@ -79,23 +106,7 @@ terraform init -backend-config="key=stg.tfstate" -reconfigure
 terraform apply -var="environment=stg"
 ```
 
-### Upload de imagens para o ECR
-
-Após a execução do script Terraform, copie o valor do campo `cr_repository_url` ou use o AWS CLI (exemplo abaixo).
-Retorne à raiz do projeto para compilar a imagem Docker e fazer upload para o ECR:
-
-```powershell
-$repositoryUrl = aws ecr describe-repositories --repository-names fiap-mechanics-dev-cr --query "repositories[0].repositoryUri" --output text
-$password = aws ecr get-login-password --region us-east-1
-docker login --username AWS --password $password $repositoryUrl
-docker build -t fiap-mechanics .
-docker tag fiap-mechanics:latest "$($repositoryUrl):latest"
-docker push "$($repositoryUrl):latest"
-```
-
->Não foi utilizado login via `--password-stdin` para garantir compatibilidade com Windows PowerShell (legado)
-
-### Geração do ambiente via Helm
+### Configuração do ambiente via Helm
 
 Utilize o AWS CLI para baixar as configurações do cluster EKS no kubectl.
 Ajuste o nome do cluster de acordo com o ambiente.
@@ -121,9 +132,6 @@ kubectl create secret generic aws-credentials `
   --from-literal=session-token="$(aws configure get aws_session_token)"
 ```
 
-Aguarde até o pod `external-secrets-webhook` ser criado e estar pronto.
-Utilize o comando `kubectl get pods -n external-secrets --watch` para monitorar o progresso.
-
 Instale também o [Metrics Server](https://github.com/kubernetes/metrics) para habilitar o Horizontal Pod Autoscaling:
 
 ```powershell
@@ -133,22 +141,29 @@ helm upgrade --install metrics-server metrics-server/metrics-server --namespace 
   --set args[1]=--kubelet-preferred-address-types=InternalIP
 ```
 
-Na raiz do projeto, execute o comando abaixo para instalar o Chart:
+Aguarde até o pod `external-secrets-webhook` ser criado e estar pronto.
+Utilize o comando `kubectl get pods -n external-secrets --watch` para monitorar o progresso.
+
+### Upload de imagens para o ECR
+
+Após a execução do script Terraform, copie o valor do campo `cr_repository_url` ou use o AWS CLI (exemplo abaixo).
+Retorne à raiz do projeto para compilar a imagem Docker e fazer upload para o ECR:
+
+```powershell
+$repositoryUrl = aws ecr describe-repositories --repository-names fiap-mechanics-dev-cr --query "repositories[0].repositoryUri" --output text
+$password = aws ecr get-login-password --region us-east-1
+docker login --username AWS --password $password $repositoryUrl
+docker build -t fiap-mechanics .
+docker tag fiap-mechanics:latest "$($repositoryUrl):latest"
+docker push "$($repositoryUrl):latest"
+```
+
+>Não foi utilizado login via `--password-stdin` para garantir compatibilidade com Windows PowerShell (legado)
+
+Na raiz do repositório, execute o comando abaixo para instalar o Chart do projeto:
 
 ```powershell
 helm upgrade --install --set image.repository=$repositoryUrl --set app.env=dev fiap-mechanics ./k8s
-```
-
-### Atualização (nova release)
-
-Para atualizar o ambiente, é necessário recompilar a imagem Docker, subir no ECR utilizando outra tag e lançar uma nova release via Helm.
-
-```powershell
-docker build -t fiap-mechanics .
-docker tag fiap-mechanics:latest "$($repositoryUrl):new-tag"
-docker push "$($repositoryUrl):new-tag"
-
-helm upgrade --set image.repository=$repositoryUrl --set image.tag="new-tag" --set app.env=dev fiap-mechanics ./k8s
 ```
 
 ### Acessando a aplicação
@@ -182,7 +197,22 @@ Utilize o comando abaixo para obter a URL do Swagger:
 "http://$(kubectl get ingress fiap-mechanics -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')/swagger"
 ```
 
-Aguarde alguns minutos até o load balancer ser criado e o DNS ser propagado.
+Aguarde até o load balancer ser criado e o DNS ser propagado.
+Esse processo pode levar vários minutos.
+
+### Atualização (nova release)
+
+Para atualizar o ambiente, é necessário recompilar a imagem Docker, subir no ECR utilizando outra tag e lançar uma nova release via Helm.
+
+```powershell
+docker build -t fiap-mechanics .
+docker tag fiap-mechanics:latest "$($repositoryUrl):new-tag"
+docker push "$($repositoryUrl):new-tag"
+
+helm upgrade --set image.repository=$repositoryUrl --set image.tag="new-tag" --set app.env=dev fiap-mechanics ./k8s
+```
+
+>Observe que a tag da imagem precisa ser diferente da anterior.
 
 #### Comandos úteis
 
@@ -205,6 +235,13 @@ aws secretsmanager delete-secret --secret-id fiap-mechanics-dev-database --force
 aws secretsmanager delete-secret --secret-id fiap-mechanics-dev-email --force-delete-without-recovery
 ```
 
+Forçar sincronização das secrets:
+
+```powershell
+kubectl annotate externalsecret fiap-mechanics-database force-sync="$(New-Guid)" --overwrite
+kubectl annotate externalsecret fiap-mechanics-email force-sync="$(New-Guid)" --overwrite
+```
+
 Adicionar manualmente as secrets (útil para execução local):
 
 ```powershell
@@ -215,4 +252,11 @@ kubectl create secret generic fiap-mechanics-email `
   --from-literal=port="1025" `
   --from-literal=userName="xxx@mechanics.com" `
   --from-literal=password="xxx"
+```
+
+Liberar lock travado no Terraform:
+
+```powershell
+# copie o lock-id da mensagem de erro
+terraform force-unlock LOCK_ID
 ```

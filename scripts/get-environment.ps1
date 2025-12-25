@@ -24,6 +24,6 @@ function Get-Environment {
         }
     }
 
-    Write-Host "Selected environment: $environment"
+    Write-Host -ForegroundColor Yellow "Selected environment: $environment"
     return $environment
 }

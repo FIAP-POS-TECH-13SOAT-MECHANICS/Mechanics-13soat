@@ -2,7 +2,7 @@ param ([string]$environment)
 . "$PSScriptRoot/get-environment.ps1"
 $environment = Get-Environment $environment
 
-Write-Host -ForegroundColor Yellow "Retrieving information for environment '$environment'..."
+Write-Host -ForegroundColor Yellow "Retrieving information..."
 $repositoryUrl = aws ecr describe-repositories --repository-names fiap-mechanics-$environment-cr --query "repositories[0].repositoryUri" --output text
 $tag = (new-guid).Guid
 

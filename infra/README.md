@@ -1,6 +1,6 @@
 # Infraestrutura
 
-A infraestrutura do projeto é definada em scripts [Terraform](https://developer.hashicorp.com/terraform).
+A infraestrutura do projeto é definida em scripts [Terraform](https://developer.hashicorp.com/terraform).
 Os arquivos foram separados por tipo de recurso (banco de dados, orquestração, secrets, rede, etc).
 
 A implementação pode ser facilmente replicada para mais de um ambiente (desenvolvimento, homologação e produção), com recursos e credenciais totalmente isolados.
@@ -9,16 +9,16 @@ A implementação pode ser facilmente replicada para mais de um ambiente (desenv
 
 Segue abaixo uma definição de cada recurso, agrupados pelo arquivo do Terraform.
 
-#### Back-end ([`backend.tf`](./backend.tf))
+### Back-end ([`backend.tf`](./backend.tf))
 
 Armazena os states do Terraform utilizando S3 e DynamoDB.
 Cada ambiente - dev, stg ou prod - possui seu próprio arquivo de state no bucket S3, que é versionado e criptografado.
 
-A tabela DynamoDB serve para controle de concorrência, permitindo que o script seja aplicado via CI/CD.
+A tabela DynamoDB é utilizada para controle de concorrência (state locking), permitindo a execução segura dos scripts em pipelines de CI/CD.
 
 ### Registro de contêineres ([`cr.tf`](./cr.tf))
 
-É onde as imagens de contêineres são armazenadas.
+Define o repositório onde as imagens de contêineres são armazenadas.
 O nome segue o padrão `fiap-mechanics-ENV-cr`.
 
 Está configurado para não permitir tags repetidas (exceto `latest`), uma vez que é necessária uma tag diferente para fazer a implantação no cluster.
@@ -45,7 +45,7 @@ Application Load Balancers (ALB) expõem recursos para acesso externo e possuem 
 Em uma aplicação real, provavelmente buscaríamos outras alternativas, como rodar o projeto em instâncias EC2 ou utilizar um único ALB a fim de reduzir custos.
 Porém, para um projeto acadêmico, essa abordagem permitiu simplificar a implantação do recurso.
 
-### Cluster kubernetes ([`k8s.tf`](./k8s.tf))
+### Cluster Kubernetes ([`k8s.tf`](./k8s.tf))
 
 Define um cluster EKS usando o modo automático (Auto Mode), que cria automaticamente os nodes e outros recursos.
 
@@ -56,12 +56,12 @@ O cluster utiliza uma sub-rede privada e busca as permissões da AWS Academy nec
 Define a estrutura de rede para o ambiente.
 Cada ambiente roda na sua própria VPC, que é nomeada seguindo o padrão `fiap-mechanics-ENV-vpc`.
 
-Alguns recursos requerem pelo menos duas zona de disponibilidade, sendo portanto criadas duas sub-redes públicas e duas privadas.
-Uma sub-rede pública é aquela que possui um internet gateway associada à ela, com as rotas devidamente configuradas.
-Isso torna a rede "exposta" à internet, possuindo um IP público e podendo ser acessada de fora da VPC.
+Alguns recursos requerem pelo menos duas zonas de disponibilidade, sendo portanto criadas duas sub-redes públicas e duas privadas.
+Uma sub-rede pública é aquela que possui um internet gateway associada a ela, com as rotas devidamente configuradas.
+Isso torna a sub-rede acessível a partir da internet, possuindo um IP público e podendo ser acessada de fora da VPC.
 
 Para as sub-redes privadas, é necessário um serviço NAT (Network Address Translation) para que os recursos da rede interna possam acessar à internet - por exemplo, para baixar imagens do repositório ECR - sem ficarem expostos a conexões de fora da VPC.
-A AWS oferece um serviço de NAT Gateway, mas por conta do custo elevado, optaos por usar uma NAT Instance - uma instância EC2 que roteia o tráfego das sub-redes privadas para a internet, mas bloqueia qualquer requisição vinda de fora.
+A AWS oferece um serviço de NAT Gateway, mas por conta do custo elevado, optamos por usar uma NAT Instance - uma instância EC2 que roteia o tráfego das sub-redes privadas para a internet, mas bloqueia qualquer requisição vinda de fora.
 
 ### Arquivos de configuração do ambiente
 
@@ -98,7 +98,7 @@ Os comandos para cada passo (incluindo a instalação das ferramentas) estão na
 1. Crie um bucket no S3 e uma tabela no DynamoDB com o nome `fiap-mechanics-tf`
 2. Aplique os scripts do Terraform
 3. Configure o kubectl com `aws eks update-kubeconfig`
-4. Execute os charts Helm para os add-ons do kubernetes
+4. Execute os charts Helm para os add-ons do Kubernetes
    - External Secrets Operator
    - Metrics Server
    - Nginx Controller (opcional)
@@ -263,11 +263,7 @@ Observe que o Swagger não está disponível se o ambiente for `prod`.
 #### Ingress Controller
 
 Com um Ingress Controller, são gerados URLs públicas para o serviço, de forma que seja possível acessar diretamente pelo navegador.
-
-```powershell
-helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx; helm repo update
-helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --create-namespace --set controller.service.annotations."service\.beta\.kubernetes\.io/aws-load-balancer-type"="alb" --set controller.service.annotations."service\.beta\.kubernetes\.io/aws-load-balancer-scheme"=internet-facing
-```
+O projeto está configurado para gerar um Application Load Balancer automaticamente.
 
 Utilize o comando abaixo para obter a URL do Swagger:
 
@@ -292,7 +288,7 @@ helm upgrade --set image.repository=$repositoryUrl --set image.tag="new-tag" --s
 
 >Observe que a tag da imagem precisa ser diferente da anterior.
 
-#### Comandos úteis
+### Comandos úteis
 
 Buscar a URL do repositório:
 

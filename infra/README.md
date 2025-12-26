@@ -141,7 +141,7 @@ aws configure
 
 Primeiro crie um bucket no S3 e uma tabela no DynamoDB para servirem de backend pro Terraform.
 
-```cmd
+```powershell
 aws s3 mb s3://fiap-mechanics-tf --region us-east-1
 aws dynamodb create-table --table-name fiap-mechanics-tf `
   --attribute-definitions AttributeName=LockID,AttributeType=S `
@@ -163,7 +163,7 @@ Após a criação do Bucket, acesse a pasta `infra`.
 Passe a chave do backend de acordo com o ambiente desejado (dev, stg ou prod) e aplique os scripts.
 
 ```powershell
-terraform init -backend-config="key=dev.tfstate"
+terraform init -backend-config="key=dev.tfstate" -reconfigure
 terraform apply -auto-approve
 ```
 

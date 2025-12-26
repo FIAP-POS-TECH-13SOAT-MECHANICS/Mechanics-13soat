@@ -9,6 +9,9 @@
 
 Para alternar entre ambientes, use o script `set-environment.ps1`.
 
+Os scripts são idempotentes, isto é, podem ser executados múltiplas vezes.
+Isto torna alguns comandos ligeiramente diferentes daqueles mostrados em [Informações sobre a Infraestrutura](../infra/README.md).
+
 ## Permissão de execução de scripts
 
 No Windows, a execução de scripts do Powershell vem desabilitada por padrão.

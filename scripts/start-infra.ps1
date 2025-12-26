@@ -13,7 +13,7 @@ Write-Host -ForegroundColor Yellow "Creating bucket 'fiap-mechanics-tf'..."
 aws s3 mb s3://fiap-mechanics-tf --region us-east-1
 
 # subir infraestrutura pelo Terraform
-Write-Host -ForegroundColor Yellow "Deploying infrastructure for environment '$environment'..."
+Write-Host -ForegroundColor Yellow "Updating infrastructure for environment '$environment'..."
 
 terraform -chdir="./infra" init -backend-config="key=$environment.tfstate" -reconfigure
 terraform -chdir="./infra" apply -var="environment=$environment" -auto-approve
@@ -27,9 +27,10 @@ helm repo add external-secrets https://charts.external-secrets.io
 helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server
 helm repo update
 
-helm upgrade --install external-secrets external-secrets/external-secrets --namespace external-secrets --create-namespace
+# instalar charts (não altera se já existirem)
+helm install external-secrets external-secrets/external-secrets --namespace external-secrets --create-namespace
 
-helm upgrade --install metrics-server metrics-server/metrics-server --namespace kube-system  `
+helm install metrics-server metrics-server/metrics-server --namespace kube-system  `
   --set args[0]=--kubelet-insecure-tls `
   --set args[1]=--kubelet-preferred-address-types=InternalIP
 
@@ -37,9 +38,11 @@ kubectl create secret generic aws-credentials `
   --namespace external-secrets `
   --from-literal=access-key-id="$(aws configure get aws_access_key_id)" `
   --from-literal=secret-access-key="$(aws configure get aws_secret_access_key)" `
-  --from-literal=session-token="$(aws configure get aws_session_token)"
+  --from-literal=session-token="$(aws configure get aws_session_token)" `
+  --dry-run=client `
+  --output yaml | kubectl apply -f -
 
 Write-Host -ForegroundColor Yellow "Waiting for External Secrets Operator to be ready..."
 kubectl wait --for=condition=Ready pod --all -n external-secrets --timeout=120s
 
-Write-Host -ForegroundColor Green "Infrastructure for environment '$environment' has been deployed."
+Write-Host -ForegroundColor Green "Infrastructure for environment '$environment' has been applyed."

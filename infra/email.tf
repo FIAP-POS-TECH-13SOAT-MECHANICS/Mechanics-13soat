@@ -79,14 +79,14 @@ resource "aws_security_group" "mailpit_ecs" {
 
 # load balancer for web client
 resource "aws_lb" "mailpit_client" {
-  name               = "${local.prefix}-mail-web-lb"
+  name               = "${local.prefix}-email-web"
   load_balancer_type = "application"
   subnets            = aws_subnet.public[*].id
   security_groups    = [aws_security_group.mailpit_web.id]
 }
 
 resource "aws_lb_target_group" "mailpit_client" {
-  name        = "${local.prefix}-mail-web-tg"
+  name        = "${local.prefix}-email-web"
   port        = 8025
   protocol    = "HTTP"
   target_type = "ip"
@@ -111,14 +111,14 @@ resource "aws_lb_listener" "mailpit_client" {
 
 # load balancer for SMTP
 resource "aws_lb" "mailpit_smtp" {
-  name               = "${local.prefix}-mail-smtp-lb"
+  name               = "${local.prefix}-email-smtp"
   load_balancer_type = "network"
   internal           = !local.public
   subnets            = local.public ? aws_subnet.public[*].id : aws_subnet.private[*].id
 }
 
 resource "aws_lb_target_group" "mailpit_smtp" {
-  name        = "${local.prefix}-mail-smtp-tg"
+  name        = "${local.prefix}-email-smtp"
   port        = 1025
   protocol    = "TCP"
   target_type = "ip"

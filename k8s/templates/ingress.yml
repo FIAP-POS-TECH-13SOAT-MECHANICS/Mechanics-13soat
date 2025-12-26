@@ -3,9 +3,11 @@ kind: Ingress
 
 metadata:
   name: {{ .Values.app.name }}
+  annotations:
+    alb.ingress.kubernetes.io/load-balancer-name: {{ ternary .Values.app.name (printf "%s-%s" .Values.app.name .Values.app.env) (eq .Values.app.env "prod") }}
 
 spec:
-  ingressClassName: nginx
+  ingressClassName: {{ .Values.app.name }}-alb
   rules:
     - http:
         paths:

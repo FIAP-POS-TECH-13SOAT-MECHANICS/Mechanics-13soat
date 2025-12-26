@@ -25,7 +25,6 @@ aws eks update-kubeconfig --name fiap-mechanics-$environment-cluster --region us
 
 helm repo add external-secrets https://charts.external-secrets.io
 helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server
-helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
 
 helm upgrade --install external-secrets external-secrets/external-secrets --namespace external-secrets --create-namespace
@@ -33,10 +32,6 @@ helm upgrade --install external-secrets external-secrets/external-secrets --name
 helm upgrade --install metrics-server metrics-server/metrics-server --namespace kube-system  `
   --set args[0]=--kubelet-insecure-tls `
   --set args[1]=--kubelet-preferred-address-types=InternalIP
-
-helm upgrade --install ingress-nginx ingress-nginx/ingress-nginx --namespace ingress-nginx --create-namespace `
-  --set controller.service.annotations."service\.beta\.kubernetes\.io/aws-load-balancer-type"="alb" `
-  --set controller.service.annotations."service\.beta\.kubernetes\.io/aws-load-balancer-scheme"=internet-facing
 
 kubectl create secret generic aws-credentials `
   --namespace external-secrets `

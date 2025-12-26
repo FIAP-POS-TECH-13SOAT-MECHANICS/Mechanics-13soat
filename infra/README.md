@@ -1,6 +1,84 @@
 # Infraestrutura
 
-<!-- TODO: descrição da infra, como recursos criados e fluxo de acesso -->
+A infraestrutura do projeto é definada em scripts [Terraform](https://developer.hashicorp.com/terraform).
+Os arquivos foram separados por tipo de recurso (banco de dados, orquestração, secrets, rede, etc).
+
+A implementação pode ser facilmente replicada para mais de um ambiente (desenvolvimento, homologação e produção), com recursos e credenciais totalmente isolados.
+
+## Recursos criados
+
+Segue abaixo uma definição de cada recurso, agrupados pelo arquivo do Terraform.
+
+#### Back-end ([`backend.tf`](./backend.tf))
+
+Armazena os states do Terraform utilizando S3 e DynamoDB.
+Cada ambiente - dev, stg ou prod - possui seu próprio arquivo de state no bucket S3, que é versionado e criptografado.
+
+A tabela DynamoDB serve para controle de concorrência, permitindo que o script seja aplicado via CI/CD.
+
+### Registro de contêineres ([`cr.tf`](./cr.tf))
+
+É onde as imagens de contêineres são armazenadas.
+O nome segue o padrão `fiap-mechanics-ENV-cr`.
+
+Está configurado para não permitir tags repetidas (exceto `latest`), uma vez que é necessária uma tag diferente para fazer a implantação no cluster.
+
+### Banco de dados ([`db.tf`](./db.tf))
+
+Define uma instância RDS do Microsoft SQL Server.
+A instância utiliza `db.t3.small` (2 vCPU e 2GB de memória), que é a configuração mínima recomendada para versão Express.
+
+Também define sub-redes e grupos de segurança.
+O acesso pode ser público ou privado, dependendo do ambiente utilizado.
+
+O nome de usuário e senha são gerados pelo Terraform.
+Isso facilita a criação dos secrets e outputs (só são exibidos se for público).
+
+### Serviço de e-mail ([`email.tf`](./email.tf))
+
+Como não há um serviço de disparo de e-mail na AWS Academy (SES não está disponível), o projeto segue utilizando MailPit para simular o envio de mensagens.
+É executado utilizando AWS Fargate, com load-balancers e regras de segurança.
+
+O acesso ao cliente web é sempre público, enquanto que, se o ambiente for `prod`, o servidor SMTP só pode ser acessado pelo cluster EKS.
+
+Application Load Balancers (ALB) expõem recursos para acesso externo e possuem um custo elevado em relação ao Elastic IP (EIP), que é o serviço de IP fixo da AWS, mas EIP não está disponível para uso junto com o Fargate.
+Em uma aplicação real, provavelmente buscaríamos outras alternativas, como rodar o projeto em instâncias EC2 ou utilizar um único ALB a fim de reduzir custos.
+Porém, para um projeto acadêmico, essa abordagem permitiu simplificar a implantação do recurso.
+
+### Cluster kubernetes ([`k8s.tf`](./k8s.tf))
+
+Define um cluster EKS usando o modo automático (Auto Mode), que cria automaticamente os nodes e outros recursos.
+
+O cluster utiliza uma sub-rede privada e busca as permissões da AWS Academy necessárias usando blocos `data`.
+
+### Configuração de rede ([`network.tf`](./network.tf))
+
+Define a estrutura de rede para o ambiente.
+Cada ambiente roda na sua própria VPC, que é nomeada seguindo o padrão `fiap-mechanics-ENV-vpc`.
+
+Alguns recursos requerem pelo menos duas zona de disponibilidade, sendo portanto criadas duas sub-redes públicas e duas privadas.
+Uma sub-rede pública é aquela que possui um internet gateway associada à ela, com as rotas devidamente configuradas.
+Isso torna a rede "exposta" à internet, possuindo um IP público e podendo ser acessada de fora da VPC.
+
+Para as sub-redes privadas, é necessário um serviço NAT (Network Address Translation) para que os recursos da rede interna possam acessar à internet - por exemplo, para baixar imagens do repositório ECR - sem ficarem expostos a conexões de fora da VPC.
+A AWS oferece um serviço de NAT Gateway, mas por conta do custo elevado, optaos por usar uma NAT Instance - uma instância EC2 que roteia o tráfego das sub-redes privadas para a internet, mas bloqueia qualquer requisição vinda de fora.
+
+### Arquivos de configuração do ambiente
+
+Os demais arquivos definem variáveis, outputs e geração de senhas.
+
+- [`outputs.tf`](./outputs.tf)
+  - Sempre exibe o ambiente, o repositório ECR e o cliente de e-mail.
+  - Se o projeto for público, exibe também a connectionString do banco de dados e credenciais para envio de e-mails.
+- [`passwords.tf`](./passwords.tf)
+  - Nome de usuário e senha para banco de dados e serviço de envio de e-mails.
+  - Utiliza `random_string` ao invés de `random_password` para facilitar o uso nas outputs.
+- [`vars.tf`](./vars.tf)
+  - Define valores utilizados em todo o projeto, como nome do projeto e região AWS.
+  - `environment`: define o ambiente, que pode ser `dev`, `stg` ou `prod`.
+  - `public_access`: permite sobreescrever o comportamento padrão de permitir acesso público somente se for `dev` ou `stg`.
+- [`providers.tf`](./providers.tf)
+  - O projeto utiliza o pacote de AWS e o gerador de senhas oficiais da HashiCorp.
 
 ## Criação via Terraform e Helm
 

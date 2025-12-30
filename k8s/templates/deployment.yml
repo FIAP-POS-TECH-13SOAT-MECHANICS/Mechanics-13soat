@@ -34,16 +34,6 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.app.name }}-database
                   key: connectionString
-            - name: EmailSenderOptions__SmtpServer
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.name }}-email
-                  key: host
-            - name: EmailSenderOptions__SmtpPort
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.app.name }}-email
-                  key: port
             - name: EmailSenderOptions__UserName
               valueFrom:
                 secretKeyRef:

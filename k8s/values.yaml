@@ -13,8 +13,8 @@ database:
   connectionString: "Server=000.us-east-1.rds.amazonaws.com;Database=fiap-mechanics;User Id=xxx;Password=xxx;"
 
 email:
-  smtpServer: fiap-mechanics-dev-email-smtp-lb-000.elb.us-east-1.amazonaws.com
-  smtpPort: 1025
+  smtpServer: mailpit-smtp
+  smtpPort: 25
   userName: "xxx@mechanics.com"
   password: "xxx"
   sslRequired: false

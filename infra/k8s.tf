@@ -55,14 +55,3 @@ resource "aws_eks_cluster" "cluster" {
     support_type = "STANDARD"
   }
 }
-
-data "aws_security_group" "eks_cluster" {
-  vpc_id = aws_vpc.main.id
-
-  filter {
-    name   = "tag:aws:eks:cluster-name"
-    values = [aws_eks_cluster.cluster.name]
-  }
-
-  depends_on = [aws_eks_cluster.cluster]
-}

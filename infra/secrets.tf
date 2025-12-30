@@ -16,9 +16,7 @@ resource "aws_secretsmanager_secret" "email_credentials" {
 resource "aws_secretsmanager_secret_version" "email_credentials_value" {
   secret_id = aws_secretsmanager_secret.email_credentials.id
   secret_string = jsonencode({
-    host     = aws_lb.mailpit_smtp.dns_name
-    port     = aws_lb_listener.mailpit_smtp.port
-    userName = "${random_string.email_smtp_user.result}@${var.email.domain}"
+    userName = "${random_string.email_smtp_user.result}@${var.email_domain}"
     password = random_string.email_smtp_password.result
   })
 }

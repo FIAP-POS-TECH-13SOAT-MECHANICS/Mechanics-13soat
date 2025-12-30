@@ -34,17 +34,6 @@ O acesso pode ser público ou privado, dependendo do ambiente utilizado.
 O nome de usuário e senha são gerados pelo Terraform.
 Isso facilita a criação dos secrets e outputs (só são exibidos se for público).
 
-### Serviço de e-mail ([`email.tf`](./email.tf))
-
-Como não há um serviço de disparo de e-mail na AWS Academy (SES não está disponível), o projeto segue utilizando MailPit para simular o envio de mensagens.
-É executado utilizando AWS Fargate, com load-balancers e regras de segurança.
-
-O acesso ao cliente web é sempre público, enquanto que, se o ambiente for `prod`, o servidor SMTP só pode ser acessado pelo cluster EKS.
-
-Application Load Balancers (ALB) expõem recursos para acesso externo e possuem um custo elevado em relação ao Elastic IP (EIP), que é o serviço de IP fixo da AWS, mas EIP não está disponível para uso junto com o Fargate.
-Em uma aplicação real, provavelmente buscaríamos outras alternativas, como rodar o projeto em instâncias EC2 ou utilizar um único ALB a fim de reduzir custos.
-Porém, para um projeto acadêmico, essa abordagem permitiu simplificar a implantação do recurso.
-
 ### Cluster Kubernetes ([`k8s.tf`](./k8s.tf))
 
 Define um cluster EKS usando o modo automático (Auto Mode), que cria automaticamente os nodes e outros recursos.
@@ -63,12 +52,25 @@ Isso torna a sub-rede acessível a partir da internet, possuindo um IP público 
 Para as sub-redes privadas, é necessário um serviço NAT (Network Address Translation) para que os recursos da rede interna possam acessar à internet - por exemplo, para baixar imagens do repositório ECR - sem ficarem expostos a conexões de fora da VPC.
 A AWS oferece um serviço de NAT Gateway, mas por conta do custo elevado, optamos por usar uma NAT Instance - uma instância EC2 que roteia o tráfego das sub-redes privadas para a internet, mas bloqueia qualquer requisição vinda de fora.
 
+### Serviço de e-mail
+
+Como não há um serviço de disparo de e-mail na AWS Academy (SES não está disponível), o projeto segue utilizando Mailpit para simular o envio de mensagens.
+É executado utilizando um script Helm, com usuário e senha gerados pelo Terraform e armazenados no Secrets Manager da AWS.
+
+O projeto já está configurado para acessar o servidor SMTP do Mailpit importando as senhas do Secrets Manager.
+É possível acessar via port-forwarding mapeando os serviços do Mailpit.
+
+| Recurso       | Serviço      | Porta | Comando                                             |
+| ------------- | ------------ | ----- | --------------------------------------------------- |
+| Cliente Web   | mailpit-http | 80    | `kubectl port-forward service/mailpit-http 8025:80` |
+| Servidor SMTP | mailpit-smtp | 25    | `kubectl port-forward service/mailpit-smtp 1025:25` |
+
 ### Arquivos de configuração do ambiente
 
 Os demais arquivos definem variáveis, outputs e geração de senhas.
 
 - [`outputs.tf`](./outputs.tf)
-  - Sempre exibe o ambiente, o repositório ECR e o cliente de e-mail.
+  - Sempre exibe o ambiente e o repositório ECR.
   - Se o projeto for público, exibe também a connectionString do banco de dados e credenciais para envio de e-mails.
 - [`passwords.tf`](./passwords.tf)
   - Nome de usuário e senha para banco de dados e serviço de envio de e-mails.
@@ -101,7 +103,7 @@ Os comandos para cada passo (incluindo a instalação das ferramentas) estão na
 4. Execute os charts Helm para os add-ons do Kubernetes
    - External Secrets Operator
    - Metrics Server
-   - Nginx Controller (opcional)
+   - Mailpit
 5. Crie uma secret chamada `aws-credentials` no namespace `external-secrets`
 
 #### Deploy da aplicação
@@ -219,6 +221,16 @@ helm upgrade --install metrics-server metrics-server/metrics-server --namespace 
   --set args[1]=--kubelet-preferred-address-types=InternalIP
 ```
 
+Por fim, baixe as credenciais de e-mail (geradas pelo Terraform) e instale o Mailpit.
+
+```powershell
+$smtpAuth = aws secretsmanager get-secret-value --secret-id fiap-mechanics-dev-email --query SecretString --output text | ConvertFrom-Json
+helm repo add jouve https://jouve.github.io/charts; helm repo update
+helm upgrade --install mailpit jouve/mailpit `
+  --set mailpit.smtp.authFile.enabled="true" `
+  --set mailpit.smtp.authFile.htpasswd="$($smtpAuth.userName):$($smtpAuth.password)"
+```
+
 Aguarde até o pod `external-secrets-webhook` ser criado e estar pronto.
 Utilize o comando `kubectl get pods -n external-secrets --watch` para monitorar o progresso.
 
@@ -246,7 +258,13 @@ helm upgrade --install --set image.repository=$repositoryUrl --set app.env=dev f
 
 ### Acessando a aplicação
 
-Há duas opções: mapear a porta via `kubectl` ou criar uma rota pública usando Nginx Controller. 
+Há duas opções: mapear a porta via `kubectl` ou pela rota pública gerada pelo Ingress Controller.
+
+Para o cliente de e-mail, mapeie a porta para o serviço do Mailpit e acesse via [localhost](http://localhost:8025).
+
+```powershell
+kubectl port-forward service/mailpit-http 8025:80
+```
 
 #### Mapeamento de porta
 

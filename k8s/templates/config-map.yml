@@ -8,6 +8,8 @@ data:
   {{- $envMap := dict "dev" "Development" "stg" "Staging" "prod" "Production" }}
   {{- $envName := index $envMap .Values.app.env | default "Development" }}
   ASPNETCORE_ENVIRONMENT: {{ $envName | quote }}
+  EmailSenderOptions__SmtpServer: {{ .Values.email.smtpServer | quote }}
+  EmailSenderOptions__SmtpPort: {{ .Values.email.smtpPort | quote }}
   EmailSenderOptions__SslRequired: {{ .Values.email.sslRequired | quote }}
   EmailSenderOptions__SenderInformation__Name: {{ .Values.email.senderName | quote }}
   EmailSenderOptions__SenderInformation__Address: {{ .Values.email.senderAddress | quote }}

@@ -10,20 +10,8 @@ output "cr_repository_url" {
   value = aws_ecr_repository.container_registry.repository_url
 }
 
-output "email_client_url" {
-  value = "http://${aws_lb.mailpit_client.dns_name}"
-}
-
-output "email_smtp_url" {
-  value = local.public ? aws_lb.mailpit_smtp.dns_name : null
-}
-
-output "email_smtp_port" {
-  value = local.public ? aws_lb_listener.mailpit_smtp.port : null
-}
-
 output "email_smtp_user" {
-  value = local.public ? "${random_string.email_smtp_user.result}@${var.email.domain}" : null
+  value = local.public ? "${random_string.email_smtp_user.result}@${var.email_domain}" : null
 }
 
 output "email_smtp_password" {

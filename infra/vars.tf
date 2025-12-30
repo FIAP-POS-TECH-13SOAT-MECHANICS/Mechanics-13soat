@@ -8,15 +8,9 @@ variable "project_name" {
   default = "fiap-mechanics"
 }
 
-variable "email" {
-  type = object({
-    image  = string
-    domain = string
-  })
-  default = {
-    image  = "axllent/mailpit:v1.28"
-    domain = "mechanics.com"
-  }
+variable "email_domain" {
+  type = string
+  default = "mechanics.com"
 }
 
 variable "environment" {

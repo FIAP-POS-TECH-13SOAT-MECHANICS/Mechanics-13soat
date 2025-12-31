@@ -48,10 +48,6 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ .Values.app.name }}-configs
-            - secretRef:
-                name: {{ .Values.app.name }}-database
-            - secretRef:
-                name: {{ .Values.app.name }}-email
 
           readinessProbe:
             httpGet:

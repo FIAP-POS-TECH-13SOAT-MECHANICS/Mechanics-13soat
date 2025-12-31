@@ -27,7 +27,10 @@ jobs:
     outputs:
       environment: ${{ steps.resolve.outputs.environment }}
     steps:
-      - id: resolve
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Resolve Environment
+        id: resolve
         uses: ./.github/actions/resolve-environment
 
   deploy-ecr:

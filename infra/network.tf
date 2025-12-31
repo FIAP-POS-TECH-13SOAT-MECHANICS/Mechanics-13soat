@@ -33,17 +33,26 @@ resource "aws_subnet" "public" {
 }
 
 resource "aws_subnet" "private" {
-  count = length(var.availability_zones)
-
   vpc_id            = aws_vpc.main.id
-  cidr_block        = cidrsubnet(var.vpc_cidr, 4, count.index + length(var.availability_zones))
-  availability_zone = var.availability_zones[count.index]
+  cidr_block        = cidrsubnet(var.vpc_cidr, 4, 10)
+  availability_zone = var.availability_zones[0]
 
   tags = {
-    Name = "${local.prefix}-private-${count.index + 1}"
+    Name = "${local.prefix}-private"
     Type = "private"
 
     "kubernetes.io/role/internal-elb" = "1"
+  }
+}
+
+# dummy private subnet for EKS cluster requirements
+resource "aws_subnet" "private_dummy" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = cidrsubnet(var.vpc_cidr, 4, 11)
+  availability_zone = var.availability_zones[1]
+
+  tags = {
+    Name = "${local.prefix}-private-dummy"
   }
 }
 
@@ -89,24 +98,20 @@ resource "aws_nat_gateway" "main" {
 }
 
 resource "aws_route_table" "private" {
-  count  = length(var.availability_zones)
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name = "${local.prefix}-private-${count.index + 1}"
+    Name = "${local.prefix}-private"
   }
 }
 
-resource "aws_route_table_association" "private" {
-  count = length(aws_subnet.private)
-
-  subnet_id      = aws_subnet.private[count.index].id
-  route_table_id = aws_route_table.private[count.index].id
-}
-
 resource "aws_route" "private_nat" {
-  count                  = length(aws_route_table.private)
-  route_table_id         = aws_route_table.private[count.index].id
+  route_table_id         = aws_route_table.private.id
   destination_cidr_block = "0.0.0.0/0"
   nat_gateway_id         = aws_nat_gateway.main.id
+}
+
+resource "aws_route_table_association" "private" {
+  subnet_id      = aws_subnet.private.id
+  route_table_id = aws_route_table.private.id
 }

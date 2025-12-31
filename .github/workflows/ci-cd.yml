@@ -5,10 +5,12 @@ on:
   push:
     branches: 
       - main
+      - release
       - develop
   pull_request:
     branches: 
       - main
+      - release
       - develop
 
 permissions:
@@ -19,12 +21,28 @@ permissions:
 jobs:
   tests:
     uses: ./.github/workflows/dotnet.yml
-# 
-  deploy-ecr:
-    needs: tests
 
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+  resolve-environment:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.resolve.outputs.environment }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Resolve Environment
+        id: resolve
+        uses: ./.github/actions/resolve-environment
+
+  deploy-ecr:
+    needs: 
+      - tests
+      - resolve-environment
+
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
 
     uses: ./.github/workflows/deploy-ecr.yml
+
+    with:
+      environment: ${{ needs.resolve-environment.outputs.environment }}
 
     secrets: inherit

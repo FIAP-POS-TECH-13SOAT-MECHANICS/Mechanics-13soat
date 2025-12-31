@@ -2,12 +2,17 @@ name: Deploy ECR
 
 on:
   workflow_call:
+    inputs:
+      environment:
+        description: Deployment environment (dev|stg|prod)
+        required: true
+        type: string
 
 jobs:
   deploy-ecr:
     runs-on: ubuntu-latest
 
-    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout code
@@ -29,8 +34,8 @@ jobs:
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: fiap-mechanics-cr
-          IMAGE_TAG: latest
+          ECR_REPOSITORY: fiap-mechanics-${{ inputs.environment }}-cr
+          IMAGE_TAG: ${{ github.sha }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG

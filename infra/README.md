@@ -324,6 +324,9 @@ Remover secrets da AWS:
 ```powershell
 aws secretsmanager delete-secret --secret-id fiap-mechanics-dev-database --force-delete-without-recovery
 aws secretsmanager delete-secret --secret-id fiap-mechanics-dev-email --force-delete-without-recovery
+
+# remover todos
+aws secretsmanager list-secrets --query "SecretList[].Name" | ConvertFrom-Json | ForEach-Object { aws secretsmanager delete-secret --secret-id $_ --force-delete-without-recovery }
 ```
 
 Forçar sincronização das secrets:

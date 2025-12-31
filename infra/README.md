@@ -49,8 +49,7 @@ Alguns recursos requerem pelo menos duas zonas de disponibilidade, sendo portant
 Uma sub-rede pública é aquela que possui um internet gateway associada a ela, com as rotas devidamente configuradas.
 Isso torna a sub-rede acessível a partir da internet, possuindo um IP público e podendo ser acessada de fora da VPC.
 
-Para as sub-redes privadas, é necessário um serviço NAT (Network Address Translation) para que os recursos da rede interna possam acessar à internet - por exemplo, para baixar imagens do repositório ECR - sem ficarem expostos a conexões de fora da VPC.
-A AWS oferece um serviço de NAT Gateway, mas por conta do custo elevado, optamos por usar uma NAT Instance - uma instância EC2 que roteia o tráfego das sub-redes privadas para a internet, mas bloqueia qualquer requisição vinda de fora.
+Para as sub-redes privadas, é necessário um serviço NAT (Network Address Translation) para que os recursos da rede interna possam acessar à internet - por exemplo, para baixar imagens do repositório ECR - sem ficarem expostos a conexões de fora da VPC. Utilizamos o serviço de NAT Gateway da AWS.
 
 ### Serviço de e-mail
 
@@ -351,4 +350,10 @@ Liberar lock travado no Terraform:
 ```powershell
 # copie o lock-id da mensagem de erro
 terraform force-unlock LOCK_ID
+```
+
+Excluir imagens do ECR (para permitir `terraform destroy`):
+
+```powershell
+aws ecr batch-delete-image --repository-name fiap-mechanics-dev-cr --image-ids (aws ecr list-images --repository-name fiap-mechanics-dev-cr --query "imageIds[].imageDigest" --no-paginate | ConvertFrom-Json | ForEach-Object { "imageDigest=$_" })
 ```

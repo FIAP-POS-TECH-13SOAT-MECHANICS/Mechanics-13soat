@@ -47,7 +47,7 @@ resource "aws_subnet" "private" {
   }
 }
 
-# Rotas para subnets publicas
+# routes for public subnets
 
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
@@ -58,7 +58,7 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name = "${local.prefix}-public-rt"
+    Name = "${local.prefix}-public"
   }
 }
 
@@ -69,63 +69,22 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-# NAT instance (EC2 para habilitar acesso a internet em subnets privadas)
+# NAT Gateway (to allow private subnets to access the internet)
 
-data "aws_ami" "amazon_linux_nat" {
-  most_recent = true
-  owners      = ["amazon"]
+resource "aws_eip" "nat" {
+  domain = "vpc"
 
-  filter {
-    name   = "name"
-    values = ["amzn2-ami-kernel-*-hvm-*-arm64-gp2"]
+  tags = {
+    Name = "${local.prefix}-nat"
   }
 }
 
-resource "aws_security_group" "nat_instance" {
-  name_prefix = "${local.prefix}-nat-"
-  description = "Security group for NAT instance"
-  vpc_id      = aws_vpc.main.id
-
-  ingress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = [var.vpc_cidr]
-    description = "Allow all from VPC"
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-    description = "Allow all outbound"
-  }
+resource "aws_nat_gateway" "main" {
+  allocation_id = aws_eip.nat.id
+  subnet_id     = aws_subnet.public[0].id
 
   tags = {
-    Name = "${local.prefix}-nat-sg"
-  }
-}
-
-resource "aws_instance" "nat" {
-  ami                    = data.aws_ami.amazon_linux_nat.id
-  instance_type          = "t4g.nano"
-  subnet_id              = aws_subnet.public[0].id
-  vpc_security_group_ids = [aws_security_group.nat_instance.id]
-  source_dest_check      = false
-
-  user_data = <<-EOF
-              #!/bin/bash
-              echo "net.ipv4.ip_forward = 1" >> /etc/sysctl.conf
-              sysctl -p
-              /sbin/iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
-              /sbin/iptables -F FORWARD
-              yum install -y iptables-services
-              service iptables save
-              EOF
-
-  tags = {
-    Name = "${local.prefix}-nat-instance"
+    Name = "${local.prefix}-nat"
   }
 }
 
@@ -134,7 +93,7 @@ resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name = "${local.prefix}-private-rt-${count.index + 1}"
+    Name = "${local.prefix}-private-${count.index + 1}"
   }
 }
 
@@ -149,5 +108,5 @@ resource "aws_route" "private_nat" {
   count                  = length(aws_route_table.private)
   route_table_id         = aws_route_table.private[count.index].id
   destination_cidr_block = "0.0.0.0/0"
-  network_interface_id   = aws_instance.nat.primary_network_interface_id
+  nat_gateway_id         = aws_nat_gateway.main.id
 }

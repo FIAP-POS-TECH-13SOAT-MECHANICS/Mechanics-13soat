@@ -7,6 +7,13 @@
 3. Utilize o script `deploy-image.ps1` para subir a aplicação.
    - Repita o comando para gerar uma nova release.
 
+O comando abaixo sobe a infraestrutura e faz deploy no ambiente DEV.
+Execute na raiz do projeto.
+
+```powershell
+.\scripts\start-infra.ps1 dev; .\scripts\deploy-image.ps1 dev
+```
+
 Para alternar entre ambientes, use o script `set-environment.ps1`.
 
 Os scripts são idempotentes, isto é, podem ser executados múltiplas vezes.

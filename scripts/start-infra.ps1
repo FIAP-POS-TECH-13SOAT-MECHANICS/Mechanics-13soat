@@ -35,6 +35,11 @@ helm install metrics-server metrics-server/metrics-server --namespace kube-syste
   --set args[0]=--kubelet-insecure-tls `
   --set args[1]=--kubelet-preferred-address-types=InternalIP
 
+$smtpAuth = aws secretsmanager get-secret-value --secret-id fiap-mechanics-$environment-email --query SecretString --output text | ConvertFrom-Json
+helm install mailpit jouve/mailpit `
+  --set mailpit.smtp.authFile.enabled="true" `
+  --set mailpit.smtp.authFile.htpasswd="$($smtpAuth.userName):$($smtpAuth.password)"
+
 kubectl create secret generic aws-credentials `
   --namespace external-secrets `
   --from-literal=access-key-id="$(aws configure get aws_access_key_id)" `
@@ -42,11 +47,6 @@ kubectl create secret generic aws-credentials `
   --from-literal=session-token="$(aws configure get aws_session_token)" `
   --dry-run=client `
   --output yaml | kubectl apply -f -
-
-$smtpAuth = aws secretsmanager get-secret-value --secret-id fiap-mechanics-$environment-email --query SecretString --output text | ConvertFrom-Json
-helm install mailpit jouve/mailpit `
-  --set mailpit.smtp.authFile.enabled="true" `
-  --set mailpit.smtp.authFile.htpasswd="$($smtpAuth.userName):$($smtpAuth.password)"
 
 Write-Host -ForegroundColor Yellow "Waiting for External Secrets Operator to be ready..."
 kubectl wait --for=condition=Ready pod --all -n external-secrets --timeout=120s

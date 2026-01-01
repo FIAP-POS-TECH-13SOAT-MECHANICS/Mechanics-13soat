@@ -33,26 +33,17 @@ resource "aws_subnet" "public" {
 }
 
 resource "aws_subnet" "private" {
+  count = length(var.availability_zones)
+
   vpc_id            = aws_vpc.main.id
-  cidr_block        = cidrsubnet(var.vpc_cidr, 4, 10)
-  availability_zone = var.availability_zones[0]
+  cidr_block        = cidrsubnet(var.vpc_cidr, 4, count.index + length(var.availability_zones))
+  availability_zone = var.availability_zones[count.index]
 
   tags = {
-    Name = "${local.prefix}-private"
+    Name = "${local.prefix}-private-${count.index + 1}"
     Type = "private"
 
     "kubernetes.io/role/internal-elb" = "1"
-  }
-}
-
-# dummy private subnet for EKS cluster requirements
-resource "aws_subnet" "private_dummy" {
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = cidrsubnet(var.vpc_cidr, 4, 11)
-  availability_zone = var.availability_zones[1]
-
-  tags = {
-    Name = "${local.prefix}-private-dummy"
   }
 }
 
@@ -112,6 +103,8 @@ resource "aws_route" "private_nat" {
 }
 
 resource "aws_route_table_association" "private" {
-  subnet_id      = aws_subnet.private.id
+  count = length(aws_subnet.private)
+
+  subnet_id      = aws_subnet.private[count.index].id
   route_table_id = aws_route_table.private.id
 }

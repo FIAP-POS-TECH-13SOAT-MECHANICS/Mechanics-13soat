@@ -1,0 +1,36 @@
+name: Initialize Infrastructure
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: Deployment environment (dev|stg|prod)
+        required: true
+        type: string
+
+jobs:
+  apply-infra:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Verify AWS identity
+        shell: pwsh
+        run: aws sts get-caller-identity
+
+      - name: Run infrastructure script
+        shell: pwsh
+        run: ./scripts/initialize-infrastructure.ps1 ${{ inputs.environment }}

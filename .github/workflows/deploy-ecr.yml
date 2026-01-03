@@ -12,11 +12,9 @@ jobs:
   deploy-ecr:
     runs-on: ubuntu-latest
 
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4

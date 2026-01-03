@@ -52,7 +52,7 @@ kubectl create secret generic aws-credentials `
 
 Write-Host
 Write-Host -ForegroundColor Yellow "Waiting for External Secrets Operator to be ready..."
-kubectl wait --for=condition=Ready pod --all -n external-secrets
+kubectl wait --for=condition=Ready pod --all -n external-secrets --timeout=120s
 
 Write-Host
 Write-Host -ForegroundColor Green "Infrastructure for environment '$environment' has been applied."

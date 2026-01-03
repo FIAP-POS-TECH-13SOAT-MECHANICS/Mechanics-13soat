@@ -13,12 +13,13 @@ Write-Host -ForegroundColor Yellow "Creating bucket 'fiap-mechanics-tf'..."
 aws s3 mb s3://fiap-mechanics-tf --region us-east-1 | Out-Null
 
 # subir infraestrutura pelo Terraform
+Write-Host
 Write-Host -ForegroundColor Yellow "Updating infrastructure for environment '$environment'..."
 
 terraform -chdir="./infra" init -backend-config="key=$environment.tfstate" -reconfigure
 terraform -chdir="./infra" apply -var="environment=$environment" -auto-approve
 
-# configurar cluster
+Write-Host
 Write-Host -ForegroundColor Yellow "Configuring cluster..."
 
 aws eks update-kubeconfig --name fiap-mechanics-$environment-cluster --region us-east-1
@@ -28,7 +29,8 @@ helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server
 helm repo add jouve https://jouve.github.io/charts
 helm repo update
 
-# instalar charts (não altera se já existirem)
+Write-Host
+Write-Host -ForegroundColor Yellow "Installing charts..."
 helm install external-secrets external-secrets/external-secrets --namespace external-secrets --create-namespace
 
 helm install metrics-server metrics-server/metrics-server --namespace kube-system  `
@@ -48,7 +50,9 @@ kubectl create secret generic aws-credentials `
   --dry-run=client `
   --output yaml | kubectl apply -f -
 
+Write-Host
 Write-Host -ForegroundColor Yellow "Waiting for External Secrets Operator to be ready..."
 kubectl wait --for=condition=Ready pod --all -n external-secrets
 
+Write-Host
 Write-Host -ForegroundColor Green "Infrastructure for environment '$environment' has been applied."

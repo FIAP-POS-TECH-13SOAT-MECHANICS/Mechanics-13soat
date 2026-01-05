@@ -19,3 +19,7 @@ riderModule.iml
 *.sln.DotSettings.User
 
 appsettings.Development.json
+
+infra/.terraform/
+infra/.terraform.lock.hcl
+infra/*.tfstate*

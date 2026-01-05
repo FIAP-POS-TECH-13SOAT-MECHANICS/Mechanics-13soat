@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using KebabCaseParameterTransformer = Mechanics.Api.Extensions.KebabCaseParameterTransformer;
 
 namespace Mechanics.Api;
 
@@ -54,10 +53,10 @@ public class Program
             .UseMiddleware<DomainValidationMiddleware>();
 
         if (app.Environment.IsDevelopment())
-        {
-            app.UseSwaggerDocumentation();
             await app.ApplyMigrations();
-        }
+
+        if (!app.Environment.IsProduction())
+            app.UseSwaggerDocumentation();
 
         app.UseHealthChecks("/health");
 

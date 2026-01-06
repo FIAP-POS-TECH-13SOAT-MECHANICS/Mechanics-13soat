@@ -2,6 +2,28 @@
 
 O projeto consiste em um sistema de informação para gerenciar ordens de serviço em uma oficina mecânica de médio porte. É possível cadastrar os clientes e veículos e gerenciar o fluxo dos pedidos, incluindo notificação e aprovação dos clientes.
 
+## Fases do projeto
+
+São 5 fases, cada uma com objetivos diferentes.
+
+### Primeira fase
+
+Implementação inicial do projeto, utilizando arquitetura monolítica. O projeto deve conter Dockerfile e docker-compose com todos os recursos necessários para execução local, como banco de dados e servidor SMTP.
+
+O sistema deve disponibilizar CRUDs para clientes, veículos, peças e serviços oferecidos, com validação de CPF/CNPJ e placa dos veículos. Os usuários devem ser capazes de cadastrar ordens de serviço (OS) e acompanhar seu andamento, incluindo controle de status, envio de notificações e aprovação de orçamentos.
+
+A autenticação deve ser realizada por meio de JWT. O projeto deve conter testes automatizados com, no mínimo, 80% de cobertura nos fluxos principais, além de um relatório de vulnerabilidades gerado a partir de ferramentas de análise, como SonarQube, OWASP e ZAP.
+
+A documentação deve conter instruções para execução do projeto, bem como a justificativa para a escolha do banco de dados. O projeto deve aplicar conceitos de Domain-Driven Design (DDD), com link para os diagramas e artefatos no Miro.
+
+### Segunda fase
+
+O projeto deve ser revisado para se adequar às boas práticas de Clean Code e à evolução da arquitetura da aplicação, além de implementar automação de testes e deploy. Também devem ser realizados ajustes nos fluxos existentes de ordens de serviço, como melhorias na listagem de OS, com ocultação padrão das ordens entregues e revisão da ordenação.
+
+A infraestrutura da aplicação deve ser preparada para ambientes além da execução local, incluindo a criação automatizada do ambiente via Terraform e o deploy em ambiente Kubernetes. A pipeline de CI/CD deve ser revisada e expandida para contemplar o provisionamento da infraestrutura, execução dos testes, build da aplicação e deploy automatizado.
+
+A documentação deve ser revisada para incluir instruções para execução, provisionamento e deploy da aplicação em ambiente em nuvem, além de detalhes sobre o ambiente provisionado e os recursos criados.
+
 ## Fluxo de atendimento
 
 1. Cadastro do cliente

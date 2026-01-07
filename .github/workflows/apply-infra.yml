@@ -31,6 +31,11 @@ jobs:
         shell: pwsh
         run: aws sts get-caller-identity
 
+      - name: Install Helm
+        uses: azure/setup-helm@v4
+        with:  
+          version: '3.14.0'
+
       - name: Run infrastructure script
         shell: pwsh
         run: ./scripts/initialize-infrastructure.ps1 ${{ inputs.environment }}

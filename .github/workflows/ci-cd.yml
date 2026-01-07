@@ -43,7 +43,7 @@ jobs:
       environment: ${{ needs.resolve-environment.outputs.environment }}
     secrets: inherit
 
-  deploy:
+  deploy-ecr:
     needs: 
       - tests
       - resolve-environment
@@ -53,3 +53,44 @@ jobs:
     with:
       environment: ${{ needs.resolve-environment.outputs.environment }}
     secrets: inherit
+
+  deploy-k8s:
+    needs: 
+      - tests
+      - resolve-environment
+      - apply-infra
+      - deploy-ecr
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/deploy-k8s.yml
+    with:
+      environment: ${{ needs.resolve-environment.outputs.environment }}
+      image_tag: ${{ github.sha }}
+    secrets: inherit
+
+  deployment-summary:
+    needs: [resolve-environment, deploy-k8s]
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate Deployment Summary
+        run: |
+          echo "##Deployment Successful!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "###Deployment Details" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Attribute | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | \`${{ needs.resolve-environment.outputs.environment }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch** | \`${{ github.ref_name }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Deployed by** | @${{ github.actor }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Timestamp** | $(date -u '+%Y-%m-%d %H:%M:%S UTC') |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Pipeline Steps Completed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "1. ✅ **Tests** - All tests passed" >> $GITHUB_STEP_SUMMARY
+          echo "2. ✅ **Infrastructure** - Terraform applied >> $GITHUB_STEP_SUMMARY
+          echo "3. ✅ **Docker Build** - Image built and pushed to ECR" >> $GITHUB_STEP_SUMMARY
+          echo "4. ✅ **K8s Deploy** - Application deployed via Helm" >> $GITHUB_STEP_SUMMARY
+
+

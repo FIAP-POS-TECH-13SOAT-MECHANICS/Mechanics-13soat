@@ -79,7 +79,7 @@ helm install mailpit jouve/mailpit `
 kubectl create secret generic aws-credentials `
   --namespace external-secrets `
   --from-literal=access-key-id="$env:AWS_ACCESS_KEY_ID" `
-  --from-literal=secret-access-key="$env: AWS_SECRET_ACCESS_KEY" `
+  --from-literal=secret-access-key="$env:AWS_SECRET_ACCESS_KEY" `
   --from-literal=session-token="$env:AWS_SESSION_TOKEN" `
   --dry-run=client `
   --output yaml | kubectl apply -f -

@@ -9,6 +9,7 @@ aws dynamodb create-table `
   --attribute-definitions AttributeName=LockID,AttributeType=S `
   --key-schema AttributeName=LockID,KeyType=HASH `
   --billing-mode PAY_PER_REQUEST | Out-Null
+
 Write-Host -ForegroundColor Yellow "Creating bucket 'fiap-mechanics-tf'..."
 aws s3 mb s3://fiap-mechanics-tf --region us-east-1 | Out-Null
 
@@ -17,40 +18,69 @@ Write-Host
 Write-Host -ForegroundColor Yellow "Updating infrastructure for environment '$environment'..."
 
 terraform -chdir="./infra" init -backend-config="key=$environment.tfstate" -reconfigure
+if ($LASTEXITCODE -ne 0) { exit 1 }
+
 terraform -chdir="./infra" apply -var="environment=$environment" -auto-approve
+if ($LASTEXITCODE -ne 0) { exit 1 }
 
 Write-Host
 Write-Host -ForegroundColor Yellow "Configuring cluster..."
 
-aws eks update-kubeconfig --name fiap-mechanics-$environment-cluster --region us-east-1
+# aguardar cluster estar pronto
+$clusterName = "fiap-mechanics-$environment-cluster"
+$retries = 0
+while ($retries -lt 20) {
+    aws eks describe-cluster --name $clusterName --region us-east-1 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) { break }
+    $retries++
+    Start-Sleep -Seconds 15
+}
+
+aws eks update-kubeconfig --name $clusterName --region us-east-1
+
+# aguardar nodes
+$waited = 0
+while ($waited -lt 300) {
+    $nodes = kubectl get nodes --no-headers 2>$null
+    if ($LASTEXITCODE -eq 0 -and $nodes) { break }
+    Start-Sleep -Seconds 15
+    $waited += 15
+}
 
 helm repo add external-secrets https://charts.external-secrets.io
 helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server
 helm repo add jouve https://jouve.github.io/charts
-helm repo add nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
 
 Write-Host
 Write-Host -ForegroundColor Yellow "Installing charts..."
-# utilizar "install" para ignorar recursos já instalados
 helm install external-secrets external-secrets/external-secrets --namespace external-secrets --create-namespace
-
-helm install ingress-nginx nginx/ingress-nginx --namespace ingress-nginx --create-namespace
 
 helm install metrics-server metrics-server/metrics-server --namespace kube-system  `
   --set args[0]=--kubelet-insecure-tls `
   --set args[1]=--kubelet-preferred-address-types=InternalIP
 
-$smtpAuth = aws secretsmanager get-secret-value --secret-id fiap-mechanics-$environment-email --query SecretString --output text | ConvertFrom-Json
+# aguardar secret estar disponível
+$secretId = "fiap-mechanics-$environment-email"
+$retries = 0
+while ($retries -lt 12) {
+    aws secretsmanager describe-secret --secret-id $secretId 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) { break }
+    $retries++
+    Start-Sleep -Seconds 10
+}
+
+$smtpAuth = aws secretsmanager get-secret-value --secret-id $secretId --query SecretString --output text | ConvertFrom-Json
 helm install mailpit jouve/mailpit `
-  --set mailpit.smtp.authFile.enabled="true" `
+  --set mailpit.smtp. authFile.enabled="true" `
   --set mailpit.smtp.authFile.htpasswd="$($smtpAuth.userName):$($smtpAuth.password)"
 
+# usar variáveis de ambiente (GitHub Actions)
 kubectl create secret generic aws-credentials `
   --namespace external-secrets `
-  --from-literal=access-key-id="$(aws configure get aws_access_key_id)" `
-  --from-literal=secret-access-key="$(aws configure get aws_secret_access_key)" `
-  --from-literal=session-token="$(aws configure get aws_session_token)" `
+  --from-literal=access-key-id="$env:AWS_ACCESS_KEY_ID" `
+  --from-literal=secret-access-key="$env: AWS_SECRET_ACCESS_KEY" `
+  --from-literal=session-token="$env:AWS_SESSION_TOKEN" `
   --dry-run=client `
   --output yaml | kubectl apply -f -
 

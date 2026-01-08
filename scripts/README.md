@@ -1,11 +1,17 @@
 # Scripts para deploy
 
-1. Configure suas credenciais na AWS:
+1. Certifique-se de ter instalado as ferramentas necessárias:
+   - AWS CLI
+   - Helm
+   - Terraform
+2. Configure suas credenciais na AWS:
    - Usando AWS CLI: `aws configure`; ou,
    - Colando no arquivo de configuração (se já existir): `notepad $ENV:USERPROFILE\.aws\credentials`;
-2. Utilize o script `initialize-infrastructure.ps1` para subir o ambiente na AWS.
-3. Utilize o script `deploy-image.ps1` para subir a aplicação.
+3. Utilize o script `initialize-infrastructure.ps1` para subir o ambiente na AWS.
+4. Utilize o script `deploy-image.ps1` para subir a aplicação.
    - Repita o comando para gerar uma nova release.
+5. Utilize o script `remove-environment.ps1` para destruir o ambiente.
+   - Para evitar conflitos, o bucket S3 com os states do Terraform não é apagado.
 
 O comando abaixo sobe a infraestrutura e faz deploy no ambiente DEV.
 Execute na raiz do projeto.

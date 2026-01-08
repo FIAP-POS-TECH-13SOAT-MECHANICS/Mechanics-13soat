@@ -24,26 +24,6 @@ resource "aws_eks_cluster" "cluster" {
     bootstrap_cluster_creator_admin_permissions = true
   }
 
-  bootstrap_self_managed_addons = false
-
-  compute_config {
-    enabled       = true
-    node_pools    = ["general-purpose", "system"]
-    node_role_arn = data.aws_iam_role.lab_node_role.arn
-  }
-
-  kubernetes_network_config {
-    elastic_load_balancing {
-      enabled = true
-    }
-  }
-
-  storage_config {
-    block_storage {
-      enabled = true
-    }
-  }
-
   vpc_config {
     subnet_ids = aws_subnet.private.*.id
 
@@ -54,4 +34,21 @@ resource "aws_eks_cluster" "cluster" {
   upgrade_policy {
     support_type = "STANDARD"
   }
+}
+
+resource "aws_eks_node_group" "node_group" {
+  cluster_name    = aws_eks_cluster.cluster.name
+  node_group_name = "general-purpose"
+  node_role_arn   = data.aws_iam_role.lab_node_role.arn
+  subnet_ids      = aws_subnet.private.*.id
+
+  scaling_config {
+    desired_size = 2
+
+    max_size = 3
+    min_size = 1
+  }
+
+  instance_types = ["t3.medium", "t3a.medium", "t2.medium"]
+  capacity_type  = "SPOT"
 }

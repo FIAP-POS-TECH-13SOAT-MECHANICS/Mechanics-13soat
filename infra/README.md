@@ -36,7 +36,7 @@ Isso facilita a criação dos secrets e outputs (só são exibidos se for públi
 
 ### Cluster Kubernetes ([`k8s.tf`](./k8s.tf))
 
-Define um cluster EKS usando o modo automático (Auto Mode), que cria automaticamente os nodes e outros recursos.
+Define um cluster EKS usando um node group de instâncias `medium`, iniciado com dois nodes.
 
 O cluster utiliza uma sub-rede privada e busca as permissões da AWS Academy necessárias usando blocos `data`.
 
@@ -84,8 +84,9 @@ Os demais arquivos definem variáveis, outputs e geração de senhas.
 ## Criação via Terraform e Helm
 
 Os scripts foram projetados para que o projeto rode em um ambiente da AWS Academy.
-
 Antes de prosseguir, certifique-se de ter instalado as ferramentas necessárias e ter atualizado as credenciais da AWS.
+
+O Helm do projeto executa as [migrações](../docs/migrations.md) e sobe dois pods do projeto, com escalonamento para até 10 réplicas.
 
 ### Resumo
 
@@ -103,6 +104,7 @@ Os comandos para cada passo (incluindo a instalação das ferramentas) estão na
    - External Secrets Operator
    - Metrics Server
    - Mailpit
+   - Nginx Controller (opcional)
 5. Crie uma secret chamada `aws-credentials` no namespace `external-secrets`
 
 #### Deploy da aplicação
@@ -280,7 +282,13 @@ Observe que o Swagger não está disponível se o ambiente for `prod`.
 #### Ingress Controller
 
 Com um Ingress Controller, são gerados URLs públicas para o serviço, de forma que seja possível acessar diretamente pelo navegador.
-O projeto está configurado para gerar um Application Load Balancer automaticamente.
+É necessário instalar o [NGINX Ingress Controller](https://kubernetes.github.io/ingress-nginx), que cria um serviço do tipo `LoadBalancer` responsável por expor o cluster externamente.
+A instalação pode ser feita via Helm:
+
+```powershell
+helm repo add nginx https://kubernetes.github.io/ingress-nginx; helm repo update
+helm upgrade --install ingress-nginx nginx/ingress-nginx --namespace ingress-nginx --create-namespace
+```
 
 Utilize o comando abaixo para obter a URL do Swagger:
 

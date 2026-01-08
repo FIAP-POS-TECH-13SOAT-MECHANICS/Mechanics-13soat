@@ -27,11 +27,15 @@ aws eks update-kubeconfig --name fiap-mechanics-$environment-cluster --region us
 helm repo add external-secrets https://charts.external-secrets.io
 helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server
 helm repo add jouve https://jouve.github.io/charts
+helm repo add nginx https://kubernetes.github.io/ingress-nginx
 helm repo update
 
 Write-Host
 Write-Host -ForegroundColor Yellow "Installing charts..."
+# utilizar "install" para ignorar recursos já instalados
 helm install external-secrets external-secrets/external-secrets --namespace external-secrets --create-namespace
+
+helm install ingress-nginx nginx/ingress-nginx --namespace ingress-nginx --create-namespace
 
 helm install metrics-server metrics-server/metrics-server --namespace kube-system  `
   --set args[0]=--kubelet-insecure-tls `

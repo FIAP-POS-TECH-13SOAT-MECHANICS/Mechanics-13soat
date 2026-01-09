@@ -48,7 +48,7 @@ jobs:
     secrets: inherit
 
   deploy:
-    name: Build and Deploy Application
+    name: Build and Deploy
     needs: [tests, resolve-environment, apply-infra]
     uses:  ./.github/workflows/deploy.yml
     with:

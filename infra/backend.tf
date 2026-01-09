@@ -35,10 +35,10 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "tfstate" {
 
 terraform {
   backend "s3" {
-    bucket  = local.tfstate_bucket_name
-    region  = "us-east-1"
-    encrypt = true
+    # bucket  = local.tfstate_bucket_name
+    # region  = "us-east-1"
+    # encrypt = true
 
-    dynamodb_table = "fiap-mechanics-tf"
+    # dynamodb_table = "fiap-mechanics-tf"
   }
 }

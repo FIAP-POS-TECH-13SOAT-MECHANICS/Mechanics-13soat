@@ -67,21 +67,30 @@ jobs:
       - name: Get application URL
         continue-on-error: true
         run: |
-          INGRESS_URL=$(kubectl get ingress -n default -o jsonpath='{.items[0].status.loadBalancer. ingress[0].hostname}' 2>/dev/null || echo "")
+          INGRESS_URL=$(kubectl get ingress -n default -o jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}' 2>/dev/null || echo "")
           echo "INGRESS_URL=$INGRESS_URL" >> $GITHUB_ENV
 
       - name:  Deployment summary
         if: success()
         run: |
-          echo "## ✅ Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "## Deployment Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Environment**: ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Image**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **Cluster**: fiap-mechanics-${{ inputs.environment }}-cluster" >> $GITHUB_STEP_SUMMARY
+          echo "| Info | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Environment** | ${{ inputs.environment }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Image** | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Cluster** | fiap-mechanics-${{ inputs.environment }}-cluster |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
           if [ -n "$INGRESS_URL" ]; then
-            echo "**Application URL**: http://$INGRESS_URL" >> $GITHUB_STEP_SUMMARY
+            echo "### 🌐 Application URLs" >> $GITHUB_STEP_SUMMARY
+            echo "- **App**:  http://$INGRESS_URL" >> $GITHUB_STEP_SUMMARY
+            echo "- **Swagger**: http://$INGRESS_URL/swagger" >> $GITHUB_STEP_SUMMARY
           else
-            echo "**Application URL**:  Run \`kubectl get ingress -n default\` (Load Balancer provisioning 5-10 min)" >> $GITHUB_STEP_SUMMARY
+            echo "### 🌐 Get Application URL" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Load Balancer provisioning (5-10 min). Run:" >> $GITHUB_STEP_SUMMARY
+            echo '```bash' >> $GITHUB_STEP_SUMMARY
+            echo 'kubectl get ingress -n default' >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
           fi

@@ -1,5 +1,3 @@
-data "aws_caller_identity" "current" {}
-
 locals {
   tfstate_bucket_name = "fiap-mechanics-tf-${data.aws_caller_identity.current.account_id}"
 }
@@ -41,6 +39,6 @@ terraform {
     region  = "us-east-1"
     encrypt = true
 
-    dynamodb_table = local.tfstate_bucket_name
+    dynamodb_table = "fiap-mechanics-tf"
   }
 }

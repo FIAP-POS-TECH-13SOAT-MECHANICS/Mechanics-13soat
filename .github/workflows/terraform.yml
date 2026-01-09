@@ -2,6 +2,11 @@ name: Terraform Deploy
 
 on:
   workflow_call:
+    inputs:
+      environment:
+        description: Deployment environment (dev|stg|prod)
+        required: true
+        type: string
 
 jobs:
   terraform:

@@ -56,5 +56,7 @@ jobs:
           -reconfigure
 
       - name: Apply terraform
-        run: terraform apply -auto-approve
+        run: |
+          cd infra &&
+          terraform apply -auto-approve
       

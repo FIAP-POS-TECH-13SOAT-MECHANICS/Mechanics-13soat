@@ -1,5 +1,5 @@
 data "aws_s3_bucket" "tfstate" {
-  bucket = "fiap-mechanics-tf"
+  bucket = var.bucket_name
 }
 
 resource "aws_s3_bucket_versioning" "versioning" {
@@ -31,10 +31,9 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "tfstate" {
 
 terraform {
   backend "s3" {
-    bucket  = "fiap-mechanics-tf"
     region  = "us-east-1"
     encrypt = true
 
-    dynamodb_table = "fiap-mechanics-tf"
+    use_lockfile = true
   }
 }

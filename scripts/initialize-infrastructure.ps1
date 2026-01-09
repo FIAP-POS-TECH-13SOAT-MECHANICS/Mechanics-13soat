@@ -3,24 +3,18 @@ param ([string]$environment)
 $environment = Get-Environment $environment
 
 # back-end do Terraform
-Write-Host -ForegroundColor Yellow "Creating DynamoDB 'fiap-mechanics-tf'..."
-aws dynamodb create-table `
-  --table-name fiap-mechanics-tf `
-  --attribute-definitions AttributeName=LockID,AttributeType=S `
-  --key-schema AttributeName=LockID,KeyType=HASH `
-  --billing-mode PAY_PER_REQUEST | Out-Null
-
-Write-Host -ForegroundColor Yellow "Creating bucket 'fiap-mechanics-tf'..."
-aws s3 mb s3://fiap-mechanics-tf --region us-east-1 | Out-Null
+$bucketName = "fiap-mechanics-tf-$(aws sts get-access-key-info --access-key-id $(aws configure get aws_access_key_id) --query Account --output text)"
+Write-Host -ForegroundColor Yellow "Creating bucket '$bucketName'..."
+aws s3 mb s3://$bucketName --region us-east-1 | Out-Null
 
 # subir infraestrutura pelo Terraform
 Write-Host
 Write-Host -ForegroundColor Yellow "Updating infrastructure for environment '$environment'..."
 
-terraform -chdir="./infra" init -backend-config="key=$environment.tfstate" -reconfigure
+terraform -chdir="./infra" init -backend-config="bucket=$bucketName" -backend-config="key=$environment.tfstate" -reconfigure
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
-terraform -chdir="./infra" apply -var="environment=$environment" -auto-approve
+terraform -chdir="./infra" apply -var="environment=$environment" -var="bucket_name=$bucketName" -auto-approve
 if ($LASTEXITCODE -ne 0) { exit 1 }
 
 Write-Host
@@ -29,8 +23,6 @@ Write-Host -ForegroundColor Yellow "Configuring cluster..."
 $clusterName = "fiap-mechanics-$environment-cluster"
 aws eks update-kubeconfig --name $clusterName --region us-east-1
 
-kubectl get nodes
-
 helm repo add external-secrets https://charts.external-secrets.io
 helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server
 helm repo add jouve https://jouve.github.io/charts
@@ -38,43 +30,38 @@ helm repo update
 
 Write-Host
 Write-Host -ForegroundColor Yellow "Installing charts..."
+Write-Host "Already installed charts will be ignored."
+
 helm install external-secrets external-secrets/external-secrets --namespace external-secrets --create-namespace
 
 helm install metrics-server metrics-server/metrics-server --namespace kube-system  `
   --set args[0]=--kubelet-insecure-tls `
   --set args[1]=--kubelet-preferred-address-types=InternalIP
 
-# aguardar secret estar disponível
 $secretId = "fiap-mechanics-$environment-email"
-$retries = 0
-while ($retries -lt 12) {
-    aws secretsmanager describe-secret --secret-id $secretId 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) { break }
-    $retries++
-    Start-Sleep -Seconds 10
-}
-
 $smtpAuth = aws secretsmanager get-secret-value --secret-id $secretId --query SecretString --output text | ConvertFrom-Json
 helm install mailpit jouve/mailpit `
-  --set mailpit.smtp. authFile.enabled="true" `
+  --set mailpit.smtp.authFile.enabled="true" `
   --set mailpit.smtp.authFile.htpasswd="$($smtpAuth.userName):$($smtpAuth.password)"
 
+Write-Host
+Write-Host -ForegroundColor Yellow "Creating AWS credentials secret..."
 
-$awsAccessKeyId = $env:AWS_ACCESS_KEY_ID
-$awsSecretAccessKey = $env:AWS_SECRET_ACCESS_KEY
-$awsSessionToken = $env:AWS_SESSION_TOKEN
+$awsAccessKeyId = aws configure get aws_access_key_id
+$awsSecretAccessKey = aws configure get aws_secret_access_key
+$awsSessionToken = aws configure get aws_session_token
 
 if ([string]::IsNullOrWhiteSpace($awsAccessKeyId)) {
-    Write-Host -ForegroundColor Yellow "Using aws configure credentials"
-    $awsAccessKeyId = aws configure get aws_access_key_id
-    $awsSecretAccessKey = aws configure get aws_secret_access_key
-    $awsSessionToken = aws configure get aws_session_token
+  Write-Host "Using AWS credentials from environment variables..."
+  $awsAccessKeyId = $env:AWS_ACCESS_KEY_ID
+  $awsSecretAccessKey = $env:AWS_SECRET_ACCESS_KEY
+  $awsSessionToken = $env:AWS_SESSION_TOKEN
 }
 
 if ([string]::IsNullOrWhiteSpace($awsAccessKeyId)) {
-    Write-Host -ForegroundColor Red "Failed to get AWS credentials!"
-    Write-Host -ForegroundColor Yellow "Please run 'aws configure' or set environment variables"
-    exit 1
+  Write-Error -ForegroundColor Red "Failed to get AWS credentials."
+  Write-Host -ForegroundColor Yellow "Please run 'aws configure' or set environment variables"
+  exit 1
 }
 
 kubectl create secret generic aws-credentials `

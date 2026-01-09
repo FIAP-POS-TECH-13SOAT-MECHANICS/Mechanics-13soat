@@ -26,26 +26,10 @@ if ($LASTEXITCODE -ne 0) { exit 1 }
 Write-Host
 Write-Host -ForegroundColor Yellow "Configuring cluster..."
 
-# aguardar cluster estar pronto
 $clusterName = "fiap-mechanics-$environment-cluster"
-$retries = 0
-while ($retries -lt 20) {
-    aws eks describe-cluster --name $clusterName --region us-east-1 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) { break }
-    $retries++
-    Start-Sleep -Seconds 15
-}
-
 aws eks update-kubeconfig --name $clusterName --region us-east-1
 
-# aguardar nodes
-$waited = 0
-while ($waited -lt 300) {
-    $nodes = kubectl get nodes --no-headers 2>$null
-    if ($LASTEXITCODE -eq 0 -and $nodes) { break }
-    Start-Sleep -Seconds 15
-    $waited += 15
-}
+kubectl get nodes
 
 helm repo add external-secrets https://charts.external-secrets.io
 helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server
@@ -79,7 +63,7 @@ helm install mailpit jouve/mailpit `
 kubectl create secret generic aws-credentials `
   --namespace external-secrets `
   --from-literal=access-key-id="$env:AWS_ACCESS_KEY_ID" `
-  --from-literal=secret-access-key="$env:AWS_SECRET_ACCESS_KEY" `
+  --from-literal=secret-access-key="$env: AWS_SECRET_ACCESS_KEY" `
   --from-literal=session-token="$env:AWS_SESSION_TOKEN" `
   --dry-run=client `
   --output yaml | kubectl apply -f -

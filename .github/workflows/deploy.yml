@@ -1,0 +1,87 @@
+name: Build and Deploy
+
+on:
+  workflow_call: 
+    inputs:
+      environment: 
+        description: Deployment environment (dev|stg|prod)
+        required: true
+        type:  string
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name:  Checkout
+        uses: actions/checkout@v5
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Docker image
+        env: 
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: fiap-mechanics-${{ inputs.environment }}-cr
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig \
+            --name fiap-mechanics-${{ inputs.environment }}-cluster \
+            --region us-east-1
+
+      - name:  Install Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: '3.14.0'
+
+      - name: Deploy with Helm
+        run: |
+          helm upgrade --install \
+            --set image.repository=${{ steps.login-ecr.outputs.registry }}/fiap-mechanics-${{ inputs.environment }}-cr \
+            --set image.tag=${{ github.sha }} \
+            --set app.env=${{ inputs.environment }} \
+            --wait \
+            --timeout 10m \
+            fiap-mechanics ./k8s
+
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment/fiap-mechanics -n default --timeout=5m
+          kubectl get pods -n default
+
+      - name: Get application URL
+        continue-on-error: true
+        run: |
+          INGRESS_URL=$(kubectl get ingress -n default -o jsonpath='{.items[0].status.loadBalancer. ingress[0].hostname}' 2>/dev/null || echo "")
+          echo "INGRESS_URL=$INGRESS_URL" >> $GITHUB_ENV
+
+      - name:  Deployment summary
+        if: success()
+        run: |
+          echo "## ✅ Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image**: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Cluster**: fiap-mechanics-${{ inputs.environment }}-cluster" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -n "$INGRESS_URL" ]; then
+            echo "**Application URL**: http://$INGRESS_URL" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Application URL**:  Run \`kubectl get ingress -n default\` (Load Balancer provisioning 5-10 min)" >> $GITHUB_STEP_SUMMARY
+          fi

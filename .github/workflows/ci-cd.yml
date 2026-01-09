@@ -47,38 +47,22 @@ jobs:
       environment: ${{ needs.resolve-environment.outputs.environment }}
     secrets: inherit
 
-  deploy-ecr:
-    name: Deploy to ECR
-    needs: 
-      - tests
-      - resolve-environment
-      - apply-infra
-    uses: ./.github/workflows/deploy-ecr.yml
+  deploy:
+    name: Build and Deploy Application
+    needs: [tests, resolve-environment, apply-infra]
+    uses:  ./.github/workflows/deploy.yml
     with:
       environment: ${{ needs.resolve-environment.outputs.environment }}
-    secrets: inherit
-
-  deploy-k8s:
-    needs: 
-      - tests
-      - resolve-environment
-      - apply-infra
-      - deploy-ecr
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    uses: ./.github/workflows/deploy-k8s.yml
-    with:
-      environment: ${{ needs.resolve-environment.outputs.environment }}
-      image_tag: ${{ github.sha }}
     secrets: inherit
 
   deployment-summary:
-    needs: [resolve-environment, deploy-k8s]
+    needs: [resolve-environment, deploy]
     if: success()
     runs-on: ubuntu-latest
     steps:
       - name: Generate Deployment Summary
         run: |
-          echo "##Deployment Successful!" >> $GITHUB_STEP_SUMMARY
+          echo "## Deployment Successful!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "###Deployment Details" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -93,7 +77,7 @@ jobs:
           echo "### Pipeline Steps Completed" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "1. ✅ **Tests** - All tests passed" >> $GITHUB_STEP_SUMMARY
-          echo "2. ✅ **Infrastructure** - Terraform applied >> $GITHUB_STEP_SUMMARY
+          echo "2. ✅ **Infrastructure** - Terraform applied" >> $GITHUB_STEP_SUMMARY
           echo "3. ✅ **Docker Build** - Image built and pushed to ECR" >> $GITHUB_STEP_SUMMARY
           echo "4. ✅ **K8s Deploy** - Application deployed via Helm" >> $GITHUB_STEP_SUMMARY
 

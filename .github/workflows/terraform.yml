@@ -22,3 +22,12 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with: 
           terraform_version: 1.14.3
+
+      - name: Init terraform
+        run: |
+          cd infra &&
+          terraform init -backend-config="key=dev.tfstate" -reconfigure
+
+      - name: Apply terraform
+        run: terraform apply -auto-approve
+      

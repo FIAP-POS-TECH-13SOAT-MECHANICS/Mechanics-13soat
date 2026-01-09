@@ -4,6 +4,14 @@
 
 Repositório do projeto destinado aos Tech Challenges da Oficina Mecânica da FIAP.
 
+A implementação está dividida em 5 fases. Para os detalhes de cada fase, veja os [objetivos do projeto](./docs/objectives.md).
+
+- [x] **Fase 1**: Implementação inicial em arquitetura monolítica
+- [x] **Fase 2**: Evolução da arquitetura e CI/CD para infraestrutura e deploy
+- [ ] Fase 3
+- [ ] Fase 4
+- [ ] Fase 5
+
 ## Definição do ambiente
 
 - SDK: .NET 8.0
@@ -69,6 +77,8 @@ Esse repositório contém instruções para execução local das análises com *
 - [Diagramas](./docs/diagrams.md)
 - [Diretrizes de design do projeto](./docs/design-guidelines.md)
 - [Fluxo de Ordem de Serviço](./docs/work-order-flow.md)
+- [Informações sobre a Infraestrutura](./infra/README.md)
 - [Migrações do banco de dados](./docs/migrations.md)
 - [Objetivos](./docs/objectives.md)
 - [Relatórios](./docs/reports/README.md)
+- [Scripts para deploy](./scripts/README.md)

@@ -1,5 +1,11 @@
+data "aws_caller_identity" "current" {}
+
+locals {
+  tfstate_bucket_name = "fiap-mechanics-tf-${data.aws_caller_identity.current.account_id}"
+}
+
 data "aws_s3_bucket" "tfstate" {
-  bucket = "fiap-mechanics-tf"
+  bucket = local.tfstate_bucket_name
 }
 
 resource "aws_s3_bucket_versioning" "versioning" {
@@ -31,10 +37,10 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "tfstate" {
 
 terraform {
   backend "s3" {
-    bucket  = "fiap-mechanics-tf"
+    bucket  = local.tfstate_bucket_name
     region  = "us-east-1"
     encrypt = true
 
-    dynamodb_table = "fiap-mechanics-tf"
+    dynamodb_table = local.tfstate_bucket_name
   }
 }

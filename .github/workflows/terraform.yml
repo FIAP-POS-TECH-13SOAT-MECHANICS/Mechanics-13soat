@@ -25,7 +25,10 @@ jobs:
 
       - name: Create bucket
         run: |
-          aws s3 mb s3://fiap-mechanics-tf --region us-east-1 || true
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          BUCKET_NAME="fiap-mechanics-tf-${ACCOUNT_ID}"
+
+          aws s3 mb s3://${BUCKET_NAME} --region us-east-1 || true
 
           aws dynamodb create-table \
             --table-name fiap-mechanics-tf \

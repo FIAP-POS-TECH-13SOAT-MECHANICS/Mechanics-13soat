@@ -33,7 +33,6 @@ jobs:
         id: resolve
         uses: ./.github/actions/resolve-environment
 
-
   terraform:
     needs: 
       - tests
@@ -49,8 +48,9 @@ jobs:
     secrets: inherit
 
   deploy-ecr:
-    needs: 
+    needs:
       - terraform
+      - resolve-environment
 
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
 

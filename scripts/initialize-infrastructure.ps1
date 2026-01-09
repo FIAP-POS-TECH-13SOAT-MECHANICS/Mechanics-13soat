@@ -59,12 +59,29 @@ helm install mailpit jouve/mailpit `
   --set mailpit.smtp. authFile.enabled="true" `
   --set mailpit.smtp.authFile.htpasswd="$($smtpAuth.userName):$($smtpAuth.password)"
 
-# usar variáveis de ambiente (GitHub Actions)
+
+$awsAccessKeyId = $env:AWS_ACCESS_KEY_ID
+$awsSecretAccessKey = $env:AWS_SECRET_ACCESS_KEY
+$awsSessionToken = $env:AWS_SESSION_TOKEN
+
+if ([string]::IsNullOrWhiteSpace($awsAccessKeyId)) {
+    Write-Host -ForegroundColor Yellow "Using aws configure credentials"
+    $awsAccessKeyId = aws configure get aws_access_key_id
+    $awsSecretAccessKey = aws configure get aws_secret_access_key
+    $awsSessionToken = aws configure get aws_session_token
+}
+
+if ([string]::IsNullOrWhiteSpace($awsAccessKeyId)) {
+    Write-Host -ForegroundColor Red "Failed to get AWS credentials!"
+    Write-Host -ForegroundColor Yellow "Please run 'aws configure' or set environment variables"
+    exit 1
+}
+
 kubectl create secret generic aws-credentials `
   --namespace external-secrets `
-  --from-literal=access-key-id="$env:AWS_ACCESS_KEY_ID" `
-  --from-literal=secret-access-key="$env:AWS_SECRET_ACCESS_KEY" `
-  --from-literal=session-token="$env:AWS_SESSION_TOKEN" `
+  --from-literal=access-key-id="$awsAccessKeyId" `
+  --from-literal=secret-access-key="$awsSecretAccessKey" `
+  --from-literal=session-token="$awsSessionToken" `
   --dry-run=client `
   --output yaml | kubectl apply -f -
 

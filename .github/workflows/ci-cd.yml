@@ -46,3 +46,17 @@ jobs:
       environment: ${{ needs.resolve-environment.outputs.environment }}
 
     secrets: inherit
+
+  terraform:
+    needs: 
+      - tests
+      - resolve-environment
+
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
+    uses: ./.github/workflows/terraform.yml
+
+    with:
+      environment: ${{ needs.resolve-environment.outputs.environment }}
+
+    secrets: inherit

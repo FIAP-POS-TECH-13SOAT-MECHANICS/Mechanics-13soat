@@ -51,6 +51,7 @@ jobs:
     needs: 
       - tests
       - resolve-environment
+      - deploy-ecr
 
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
 

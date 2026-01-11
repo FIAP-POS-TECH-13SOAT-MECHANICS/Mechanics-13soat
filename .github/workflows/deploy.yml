@@ -25,7 +25,8 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Update AWS Credentials for ESO
-        run: | 
+        run: |
+          aws eks update-kubeconfig --name fiap-mechanics-${{ inputs.environment }}-cluster --region us-east-1
           kubectl create secret generic aws-credentials \
             --namespace external-secrets \
             --from-literal=access-key-id="${{ secrets.AWS_ACCESS_KEY_ID }}" \

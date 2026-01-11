@@ -46,7 +46,7 @@ jobs:
     secrets: inherit
 
   k8s:
-    name: Install kubernetes resources
+    name: Install kubernetes dependencies
     needs:
       - terraform
       - resolve-environment

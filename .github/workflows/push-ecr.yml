@@ -35,6 +35,6 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           push: true
-          tags: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/fiap-mechanics-${{ inputs.environment }}-cr:${{ github.sha }}
+          tags: ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/fiap-mechanics-${{ inputs.environment }}-cr:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max

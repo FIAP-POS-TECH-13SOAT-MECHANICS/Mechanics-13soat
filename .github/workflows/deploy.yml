@@ -17,19 +17,29 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v5
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Update AWS Credentials for ESO
+        run: | 
+          kubectl create secret generic aws-credentials \
+            --namespace external-secrets \
+            --from-literal=access-key-id="${{ secrets.AWS_ACCESS_KEY_ID }}" \
+            --from-literal=secret-access-key="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+            --from-literal=session-token="${{ secrets.AWS_SESSION_TOKEN }}" \
+            --dry-run=client \
+            --output yaml | kubectl apply -f -
+
       - name: Get ECR Repository URI
         run: echo "REPOSITORY_URI=$(aws ecr describe-repositories --repository-names fiap-mechanics-${{ inputs.environment }}-cr --query 'repositories[0].repositoryUri' --output text)" >> $GITHUB_ENV
 
       - name: Install Helm Chart
         run: |
-          aws eks update-kubeconfig --name fiap-mechanics-${{ inputs.environment }}-cluster --region  ${{ secrets.AWS_REGION }}
+          aws eks update-kubeconfig --name fiap-mechanics-${{ inputs.environment }}-cluster --region ${{ secrets.AWS_REGION }}
           helm upgrade --install fiap-mechanics ./k8s \
             --set image.repository=$REPOSITORY_URI \
             --set image.tag=${{ github.sha }} \

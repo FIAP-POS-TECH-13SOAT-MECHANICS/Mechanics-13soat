@@ -29,7 +29,7 @@ jobs:
       - name: Create bucket
         run: |
           BUCKET_NAME="fiap-mechanics-tf-${ACCOUNT_ID}"
-          aws s3 mb s3://${BUCKET_NAME} --region us-east-1 || true
+          aws s3 mb s3://${BUCKET_NAME} --region ${{ secrets.AWS_REGION }} || true
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -40,7 +40,7 @@ jobs:
           terraform init \
           -backend-config="bucket=fiap-mechanics-tf-${ACCOUNT_ID}" \
           -backend-config="key=${{ inputs.environment }}.tfstate" \
-          -backend-config="region=us-east-1" \
+          -backend-config="region=${{ secrets.AWS_REGION }}" \
           -backend-config="encrypt=true"
 
       - name: Apply terraform

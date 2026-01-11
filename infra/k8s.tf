@@ -52,3 +52,11 @@ resource "aws_eks_node_group" "node_group" {
   instance_types = ["t3.medium", "t3a.medium", "t2.medium"]
   capacity_type  = "SPOT"
 }
+
+data "aws_eks_cluster" "cluster" {
+  name = aws_eks_cluster.cluster.name
+}
+
+data "aws_eks_cluster_auth" "cluster" {
+  name = aws_eks_cluster.cluster.name
+}

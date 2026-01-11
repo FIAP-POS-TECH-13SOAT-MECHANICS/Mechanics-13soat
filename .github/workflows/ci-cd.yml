@@ -45,16 +45,6 @@ jobs:
       environment: ${{ needs.resolve-environment.outputs.environment }}
     secrets: inherit
 
-  k8s:
-    name: Install kubernetes dependencies
-    needs:
-      - terraform
-      - resolve-environment
-    uses: ./.github/workflows/k8s.yml
-    with:
-      environment: ${{ needs.resolve-environment.outputs.environment }}
-    secrets: inherit
-
   push-ecr:
     name: Push Docker image to ECR
     needs:
@@ -68,7 +58,6 @@ jobs:
   deploy:
     name: Deploy to EKS
     needs:
-      - k8s
       - push-ecr
       - resolve-environment
     uses: ./.github/workflows/deploy.yml

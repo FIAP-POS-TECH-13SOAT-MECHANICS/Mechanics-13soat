@@ -1,4 +1,4 @@
-name: Deploy ECR
+name: Push to ECR
 
 on:
   workflow_call:
@@ -26,16 +26,14 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+      - name: Get ECR Repository URI
+        run: echo "REPOSITORY_URI=$(aws ecr describe-repositories --repository-names fiap-mechanics-${{ inputs.environment }}-cr --query 'repositories[0].repositoryUri' --output text)" >> $GITHUB_ENV
 
-      - name: Build, tag, and push the image to Amazon ECR
-        id: build-image
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: fiap-mechanics-${{ inputs.environment }}-cr
-          IMAGE_TAG: ${{ github.sha }}
+      - name: Install Helm Chart
         run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          aws eks update-kubeconfig --name fiap-mechanics-${{ inputs.environment }}-cluster --region us-east-1
+          helm upgrade --install
+            --set image.repository=$REPOSITORY_URI \
+            --set image.tag=${{ github.sha }} \
+            --set app.env=${{ inputs.environment }} \
+            fiap-mechanics ./k8s

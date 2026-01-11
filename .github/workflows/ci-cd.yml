@@ -23,6 +23,8 @@ jobs:
     uses: ./.github/workflows/dotnet.yml
 
   resolve-environment:
+    name: Resolve environment name
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     outputs:
       environment: ${{ steps.resolve.outputs.environment }}
@@ -34,44 +36,42 @@ jobs:
         uses: ./.github/actions/resolve-environment
 
   terraform:
+    name: Apply Terraform
     needs: 
       - tests
       - resolve-environment
-
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-
     uses: ./.github/workflows/terraform.yml
-
     with:
       environment: ${{ needs.resolve-environment.outputs.environment }}
-
-    secrets: inherit
-
-  deploy-ecr:
-    needs:
-      - terraform
-      - resolve-environment
-
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-
-    uses: ./.github/workflows/deploy-ecr.yml
-
-    with:
-      environment: ${{ needs.resolve-environment.outputs.environment }}
-
     secrets: inherit
 
   k8s:
+    name: Install kubernetes resources
     needs:
-      - deploy-ecr
       - terraform
       - resolve-environment
-
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-
     uses: ./.github/workflows/k8s.yml
-
     with:
       environment: ${{ needs.resolve-environment.outputs.environment }}
+    secrets: inherit
 
+  push-ecr:
+    name: Push Docker image to ECR
+    needs:
+      - terraform
+      - resolve-environment
+    uses: ./.github/workflows/push-ecr.yml
+    with:
+      environment: ${{ needs.resolve-environment.outputs.environment }}
+    secrets: inherit
+
+  deploy:
+    name: Deploy to EKS
+    needs:
+      - k8s
+      - push-ecr
+      - resolve-environment
+    uses: ./.github/workflows/deploy.yml
+    with:
+      environment: ${{ needs.resolve-environment.outputs.environment }}
     secrets: inherit

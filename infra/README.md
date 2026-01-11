@@ -11,10 +11,11 @@ Segue abaixo uma definição de cada recurso, agrupados pelo arquivo do Terrafor
 
 ### Back-end ([`backend.tf`](./backend.tf))
 
-Armazena os states do Terraform utilizando S3 e DynamoDB.
+Armazena os states do Terraform utilizando S3.
 Cada ambiente - dev, stg ou prod - possui seu próprio arquivo de state no bucket S3, que é versionado e criptografado.
 
-A tabela DynamoDB é utilizada para controle de concorrência (state locking), permitindo a execução segura dos scripts em pipelines de CI/CD.
+O nome do bucket deve ser único na região `us-east-1` e deve ser passado por parâmetro.
+O back-end possui controle de concorrência (state locking), permitindo a execução segura dos scripts em pipelines de CI/CD.
 
 ### Registro de contêineres ([`cr.tf`](./cr.tf))
 
@@ -78,6 +79,7 @@ Os demais arquivos definem variáveis, outputs e geração de senhas.
   - Define valores utilizados em todo o projeto, como nome do projeto e região AWS.
   - `environment`: define o ambiente, que pode ser `dev`, `stg` ou `prod`.
   - `public_access`: permite sobreescrever o comportamento padrão de permitir acesso público somente se for `dev` ou `stg`.
+  - `bucket_name`: nome do Bucket S3 para armazenamento dos states
 - [`providers.tf`](./providers.tf)
   - O projeto utiliza o pacote de AWS e o gerador de senhas oficiais da HashiCorp.
 
@@ -97,7 +99,7 @@ Os comandos para cada passo (incluindo a instalação das ferramentas) estão na
 
 #### Criação do ambiente
 
-1. Crie um bucket no S3 e uma tabela no DynamoDB com o nome `fiap-mechanics-tf`
+1. Crie um bucket no S3
 2. Aplique os scripts do Terraform
 3. Configure o kubectl com `aws eks update-kubeconfig`
 4. Execute os charts Helm para os add-ons do Kubernetes
@@ -142,14 +144,12 @@ aws configure
 
 ### Execução dos scripts
 
-Primeiro crie um bucket no S3 e uma tabela no DynamoDB para servirem de backend pro Terraform.
+Primeiro crie um bucket no S3 para servir de backend pro Terraform.
+Para garantir que o nome seja único, utilize o nome `fiap-mechanics-tf` e o ID da conta da AWS como sufixo, como no exemplo abaixo.
 
 ```powershell
-aws s3 mb s3://fiap-mechanics-tf --region us-east-1
-aws dynamodb create-table --table-name fiap-mechanics-tf `
-  --attribute-definitions AttributeName=LockID,AttributeType=S `
-  --key-schema AttributeName=LockID,KeyType=HASH `
-  --billing-mode PAY_PER_REQUEST | Out-Null
+$awsAccountId = aws sts get-access-key-info --access-key-id $(aws configure get aws_access_key_id) --query Account --output text
+aws s3 mb s3://fiap-mechanics-tf-$awsAccountId --region us-east-1
 ```
 
 Por padrão, será gerado um ambiente de desenvolvimento (dev).
@@ -166,11 +166,9 @@ Após a criação do Bucket, acesse a pasta `infra`.
 Passe a chave do backend de acordo com o ambiente desejado (dev, stg ou prod) e aplique os scripts.
 
 ```powershell
-terraform init -backend-config="key=dev.tfstate" -reconfigure
-terraform apply -auto-approve
+terraform init -backend-config="bucket=fiap-mechanics-tf-$awsAccountId" -backend-config="key=dev.tfstate" -reconfigure
+terraform apply
 ```
-
-> Observação: evite usar `-auto-approve` em ambientes reais.
 
 O processo leva de 10 a 15 minutos.
 Serão exibidas algumas informações úteis sobre o ambiente.
@@ -183,8 +181,8 @@ várias dessas informações só são exibidas se o projeto estiver definido com
 Se quiser gerenciar outros ambientes, altere o state e reconfigure o Terraform.
 
 ```powershell
-terraform init -backend-config="key=stg.tfstate" -reconfigure
-terraform apply -var="environment=stg"
+terraform init -backend-config="bucket=fiap-mechanics-tf-fulano" -backend-config="key=stg.tfstate" -reconfigure
+terraform apply -var="bucket_name=fiap-mechanics-tf-fulano" -var="environment=stg"
 ```
 
 ### Configuração do ambiente via Helm

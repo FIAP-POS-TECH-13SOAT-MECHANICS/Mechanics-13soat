@@ -3,21 +3,19 @@ param ([string]$environment)
 $environment = Get-Environment $environment
 
 # back-end do Terraform
-Write-Host -ForegroundColor Yellow "Creating DynamoDB 'fiap-mechanics-tf'..."
-aws dynamodb create-table `
-  --table-name fiap-mechanics-tf `
-  --attribute-definitions AttributeName=LockID,AttributeType=S `
-  --key-schema AttributeName=LockID,KeyType=HASH `
-  --billing-mode PAY_PER_REQUEST | Out-Null
-Write-Host -ForegroundColor Yellow "Creating bucket 'fiap-mechanics-tf'..."
-aws s3 mb s3://fiap-mechanics-tf --region us-east-1 | Out-Null
+$bucketName = "fiap-mechanics-tf-$(aws sts get-access-key-info --access-key-id $(aws configure get aws_access_key_id) --query Account --output text)"
+Write-Host -ForegroundColor Yellow "Creating bucket '$bucketName'..."
+aws s3 mb s3://$bucketName --region us-east-1 | Out-Null
 
 # subir infraestrutura pelo Terraform
 Write-Host
 Write-Host -ForegroundColor Yellow "Updating infrastructure for environment '$environment'..."
 
-terraform -chdir="./infra" init -backend-config="key=$environment.tfstate" -reconfigure
+terraform -chdir="./infra" init -backend-config="bucket=$bucketName" -backend-config="key=$environment.tfstate" -reconfigure
+if ($LASTEXITCODE -ne 0) { exit 1 }
+
 terraform -chdir="./infra" apply -var="environment=$environment" -auto-approve
+if ($LASTEXITCODE -ne 0) { exit 1 }
 
 Write-Host
 Write-Host -ForegroundColor Yellow "Configuring cluster..."
@@ -32,7 +30,9 @@ helm repo update
 
 Write-Host
 Write-Host -ForegroundColor Yellow "Installing charts..."
+Write-Host "Already installed charts will be ignored."
 # utilizar "install" para ignorar recursos já instalados
+
 helm install external-secrets external-secrets/external-secrets --namespace external-secrets --create-namespace
 
 helm install ingress-nginx nginx/ingress-nginx --namespace ingress-nginx --create-namespace

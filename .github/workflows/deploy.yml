@@ -29,8 +29,8 @@ jobs:
 
       - name: Install Helm Chart
         run: |
-          aws eks update-kubeconfig --name fiap-mechanics-${{ inputs.environment }}-cluster --region us-east-1
-          helm upgrade --install fiap-mechanics ./k8s
+          aws eks update-kubeconfig --name fiap-mechanics-${{ inputs.environment }}-cluster --region  ${{ secrets.AWS_REGION }}
+          helm upgrade --install fiap-mechanics ./k8s \
             --set image.repository=$REPOSITORY_URI \
             --set image.tag=${{ github.sha }} \
             --set app.env=${{ inputs.environment }}

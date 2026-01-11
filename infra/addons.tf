@@ -53,4 +53,6 @@ resource "helm_release" "external_secrets" {
 
   repository = "https://charts.external-secrets.io"
   chart      = "external-secrets"
+
+  wait_for_jobs = true
 }

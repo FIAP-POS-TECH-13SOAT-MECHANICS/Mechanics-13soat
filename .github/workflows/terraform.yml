@@ -58,5 +58,5 @@ jobs:
       - name: Apply terraform
         run: |
           cd infra &&
-          terraform apply -var="environment=${{ inputs.environment }}"
+          terraform apply -var="environment=${{ inputs.environment }}" -auto-approve
       

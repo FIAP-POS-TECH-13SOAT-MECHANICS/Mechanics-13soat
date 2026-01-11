@@ -24,17 +24,6 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Update AWS Credentials for ESO
-        run: |
-          aws eks update-kubeconfig --name fiap-mechanics-${{ inputs.environment }}-cluster --region us-east-1
-          kubectl create secret generic aws-credentials \
-            --namespace external-secrets \
-            --from-literal=access-key-id="${{ secrets.AWS_ACCESS_KEY_ID }}" \
-            --from-literal=secret-access-key="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
-            --from-literal=session-token="${{ secrets.AWS_SESSION_TOKEN }}" \
-            --dry-run=client \
-            --output yaml | kubectl apply -f -
-
       - name: Get ECR Repository URI
         run: echo "REPOSITORY_URI=$(aws ecr describe-repositories --repository-names fiap-mechanics-${{ inputs.environment }}-cr --query 'repositories[0].repositoryUri' --output text)" >> $GITHUB_ENV
 

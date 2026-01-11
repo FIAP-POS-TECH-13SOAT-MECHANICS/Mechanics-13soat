@@ -65,4 +65,4 @@ jobs:
             --set mailpit.smtp.authFile.htpasswd="${USERNAME}:${PASSWORD}"
             
       - name: Watch Kubernetes Progress
-        run: kubectl get pods -n external-secrets --watch
+        run: kubectl wait --for=condition=Ready pod --all -n external-secrets --timeout=90s

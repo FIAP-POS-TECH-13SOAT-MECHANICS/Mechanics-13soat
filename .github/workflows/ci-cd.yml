@@ -60,3 +60,18 @@ jobs:
       environment: ${{ needs.resolve-environment.outputs.environment }}
 
     secrets: inherit
+
+  k8s:
+    needs:
+      - deploy-ecr
+      - terraform
+      - resolve-environment
+
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+
+    uses: ./.github/workflows/k8s.yml
+
+    with:
+      environment: ${{ needs.resolve-environment.outputs.environment }}
+
+    secrets: inherit

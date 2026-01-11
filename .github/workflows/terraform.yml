@@ -49,7 +49,7 @@ jobs:
           cd infra &&
           terraform init \
           -backend-config="bucket=fiap-mechanics-tf-${ACCOUNT_ID}" \
-          -backend-config="key=dev.tfstate" \
+          -backend-config="key=${{ inputs.environment }}.tfstate" \
           -backend-config="region=us-east-1" \
           -backend-config="encrypt=true" \
           -backend-config="dynamodb_table=fiap-mechanics-tf" \
@@ -58,5 +58,5 @@ jobs:
       - name: Apply terraform
         run: |
           cd infra &&
-          terraform apply -auto-approve
+          terraform apply -var="environment=${{ inputs.environment }}"
       

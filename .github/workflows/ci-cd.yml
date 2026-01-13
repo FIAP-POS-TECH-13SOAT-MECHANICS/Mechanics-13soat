@@ -48,7 +48,6 @@ jobs:
   deploy:
     name: Deploy on EKS
     needs:
-      - push-ecr
       - resolve-environment
     uses: ./.github/workflows/deploy.yml
     with:

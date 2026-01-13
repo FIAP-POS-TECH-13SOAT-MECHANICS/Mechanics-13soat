@@ -11,10 +11,12 @@ Segue abaixo uma definição de cada recurso, agrupados pelo arquivo do Terrafor
 
 ### Back-end ([`backend.tf`](./backend.tf))
 
-Armazena os states do Terraform utilizando S3 e DynamoDB.
+Armazena os states do Terraform utilizando S3.
 Cada ambiente - dev, stg ou prod - possui seu próprio arquivo de state no bucket S3, que é versionado e criptografado.
 
-A tabela DynamoDB é utilizada para controle de concorrência (state locking), permitindo a execução segura dos scripts em pipelines de CI/CD.
+O nome do bucket deve ser único na região `us-east-1` e deve ser passado por parâmetro.
+Utilize o prefixo `fiap-mechanics-tf-` e o ID da conta AWS.
+O back-end possui controle de concorrência (state locking), permitindo a execução segura dos scripts em pipelines de CI/CD.
 
 ### Registro de contêineres ([`cr.tf`](./cr.tf))
 
@@ -51,7 +53,16 @@ Isso torna a sub-rede acessível a partir da internet, possuindo um IP público 
 
 Para as sub-redes privadas, é necessário um serviço NAT (Network Address Translation) para que os recursos da rede interna possam acessar à internet - por exemplo, para baixar imagens do repositório ECR - sem ficarem expostos a conexões de fora da VPC. Utilizamos o serviço de NAT Gateway da AWS.
 
-### Serviço de e-mail
+### Dependências externas ([`addons.tf](./addons.tf))
+
+Instala (via Helm charts) as dependências do projeto no cluster EKS.
+
+- Metrics Server: obtém métricas do sistema para permitir o funcionamento do HPA
+- Nginx Ingress Controller: gera um Network Load Balancer para permitir acesso externo ao projeto
+- External Secrets Operator (ESO): importa credenciais de acesso do Secrets Manager da AWS
+- MailPit: servidor SMTP e cliente de e-mail para simular o envio de mensagens
+
+#### Sobre o serviço de e-mail
 
 Como não há um serviço de disparo de e-mail na AWS Academy (SES não está disponível), o projeto segue utilizando Mailpit para simular o envio de mensagens.
 É executado utilizando um script Helm, com usuário e senha gerados pelo Terraform e armazenados no Secrets Manager da AWS.
@@ -79,7 +90,7 @@ Os demais arquivos definem variáveis, outputs e geração de senhas.
   - `environment`: define o ambiente, que pode ser `dev`, `stg` ou `prod`.
   - `public_access`: permite sobreescrever o comportamento padrão de permitir acesso público somente se for `dev` ou `stg`.
 - [`providers.tf`](./providers.tf)
-  - O projeto utiliza o pacote de AWS e o gerador de senhas oficiais da HashiCorp.
+  - O projeto utiliza o pacote de AWS, Helm e o gerador de senhas oficiais da HashiCorp.
 
 ## Criação via Terraform e Helm
 
@@ -97,15 +108,10 @@ Os comandos para cada passo (incluindo a instalação das ferramentas) estão na
 
 #### Criação do ambiente
 
-1. Crie um bucket no S3 e uma tabela no DynamoDB com o nome `fiap-mechanics-tf`
+1. Crie um bucket no S3
 2. Aplique os scripts do Terraform
 3. Configure o kubectl com `aws eks update-kubeconfig`
-4. Execute os charts Helm para os add-ons do Kubernetes
-   - External Secrets Operator
-   - Metrics Server
-   - Mailpit
-   - Nginx Controller (opcional)
-5. Crie uma secret chamada `aws-credentials` no namespace `external-secrets`
+4. Crie uma secret chamada `aws-credentials` no namespace `external-secrets`
 
 #### Deploy da aplicação
 
@@ -142,14 +148,12 @@ aws configure
 
 ### Execução dos scripts
 
-Primeiro crie um bucket no S3 e uma tabela no DynamoDB para servirem de backend pro Terraform.
+Primeiro crie um bucket no S3 para servir de backend pro Terraform.
+Para garantir que o nome seja único, utilize o nome `fiap-mechanics-tf` e o ID da conta da AWS como sufixo, como no exemplo abaixo.
 
 ```powershell
-aws s3 mb s3://fiap-mechanics-tf --region us-east-1
-aws dynamodb create-table --table-name fiap-mechanics-tf `
-  --attribute-definitions AttributeName=LockID,AttributeType=S `
-  --key-schema AttributeName=LockID,KeyType=HASH `
-  --billing-mode PAY_PER_REQUEST | Out-Null
+$awsAccountId = aws sts get-access-key-info --access-key-id $(aws configure get aws_access_key_id) --query Account --output text
+aws s3 mb s3://fiap-mechanics-tf-$awsAccountId --region us-east-1
 ```
 
 Por padrão, será gerado um ambiente de desenvolvimento (dev).
@@ -166,11 +170,9 @@ Após a criação do Bucket, acesse a pasta `infra`.
 Passe a chave do backend de acordo com o ambiente desejado (dev, stg ou prod) e aplique os scripts.
 
 ```powershell
-terraform init -backend-config="key=dev.tfstate" -reconfigure
-terraform apply -auto-approve
+terraform init -backend-config="bucket=fiap-mechanics-tf-$awsAccountId" -backend-config="key=dev.tfstate" -reconfigure
+terraform apply
 ```
-
-> Observação: evite usar `-auto-approve` em ambientes reais.
 
 O processo leva de 10 a 15 minutos.
 Serão exibidas algumas informações úteis sobre o ambiente.
@@ -183,11 +185,11 @@ várias dessas informações só são exibidas se o projeto estiver definido com
 Se quiser gerenciar outros ambientes, altere o state e reconfigure o Terraform.
 
 ```powershell
-terraform init -backend-config="key=stg.tfstate" -reconfigure
+terraform init -backend-config="bucket=fiap-mechanics-tf-fulano" -backend-config="key=stg.tfstate" -reconfigure
 terraform apply -var="environment=stg"
 ```
 
-### Configuração do ambiente via Helm
+### Configuração do ambiente
 
 Utilize o AWS CLI para baixar as configurações do cluster EKS no kubectl.
 Ajuste o nome do cluster de acordo com o ambiente.
@@ -196,14 +198,9 @@ Ajuste o nome do cluster de acordo com o ambiente.
 aws eks update-kubeconfig --name fiap-mechanics-dev-cluster --region us-east-1
 ```
 
-Instale o [External Secrets Operator (ESO)](https://external-secrets.io):
-
-```powershell
-helm repo add external-secrets https://charts.external-secrets.io; helm repo update
-helm upgrade --install external-secrets external-secrets/external-secrets --namespace external-secrets --create-namespace
-```
-
-Adicione outra secret com as credenciais da AWS para o ESO:
+O External Secrets Operator (ESO) requer acesso ao Secets Manager da AWS.
+O ideal seria utilizar IRSA (IAM Roles for Service Accounts) para evitar expor as credenciais da conta AWS, mas por limitações do ambiente AWS Academy não é possível usar essa abordagem.
+Portanto, adicione uma secret com as credenciais para que o ESO acesse o Secrets Manager.
 
 ```powershell
 kubectl create secret generic aws-credentials `
@@ -212,28 +209,6 @@ kubectl create secret generic aws-credentials `
   --from-literal=secret-access-key="$(aws configure get aws_secret_access_key)" `
   --from-literal=session-token="$(aws configure get aws_session_token)"
 ```
-
-Instale também o [Metrics Server](https://github.com/kubernetes/metrics) para habilitar o Horizontal Pod Autoscaling:
-
-```powershell
-helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server; helm repo update
-helm upgrade --install metrics-server metrics-server/metrics-server --namespace kube-system  `
-  --set args[0]=--kubelet-insecure-tls `
-  --set args[1]=--kubelet-preferred-address-types=InternalIP
-```
-
-Por fim, baixe as credenciais de e-mail (geradas pelo Terraform) e instale o Mailpit.
-
-```powershell
-$smtpAuth = aws secretsmanager get-secret-value --secret-id fiap-mechanics-dev-email --query SecretString --output text | ConvertFrom-Json
-helm repo add jouve https://jouve.github.io/charts; helm repo update
-helm upgrade --install mailpit jouve/mailpit `
-  --set mailpit.smtp.authFile.enabled="true" `
-  --set mailpit.smtp.authFile.htpasswd="$($smtpAuth.userName):$($smtpAuth.password)"
-```
-
-Aguarde até o pod `external-secrets-webhook` ser criado e estar pronto.
-Utilize o comando `kubectl get pods -n external-secrets --watch` para monitorar o progresso.
 
 ### Upload de imagens para o ECR
 
@@ -282,13 +257,8 @@ Observe que o Swagger não está disponível se o ambiente for `prod`.
 #### Ingress Controller
 
 Com um Ingress Controller, são gerados URLs públicas para o serviço, de forma que seja possível acessar diretamente pelo navegador.
-É necessário instalar o [NGINX Ingress Controller](https://kubernetes.github.io/ingress-nginx), que cria um serviço do tipo `LoadBalancer` responsável por expor o cluster externamente.
-A instalação pode ser feita via Helm:
-
-```powershell
-helm repo add nginx https://kubernetes.github.io/ingress-nginx; helm repo update
-helm upgrade --install ingress-nginx nginx/ingress-nginx --namespace ingress-nginx --create-namespace
-```
+O projeto utiliza [NGINX Ingress Controller](https://kubernetes.github.io/ingress-nginx), que cria um serviço do tipo `LoadBalancer` responsável por expor o cluster externamente.
+A instalação é feita pelo Terraform.
 
 Utilize o comando abaixo para obter a URL do Swagger:
 

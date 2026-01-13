@@ -4,9 +4,6 @@ $environment = Get-Environment $environment
 
 Write-Host -ForegroundColor Yellow "Destroying environment: $environment"
 
-Write-Host -ForegroundColor Yellow "Removing ingress controller..."
-helm uninstall ingress-nginx 2>$null
-
 Write-Host -ForegroundColor Yellow "Deleting secrets..."
 aws secretsmanager list-secrets --query "SecretList[?starts_with(Name, 'fiap-mechanics-$environment')].Name" | ConvertFrom-Json | `
   ForEach-Object { aws secretsmanager delete-secret --secret-id $_ --force-delete-without-recovery }
@@ -18,6 +15,9 @@ $imageList = aws ecr list-images --repository-name $repositoryName --query "imag
 aws ecr batch-delete-image --repository-name $repositoryName --image-ids $imageList
 
 Write-Host -ForegroundColor Yellow "Running terraform destroy..."
+$bucketName = "fiap-mechanics-tf-$(aws sts get-access-key-info --access-key-id $(aws configure get aws_access_key_id) --query Account --output text)"
+terraform -chdir="./infra" init -backend-config="bucket=$bucketName" -backend-config="key=$environment.tfstate" -reconfigure
 terraform -chdir="./infra" destroy -var="environment=$environment" -auto-approve
 
 Write-Host -ForegroundColor Green "Infrastructure for environment '$environment' has been destroyed."
+Write-Host "The S3 bucket may be deleted manually."

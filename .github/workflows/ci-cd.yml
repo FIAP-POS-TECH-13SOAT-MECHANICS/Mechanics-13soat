@@ -48,6 +48,7 @@ jobs:
   deploy:
     name: Deploy on EKS
     needs:
+      - terraform
       - resolve-environment
     uses: ./.github/workflows/deploy.yml
     with:

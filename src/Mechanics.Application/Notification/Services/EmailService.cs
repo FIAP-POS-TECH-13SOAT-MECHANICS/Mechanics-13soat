@@ -27,7 +27,7 @@ public class EmailService(ILogger<EmailService> logger, IEmailSenderService send
     {
         logger.LogInformation("Sending work order pending approval to '{EmailAddress}'", customer.Email);
 
-        var baseUrl = $"{appInfo.Value.HostBaseUrl}/api/work-orders";
+        var baseUrl = $"{appInfo.Value.BaseUrl}/api/work-orders";
         var queryParams = $"document={customer.Document}&accessKey={workOrder.AccessKey}";
         var approveUrl = $"{baseUrl}/approve-budget?{queryParams}";
         var rejectUrl = $"{baseUrl}/reject-budget?{queryParams}";

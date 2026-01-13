@@ -297,11 +297,7 @@ public class EmailServiceTests
 
     private static EmailService CreateInstance(IEmailSenderService senderService)
     {
-        var options = new OptionsWrapper<AppInfo>(new AppInfo
-        {
-            HostBaseUrl = "http://localhost:5000",
-        });
-
+        var options = new OptionsWrapper<AppInfo>(new AppInfo { BaseUrl = "http://localhost:5000" });
         return new EmailService(new NullLoggerFactory().CreateLogger<EmailService>(), senderService, options);
     }
 }

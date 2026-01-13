@@ -2,5 +2,5 @@
 
 public class AppInfo
 {
-    public required string HostBaseUrl { get; init; }
+    public required string BaseUrl { get; init; }
 }

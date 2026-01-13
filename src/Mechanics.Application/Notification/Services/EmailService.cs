@@ -1,13 +1,16 @@
 using Mechanics.Application.Notification.Templates;
+using Mechanics.Application.Options;
 using Mechanics.Domain.Auth;
 using Mechanics.Domain.Customers;
 using Mechanics.Domain.WorkOrders;
 using Mechanics.Infra.Integrations.EmailSender;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace Mechanics.Application.Notification.Services;
 
-public class EmailService(ILogger<EmailService> logger, IEmailSenderService senderService) : IEmailService
+public class EmailService(ILogger<EmailService> logger, IEmailSenderService senderService, IOptions<AppInfo> appInfo)
+    : IEmailService
 {
     public async Task SendWorkOrderCreated(Customer customer, WorkOrder workOrder, CancellationToken cancellationToken = default)
     {
@@ -24,7 +27,12 @@ public class EmailService(ILogger<EmailService> logger, IEmailSenderService send
     {
         logger.LogInformation("Sending work order pending approval to '{EmailAddress}'", customer.Email);
 
-        var message = WorkOrderEmailTemplates.WorkOrderPendingApproval(customer, workOrder, budget);
+        var baseUrl = $"{appInfo.Value.HostBaseUrl}/api/work-orders";
+        var queryParams = $"document={customer.Document}&accessKey={workOrder.AccessKey}";
+        var approveUrl = $"{baseUrl}/approve-budget?{queryParams}";
+        var rejectUrl = $"{baseUrl}/reject-budget?{queryParams}";
+
+        var message = WorkOrderEmailTemplates.WorkOrderPendingApproval(customer, workOrder, budget, approveUrl, rejectUrl);
         await senderService.SendAsync(message, cancellationToken);
 
         logger.LogInformation("Work order pending approval sent to '{EmailAddress}'", customer.Email);
@@ -51,7 +59,8 @@ public class EmailService(ILogger<EmailService> logger, IEmailSenderService send
         logger.LogInformation("Work order cancelled sent to '{EmailAddress}'", customer.Email);
     }
 
-    public async Task SendMechanicBudgetDecision(User mechanic, WorkOrder workOrder, Budget budget, bool approved, CancellationToken cancellationToken = default)
+    public async Task SendMechanicBudgetDecision(User mechanic, WorkOrder workOrder, Budget budget, bool approved,
+        CancellationToken cancellationToken = default)
     {
         logger.LogInformation("Sending mechanic budget decision to '{EmailAddress}'", mechanic.Email);
 

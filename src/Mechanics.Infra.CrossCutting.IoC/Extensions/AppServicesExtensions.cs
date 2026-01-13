@@ -1,4 +1,5 @@
-﻿using Mechanics.Application.Utils;
+﻿using Mechanics.Application.Options;
+using Mechanics.Application.Utils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,6 +19,8 @@ public static class AppServicesExtensions
             .Where(type => type.GetInterfaces().Contains(typeof(IAppService)));
         foreach (var appService in appServices)
             services.AddScoped(appService);
+
+        services.Configure<AppInfo>(configuration.GetSection(nameof(AppInfo)));
 
         return services;
     }

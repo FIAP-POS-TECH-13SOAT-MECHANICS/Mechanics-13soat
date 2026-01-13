@@ -165,6 +165,8 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
         budget.ApprovedAt = DateTime.Now;
         budget.ApprovedByCustomerDocument = normalizedDocument;
         budget.Description = description;
+
+        wo.Status = WorkOrderStatus.InProgress;
         wo.LastUpdate = DateTime.Now;
 
         var hist = new WorkOrderHistory

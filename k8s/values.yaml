@@ -4,6 +4,7 @@ app:
   env: dev
   port: 5000
   autoRunMigrations: true
+  baseUrl: http://localhost:5000
 
 image:
   repository: 000.dkr.ecr.us-east-1.amazonaws.com/fiap-mechanics-dev-cr

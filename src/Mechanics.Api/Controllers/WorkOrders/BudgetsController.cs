@@ -14,17 +14,17 @@ namespace Mechanics.Api.Controllers.WorkOrders;
 public class BudgetsController(BudgetAppService budgetService) : ControllerBase
 {
     /// <summary>
-    ///     Aprova publicamente um budget associado à ordem de serviço.
+    ///     Aprova publicamente um orçamento associado à ordem de serviço.
     ///     Rota pública que o cliente utiliza com seu documento e o código de acesso.
     /// </summary>
     /// <param name="request">Documento e accessKey do cliente.</param>
     /// <param name="cancellationToken">Token para cancelamento.</param>
     [AllowAnonymous]
-    [HttpPost("approve-budget")]
+    [HttpGet("approve-budget")]
     [Consumes(typeof(ApproveBudgetPublicRequest), "application/json")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> ApproveBudget([FromBody] ApproveBudgetPublicRequest request,
+    public async Task<IActionResult> ApproveBudget([FromQuery] ApproveBudgetPublicRequest request,
         CancellationToken cancellationToken)
     {
         await budgetService.PublicApproveBudget(request.Document, request.AccessKey, request.Description, cancellationToken);
@@ -32,15 +32,15 @@ public class BudgetsController(BudgetAppService budgetService) : ControllerBase
     }
 
     /// <summary>
-    ///     Rejeita publicamente um budget associado à ordem de serviço.
+    ///     Rejeita publicamente um orçamento associado à ordem de serviço.
     ///     Rota pública para o cliente sinalizar que não aceita o orçamento.
     /// </summary>
     [AllowAnonymous]
-    [HttpPost("reject-budget")]
+    [HttpGet("reject-budget")]
     [Consumes(typeof(ApproveBudgetPublicRequest), "application/json")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> RejectBudget([FromBody] ApproveBudgetPublicRequest request,
+    public async Task<IActionResult> RejectBudget([FromQuery] ApproveBudgetPublicRequest request,
         CancellationToken cancellationToken)
     {
         await budgetService.PublicRejectBudget(request.Document, request.AccessKey, request.Description, cancellationToken);

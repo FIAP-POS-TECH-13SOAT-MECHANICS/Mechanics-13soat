@@ -1,0 +1,68 @@
+name: Deploy k8s
+# TODO remover?
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: Deployment environment (dev|stg|prod)
+        required: true
+        type: string
+
+jobs:
+  kubernetes:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          
+      - name: Get AWS Account ID
+        run: echo "ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)" >> $GITHUB_ENV
+        
+      - name: Get EKS configuration
+        run: aws eks update-kubeconfig --name fiap-mechanics-${{ inputs.environment }}-cluster --region us-east-1
+        
+      - name: Install ESO
+        run: | 
+          helm repo add external-secrets https://charts.external-secrets.io
+          helm repo update
+          helm upgrade --install external-secrets external-secrets/external-secrets --namespace external-secrets --create-namespace
+          
+      - name: Add AWS Credentials for ESO
+        run: | 
+          kubectl create secret generic aws-credentials \
+            --namespace external-secrets \
+            --from-literal=access-key-id="${{ secrets.AWS_ACCESS_KEY_ID }}" \
+            --from-literal=secret-access-key="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+            --from-literal=session-token="${{ secrets.AWS_SESSION_TOKEN }}" \
+            --dry-run=client \
+            --output yaml | kubectl apply -f -
+            
+      - name: Install Metrics Server
+        run: |
+          helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server
+          helm repo update
+          helm upgrade --install metrics-server metrics-server/metrics-server --namespace kube-system \
+            --set args[0]=--kubelet-insecure-tls \
+            --set args[1]=--kubelet-preferred-address-types=InternalIP
+            
+      - name: Install Mailpit
+        run: |
+          SMTP_AUTH=$(aws secretsmanager get-secret-value --secret-id fiap-mechanics-dev-email --query SecretString --output text)
+          USERNAME=$(echo $SMTP_AUTH | jq -r '.userName')
+          PASSWORD=$(echo $SMTP_AUTH | jq -r '.password')
+          helm repo add jouve https://jouve.github.io/charts
+          helm repo update
+          helm upgrade --install mailpit jouve/mailpit \
+            --set mailpit.smtp.authFile.enabled="true" \
+            --set mailpit.smtp.authFile.htpasswd="${USERNAME}:${PASSWORD}"
+            
+      - name: Wait for External Secrets Operator to be ready
+        run: kubectl wait --for=condition=Ready pod --all -n external-secrets --timeout=90s

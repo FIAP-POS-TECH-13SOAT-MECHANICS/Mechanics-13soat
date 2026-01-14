@@ -14,6 +14,8 @@ RUN dotnet ef migrations bundle  --project src/Mechanics.Infra.Data --startup-pr
 RUN dotnet publish src/Mechanics.Api/Mechanics.Api.csproj --no-restore -c Release -o /dist
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0-noble-chiseled-extra AS final
+
+ENV LANG=pt_BR.UTF-8 LANGUAGE=pt_BR:pt LC_ALL=pt_BR.UTF-8
 EXPOSE 8080
 
 WORKDIR /dist

@@ -27,14 +27,16 @@ public static class WorkOrderEmailTemplates
                 """,
     };
 
-    public static EmailMessage WorkOrderPendingApproval(Customer customer, WorkOrder workOrder, Budget budget) => new()
+    public static EmailMessage WorkOrderPendingApproval(Customer customer, WorkOrder workOrder, Budget budget, string approvalUrl,
+        string rejectUrl) => new()
     {
         Recipient = customer.Email,
         Subject = "Orçamento da OS disponível - FIAP Mechanics",
-        Body = BuildPendingApprovalBody(customer, workOrder, budget),
+        Body = BuildPendingApprovalBody(customer, workOrder, budget, approvalUrl, rejectUrl),
     };
 
-    private static string BuildPendingApprovalBody(Customer customer, WorkOrder workOrder, Budget budget)
+    private static string BuildPendingApprovalBody(Customer customer, WorkOrder workOrder, Budget budget, string approvalUrl,
+        string rejectUrl)
     {
         var sb = new StringBuilder();
 
@@ -46,26 +48,20 @@ public static class WorkOrderEmailTemplates
                        <li><b>Orçamento</b>: {budget.Id}</li>
                        <li><b>Valor estimado</b>: {budget.Total:C}</li>
                    </ul>
-                   <p>Para aprovar o orçamento, acesse a nossa API pública de aprovação e informe seu documento e o código de acesso.</p>
                    """);
 
         sb.Append("<p>Resumo dos itens:</p><ul>");
         if (budget.Items != null && budget.Items.Count != 0)
-        {
             foreach (var item in budget.Items)
-            {
-                sb.Append($"<li>{item.NameSnapshot} — {item.Quantity} x {item.UnitPriceSnapshot:C} = {item.Subtotal:C}</li>");
-            }
-        }
+                sb.Append($"<li>{item.NameSnapshot} — {item.Quantity}x {item.UnitPriceSnapshot:C} = {item.Subtotal:C}</li>");
         else
-        {
             sb.Append("<li>— Nenhum item listado —</li>");
-        }
-
         sb.Append("</ul>");
 
-        sb.Append($"<p>O orçamento expira em: {budget.ExpiresAt?.ToString("G") ?? "—"}</p>");
+        sb.Append($"""<p><a href="{approvalUrl}">Aprovar orçamento</a> | <a href="{rejectUrl}">Rejeitar orçamento</a></p>""");
+        sb.Append("<p>Caso deseje deixar um comentário na sua resposta, acesse nosso sistema.</p>");
 
+        sb.Append($"<p>O orçamento expira em: {budget.ExpiresAt?.ToString("t") ?? "—"}</p>");
         sb.Append("<p>Obrigado,<br/>FIAP Mechanics</p>");
 
         return sb.ToString();
@@ -117,6 +113,7 @@ public static class WorkOrderEmailTemplates
                 <p>Obrigado,<br/>FIAP Mechanics</p>
                 """,
     };
+
     public static EmailMessage MechanicBudgetDecision(User mechanic, WorkOrder workOrder, Budget budget, bool approved) => new()
     {
         Recipient = mechanic.Email,
@@ -128,8 +125,8 @@ public static class WorkOrderEmailTemplates
                 <p>O orçamento da ordem <b>{workOrder.AccessKey}</b> ({workOrder.Id}) foi {(approved ? "aprovado" : "rejeitado")} pelo cliente.</p>
 
                 <ul>
-                    <li><b>Orçamento</b>: {budget.Id}</li>
                     <li><b>Valor estimado</b>: {budget.Total:C}</li>
+                    <li>{(budget.Description is not null ? $"<b>Comentário do cliente</b>: {budget.Description}" : "O cliente não deixou nenhum comentário.")}</li>
                 </ul>
 
                 <p>{(approved ? "Por favor, inicie a execução quando apropriado." : "Por favor, revise o orçamento e proceda com ajustes necessários.")}</p>

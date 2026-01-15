@@ -1,4 +1,4 @@
-name: Terraform Deploy
+name: Apply Infraestructure
 
 on:
   workflow_call:

@@ -1,4 +1,4 @@
-name: Push and Deploy to ECR
+name: Push to ECR and Deploy to EKS
 
 on:
   workflow_call:

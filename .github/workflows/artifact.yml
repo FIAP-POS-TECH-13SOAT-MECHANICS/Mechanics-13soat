@@ -1,0 +1,27 @@
+name: Export artifact
+
+on:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Publish artifact
+        run: dotnet publish -c Release -o ./dist --no-restore
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          path: ./dist

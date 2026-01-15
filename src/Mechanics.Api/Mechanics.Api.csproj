@@ -9,6 +9,8 @@
     <NoWarn>$(NoWarn);1591</NoWarn>
 
     <SatelliteResourceLanguages>pt-BR</SatelliteResourceLanguages>
+
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
 
   <ItemGroup>

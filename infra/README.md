@@ -7,6 +7,8 @@ A implementação pode ser facilmente replicada para mais de um ambiente (desenv
 
 ## Recursos criados
 
+<img width="2956" height="2136" alt="infrastructure-composer-template yaml(4)" src="https://github.com/user-attachments/assets/00c42339-979a-4990-ac8f-4a93c5b595c9" />
+
 Segue abaixo uma definição de cada recurso, agrupados pelo arquivo do Terraform.
 
 ### Back-end ([`backend.tf`](./backend.tf))
@@ -99,7 +101,7 @@ Antes de prosseguir, certifique-se de ter instalado as ferramentas necessárias 
 
 O Helm do projeto executa as [migrações](../docs/migrations.md) e sobe dois pods do projeto, com escalonamento para até 10 réplicas.
 
-### Resumo
+### Processo de deploy
 
 O processo pode ser definido em duas etapas: Criação do ambiente e deploy da aplicação.
 Ambos podem ser executados através dos scripts Powershell da pasta [scripts](./../scripts/README.md).
@@ -119,6 +121,15 @@ Os comandos para cada passo (incluindo a instalação das ferramentas) estão na
 2. Faça login no repositório ECR gerado pelo Terraform
 3. Faça upload para o repositório
 4. Execute o helm para aplicar a nova imagem
+
+#### Pipeline de CI/CD
+
+Ao fazer alterações nas branches `main`, `release` ou `develop`, é disparada a pipeline [CI/CD](./../.github/workflows/ci-cd.yml).
+
+![diagram](https://github.com/user-attachments/assets/9ac65e7d-0aa2-48f6-8e66-e3153a2228bc)
+
+A pipeline executa os testes, identifica o ambiente a partir do nome da branch, gera o artefato para download e faz deploy no Cluster EKS.
+A rotina de testes também é executada ao abrir um PR para alguma dessas branches.
 
 ### Instalação das ferramentas
 

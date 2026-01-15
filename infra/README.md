@@ -1,5 +1,11 @@
 # Infraestrutura
 
+- [Recursos criados](#recursos-criados)
+- [Criação via Terraform e Helm](#criação-via-terraform-e-helm)
+- [Pipeline de CI/CD](#pipeline-de-cicd)
+- [Acessando a aplicação](#acessando-a-aplicação)
+- [Comandos úteis](#comandos-úteis)
+
 A infraestrutura do projeto é definida em scripts [Terraform](https://developer.hashicorp.com/terraform).
 Os arquivos foram separados por tipo de recurso (banco de dados, orquestração, secrets, rede, etc).
 
@@ -122,15 +128,6 @@ Os comandos para cada passo (incluindo a instalação das ferramentas) estão na
 3. Faça upload para o repositório
 4. Execute o helm para aplicar a nova imagem
 
-#### Pipeline de CI/CD
-
-Ao fazer alterações nas branches `main`, `release` ou `develop`, é disparada a pipeline [CI/CD](./../.github/workflows/ci-cd.yml).
-
-![diagram](https://github.com/user-attachments/assets/9ac65e7d-0aa2-48f6-8e66-e3153a2228bc)
-
-A pipeline executa os testes, identifica o ambiente a partir do nome da branch, gera o artefato para download e faz deploy no Cluster EKS.
-A rotina de testes também é executada ao abrir um PR para alguma dessas branches.
-
 ### Instalação das ferramentas
 
 Instale
@@ -243,7 +240,36 @@ Na raiz do repositório, execute o comando abaixo para instalar o Chart do proje
 helm upgrade --install --set image.repository=$repositoryUrl --set app.env=dev fiap-mechanics ./k8s
 ```
 
-### Acessando a aplicação
+### Atualização (nova release)
+
+Para atualizar o ambiente, é necessário recompilar a imagem Docker, subir no ECR utilizando outra tag e lançar uma nova release via Helm.
+
+```powershell
+docker build -t fiap-mechanics .
+docker tag fiap-mechanics:latest "$($repositoryUrl):new-tag"
+docker push "$($repositoryUrl):new-tag"
+
+helm upgrade --set image.repository=$repositoryUrl --set image.tag="new-tag" --set app.env=dev fiap-mechanics ./k8s
+```
+
+## Pipeline de CI/CD
+
+Ao fazer alterações nas branches `main`, `release` ou `develop`, é disparada a pipeline [CI/CD](./../.github/workflows/ci-cd.yml).
+A rotina de testes também é executada ao abrir um PR para alguma dessas branches.
+
+![diagram](https://github.com/user-attachments/assets/9ac65e7d-0aa2-48f6-8e66-e3153a2228bc)
+
+A pipeline executa os seguintes passos:
+1. Executa os testes
+2. Identifica o nome do ambiente a partir da branch
+   - `main` => `prod`
+   - `release` => `stg`
+   - `develop` => `dev`
+3. Gera e exporta o artefato (executável) do projeto
+4. Atualiza o ambiente via Terraform
+5. Compila a imagem Docker, sobe no ECR e publica no EKS
+
+## Acessando a aplicação
 
 Há duas opções: mapear a porta via `kubectl` ou pela rota pública gerada pelo Ingress Controller.
 
@@ -253,7 +279,7 @@ Para o cliente de e-mail, mapeie a porta para o serviço do Mailpit e acesse via
 kubectl port-forward service/mailpit-http 8025:80
 ```
 
-#### Mapeamento de porta
+### Mapeamento de porta
 
 Utilize o seguinte comando para mapear a porta.
 
@@ -265,7 +291,7 @@ Acesse o Swagger pela URL [localhost:5000/swagger](http://localhost:5000/swagger
 teste a conexão pelo [localhost:5000/health](http://localhost:5000/health).
 Observe que o Swagger não está disponível se o ambiente for `prod`.
 
-#### Ingress Controller
+### Ingress Controller
 
 Com um Ingress Controller, são gerados URLs públicas para o serviço, de forma que seja possível acessar diretamente pelo navegador.
 O projeto utiliza [NGINX Ingress Controller](https://kubernetes.github.io/ingress-nginx), que cria um serviço do tipo `LoadBalancer` responsável por expor o cluster externamente.
@@ -280,21 +306,9 @@ Utilize o comando abaixo para obter a URL do Swagger:
 Aguarde até o load balancer ser criado e o DNS ser propagado.
 Esse processo pode levar vários minutos.
 
-### Atualização (nova release)
-
-Para atualizar o ambiente, é necessário recompilar a imagem Docker, subir no ECR utilizando outra tag e lançar uma nova release via Helm.
-
-```powershell
-docker build -t fiap-mechanics .
-docker tag fiap-mechanics:latest "$($repositoryUrl):new-tag"
-docker push "$($repositoryUrl):new-tag"
-
-helm upgrade --set image.repository=$repositoryUrl --set image.tag="new-tag" --set app.env=dev fiap-mechanics ./k8s
-```
-
 >Observe que a tag da imagem precisa ser diferente da anterior.
 
-### Comandos úteis
+## Comandos úteis
 
 Buscar a URL do repositório:
 

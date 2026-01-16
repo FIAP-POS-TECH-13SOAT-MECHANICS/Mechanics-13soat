@@ -1,4 +1,4 @@
-name: Push and Deploy to ECR
+name: Push to ECR and Deploy to EKS
 
 on:
   workflow_call:
@@ -11,6 +11,10 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    concurrency:
+      group: deploy-${{ inputs.environment }}
+      cancel-in-progress: true
 
     steps:
       - name: Checkout code

@@ -24,6 +24,44 @@ A infraestrutura da aplicação deve ser preparada para ambientes além da execu
 
 A documentação deve ser revisada para incluir instruções para execução, provisionamento e deploy da aplicação em ambiente em nuvem, além de detalhes sobre o ambiente provisionado e os recursos criados.
 
+#### Endpoints exigidos
+
+Os endpoints abaixo são requisitos para a segunda fase:
+
+- **Abertura de Ordem de Serviço (OS)**
+  - `POST /api/work-orders`
+  - Recebe o ID de um veículo e cria uma nova ordem de serviço.
+  - É possível adicionar o problema reportado pelo cliente, peças e serviços.
+  - O veículo deve ser previamente cadastrado.
+    - Utilize `POST /api/vehicles` para cadastrar.
+    - O cliente é identificado através do cadastro do veículo. Use `POST /api/customers` para cadastrar.
+  - É enviado um e-mail para o endereço do cliente.
+  - Precisa estar autenticado (use `POST /api/auth/login`).
+- **Consulta de status da OS**
+  - `GET /api/work-orders/track`
+  - Permite consultar a situação da ordem de serviço
+  - É necessário informar o documento do cliente (CPF ou CNPJ) e a chave de acesso (número da Ordem de Serviço).
+  - A chave de acesso é enviada por e-mail para o cliente.
+  - Não precisa estar autenticado para fazer a consulta.
+- **Aprovação de orçamento**
+  - Links para aprovação e rejeição do orçamento são enviados por e-mail.
+  - São enviados para o cliente por e-mail através da chamada `POST /api/work-orders/{workOrderId}/request-approval`
+  - Ao clicar em um dos links do e-mail, o status da OS é alterado:
+    - Se aprovado, muda para "em andamento";
+    - Se rejeitado, volta para "em análise";
+  - Os endpoints de aprovação e rejeição também permitem anexar um comentário (parâmetro `description`), mas essa funcionalidade não está disponível pelo e-mail.
+  - **Listagem de orçamento**
+    - `GET /api/work-orders`
+    - Ordenado pelo status de forma decrescente (Em Execução, Aguardando Aprovação, Diagnóstico, Recebida) e depois pela data (mais antigas primeiro)
+    - Por padrão, não exibe os itens concluídos (entregues)
+      - Utilize `includeCompleted=true` para mostrar esses itens
+    - A lista é paginada (padrão de 10 itens por página)
+  - **Atualização de status da OS**
+    - Ao alterar o status, um e-mail é enviado ao cliente.
+    - O mecânico responsável também recebe uma mensagem quando o orçamento é aprovado.
+
+Se estiver utilizando Docker Compose, o cliente de e-mail roda na porta [8025](http://localhost:8025).
+
 ## Fluxo de atendimento
 
 1. Cadastro do cliente

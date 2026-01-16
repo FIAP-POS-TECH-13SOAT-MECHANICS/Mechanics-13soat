@@ -1,4 +1,4 @@
-name: Terraform Deploy
+name: Apply Infraestructure
 
 on:
   workflow_call:
@@ -11,6 +11,7 @@ on:
 jobs:
   terraform:
     runs-on: ubuntu-latest
+    concurrency: infra-${{ inputs.environment }}
 
     steps:
       - uses: actions/checkout@v5

@@ -15,6 +15,10 @@ resource "helm_release" "metrics_server" {
       value = "--kubelet-preferred-address-types=InternalIP"
     }
   ]
+
+  depends_on = [
+    aws_eks_node_group.node_group
+  ]
 }
 
 resource "helm_release" "ingress_nginx" {
@@ -25,6 +29,10 @@ resource "helm_release" "ingress_nginx" {
 
   repository = "https://kubernetes.github.io/ingress-nginx"
   chart      = "ingress-nginx"
+
+  depends_on = [
+    aws_eks_node_group.node_group
+  ]
 }
 
 resource "helm_release" "mailpit" {
@@ -43,6 +51,10 @@ resource "helm_release" "mailpit" {
     name  = "mailpit.smtp.authFile.htpasswd"
     value = "${random_string.email_smtp_user.result}@${var.email_domain}:${random_string.email_smtp_password.result}"
   }]
+
+  depends_on = [
+    aws_eks_node_group.node_group
+  ]
 }
 
 resource "helm_release" "external_secrets" {
@@ -55,4 +67,8 @@ resource "helm_release" "external_secrets" {
   chart      = "external-secrets"
 
   wait_for_jobs = true
+
+  depends_on = [
+    aws_eks_node_group.node_group
+  ]
 }

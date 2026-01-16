@@ -1,4 +1,3 @@
 ﻿src/Mechanics.Api/appsettings.Development.json
 src/*/bin
 src/*/obj
-dist/*

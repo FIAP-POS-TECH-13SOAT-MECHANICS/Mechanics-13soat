@@ -3,12 +3,12 @@ name: CI/CD Pipeline
 on:
   workflow_dispatch:
   push:
-    branches: 
+    branches:
       - main
       - release
       - develop
   pull_request:
-    branches: 
+    branches:
       - main
       - release
       - develop
@@ -20,7 +20,14 @@ permissions:
 
 jobs:
   tests:
-    uses: ./.github/workflows/dotnet.yml
+    name: Run tests
+    uses: ./.github/workflows/tests.yml
+
+  export-artifact:
+    name: Export build artifact
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: tests
+    uses: ./.github/workflows/artifact.yml
 
   resolve-environment:
     name: Resolve environment name
@@ -36,11 +43,11 @@ jobs:
         uses: ./.github/actions/resolve-environment
 
   terraform:
-    name: Apply Terraform
-    needs: 
+    name: Apply infrastructure
+    needs:
       - tests
       - resolve-environment
-    uses: ./.github/workflows/terraform.yml
+    uses: ./.github/workflows/infra.yml
     with:
       environment: ${{ needs.resolve-environment.outputs.environment }}
     secrets: inherit

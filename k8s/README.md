@@ -8,7 +8,7 @@ Ao instalar o chart, os seguintes hooks são executados:
 2. `db-secret`: secrets para o banco de dados
 3. `migrations-job`: executa as migrações do banco de dados
 
-Somente após os hooks terem sido criados com sucesso é que os demais recursos são provisionados:
+Somente após os hooks terem rodado com sucesso é que os demais recursos são provisionados:
 
 - `email-secret`
 - `config-map`

@@ -61,3 +61,23 @@ História pictográfica:
 3.	Administrador → solicita relatórios → Sistema
 
 ![AdministrativeManagement](./images/c.png)
+
+### Recursos criados na AWS
+
+Para mais detalhes sobre os recursos, acesse a página de [Informações da Infraestrutura](./../infra/README.md).
+
+![Infraestructure](./images/infrastructure-dark.yaml.png)
+
+### Pipeline de deploy
+
+A pipeline executa os seguintes passos:
+1. Executa os testes
+2. Identifica o nome do ambiente a partir da branch
+   - `main` => `prod`
+   - `release` => `stg`
+   - `develop` => `dev`
+3. Gera e exporta o artefato (executável) do projeto
+4. Atualiza o ambiente via Terraform
+5. Compila a imagem Docker, sobe no ECR e publica no EKS
+
+![Deploy](./images/deploy.svg)

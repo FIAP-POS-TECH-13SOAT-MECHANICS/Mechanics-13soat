@@ -6,6 +6,24 @@ Siga os passos alterar as configurações do projeto.
 2. [Inicie os serviços](#serviços)
 3. [Rode o projeto](#execução-do-projeto)
 
+## Ambiente
+
+Em aplicações .Net, é definido através da variável de ambiente `ASPNETCORE_ENVIRONMENT`.
+A pipeline de CI/CD seleciona o ambiente automaticamente de acordo com a branch.
+O Docker Compose está configurado para rodar em ambiente de desenvolvimento.
+
+O projeto possui os seguintes ambientes:
+- `Production` (main): modo de produção. Por segurança, o Swagger é desativado.
+- `Staging` (release): ambiente de homologação. O Swagger está ativo, mas as migrações do banco devem ser executadas manualmente.
+- `Development` (develop): ambiente de desenvolvimento. Swagger ativo e as migrações são executadas ao iniciar o projeto.
+
+Para executar via Helm chart, utilize o parâmetro `app.env` e o nome do ambiente abreviado (`prod`, `stg` ou `dev`).
+As migrações são executadas durante o deploy via Helm (para todos os ambientes).
+
+```bash
+helm upgrade --install fiap-mechanics ./k8s --set image.repository=$REPOSITORY_URI --set app.env=stg
+```
+
 ## Configurações locais
 
 O arquivo `appsettings.json` está configurado para permitir a execução via Docker e não deve ser alterado.
@@ -42,6 +60,10 @@ O exemplo abaixo contém algumas configurações comuns:
         // alterar servidor SMTP
         "SmtpServer": "xxx.elb.amazonaws.com",
         "SmtpPort": 25
+    },
+    "AppInfo": {
+        // endereço base do projeto (para links em e-mails)
+        "BaseUrl": "http://localhost:5000"
     }
 }
 ```

@@ -3,6 +3,11 @@
 
 Após alterar as classes de domínio (namespace `Mechanics.Domain`) ou arquivos de configuração do EF (namespace `Mechanics.Infra.Data.Configurations`), crie uma nova migração no banco de dados.
 
+Em ambientes DEV, as migrações do banco de dados são executadas automaticamente ao iniciar o projeto.
+
+O Helm chart do projeto também possui um job para executar as migrações em kubernetes, evitando problemas de paralelismo.
+Esse job é executado uma vez ao fazer deploy do projeto, em qualquer ambiente.
+
 ## Preparação do ambiente
 
 1. Instale o Dotnet EF Tools com o comando `dotnet tool install --global dotnet-ef`.

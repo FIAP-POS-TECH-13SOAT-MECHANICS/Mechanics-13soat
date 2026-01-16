@@ -13,7 +13,7 @@ A implementação pode ser facilmente replicada para mais de um ambiente (desenv
 
 ## Recursos criados
 
-<img width="2956" height="2136" alt="infrastructure-composer-template yaml(4)" src="https://github.com/user-attachments/assets/00c42339-979a-4990-ac8f-4a93c5b595c9" />
+![Recursos criados](./../docs/images/infrastructure-dark.yaml.png)
 
 Segue abaixo uma definição de cada recurso, agrupados pelo arquivo do Terraform.
 
@@ -257,7 +257,7 @@ helm upgrade --set image.repository=$repositoryUrl --set image.tag="new-tag" --s
 Ao fazer alterações nas branches `main`, `release` ou `develop`, é disparada a pipeline [CI/CD](./../.github/workflows/ci-cd.yml).
 A rotina de testes também é executada ao abrir um PR para alguma dessas branches.
 
-![diagram](https://github.com/user-attachments/assets/9ac65e7d-0aa2-48f6-8e66-e3153a2228bc)
+![Pipeline de deploy](./../docs/images/deploy.svg)
 
 A pipeline executa os seguintes passos:
 1. Executa os testes

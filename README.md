@@ -16,6 +16,7 @@ A implementação está dividida em 5 fases. Para os detalhes de cada fase, veja
 
 - SDK: .NET 8.0
 - Banco de dados: MSSQL 2025
+- Serviço de E-mail: MailPit
 
 ## Execução do projeto
 
@@ -39,6 +40,18 @@ Após o processo concluir, o projeto estará disponível nas seguintes URLs:
 
 > **Opcional**
 > Utilize o script [dev-seeds](./dev-seeds/README.md) para popular o banco com dados de exemplo.
+
+## Opções do projeto
+
+As configurações são definidas em arquivos `appsettings`.
+Para execução local, crie [um arquivo `appsettings.Development`](./docs/configuration.md).
+Algumas dessas configurações também poder ser definidas no [Helm chart](./k8s/README.md).
+
+| Branch    | Ambiente    | Swagger | EF Migrations          |
+|-----------|-------------|---------|------------------------|
+| `main`    | Production  | Não     | Somente via Helm chart |
+| `release` | Staging     | Sim     | Somente via Helm chart |
+| `develop` | Development | Sim     | Executadas ao iniciar  |
 
 ## Usuários padrão
 

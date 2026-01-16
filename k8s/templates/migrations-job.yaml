@@ -4,7 +4,7 @@ kind: Job
 metadata:
   name: {{ .Values.app.name }}-migrations
   annotations:
-    "helm.sh/hook": {{ ternary "pre-install,pre-upgrade" "pre-install" .Values.app.autoRunMigrations }}
+    "helm.sh/hook": {{ ternary "pre-install,pre-upgrade" "pre-install" .Values.app.runMigrationsOnUpdate }}
     "helm.sh/hook-weight": "-5"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 

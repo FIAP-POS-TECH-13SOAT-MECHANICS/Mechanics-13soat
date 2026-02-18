@@ -1,6 +1,5 @@
 using Mechanics.Application.WorkOrders.Requests;
 using Mechanics.Domain.Auth;
-using Mechanics.Domain.Base;
 using Mechanics.Domain.Customers;
 using Mechanics.Domain.ServicesCatalog;
 using Mechanics.Domain.Vehicles;

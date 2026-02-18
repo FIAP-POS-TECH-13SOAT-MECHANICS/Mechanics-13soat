@@ -1,5 +1,5 @@
 ﻿using Mechanics.Application.Options;
-using Mechanics.Application.Utils;
+using Mechanics.Application.Utils.TokenGenerator;
 using Mechanics.Tests.Unit.Mocks;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
@@ -86,13 +86,14 @@ public class JwtTokenHandlerTests
         Assert.IsFalse(isValid);
     }
 
-    private static JwtTokenHandler CreateInstance(TimeProvider timeProvider, string? secretKey = null)
+    private static JwtTokenHandler CreateInstance(TimeProvider timeProvider, string? privateKey = null)
     {
         var options = new OptionsWrapper<JwtOptions>(new JwtOptions
         {
             AccessTokenLifetime = 10,
             RefreshTokenLifetime = 120,
-            SecretKey = secretKey ?? "9590d9fa-9917-44c2-9cd9-d6e0fb62391b",
+            PublicKey = "9590d9fa-9917-44c2-9cd9-d6e0fb62391b",
+            PrivateKey = privateKey ?? "1799f0f2-b8e5-4074-9e2e-a770334f906b",
         });
 
         return new JwtTokenHandler(options, timeProvider);

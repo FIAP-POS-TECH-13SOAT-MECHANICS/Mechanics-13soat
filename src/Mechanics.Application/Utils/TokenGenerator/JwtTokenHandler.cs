@@ -1,15 +1,15 @@
 ﻿using Mechanics.Application.Auth.Responses;
 using Mechanics.Application.Options;
-using Mechanics.Application.Utils.TokenGenerator;
 using Mechanics.Domain.Auth;
 using Mechanics.Infra.Data.Seeds;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
-namespace Mechanics.Application.Utils;
+namespace Mechanics.Application.Utils.TokenGenerator;
 
 public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions, TimeProvider timeProvider) : IJwtTokenHandler
 {
@@ -38,7 +38,7 @@ public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions, TimeProvider timeP
 
     public async Task<bool> ValidateRefreshToken(string refreshToken, string securityStamp)
     {
-        var refreshTokenKey = Encoding.ASCII.GetBytes($"{_options.SecretKey}:{securityStamp}");
+        var refreshTokenKey = Encoding.ASCII.GetBytes(securityStamp);
         var validationResult = await _tokenHandler.ValidateTokenAsync(refreshToken, new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
@@ -61,13 +61,14 @@ public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions, TimeProvider timeP
             new("role", _roles[user.RoleId]),
         };
 
-        var key = Encoding.ASCII.GetBytes(_options.SecretKey);
+        var rsa = RSA.Create();
+        rsa.ImportFromPem(_options.PrivateKey);
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Issuer = JwtTokenIssuer,
             Subject = new ClaimsIdentity(claims),
             Expires = expiration.UtcDateTime,
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+            SigningCredentials = new SigningCredentials(new RsaSecurityKey(rsa), SecurityAlgorithms.RsaSha256),
             IssuedAt = timeProvider.GetUtcNow().UtcDateTime,
             NotBefore = timeProvider.GetUtcNow().UtcDateTime,
         };
@@ -82,7 +83,7 @@ public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions, TimeProvider timeP
             new("sub", user.Id.ToString()),
         };
 
-        var key = Encoding.ASCII.GetBytes($"{_options.SecretKey}:{user.SecurityStamp}");
+        var key = Encoding.ASCII.GetBytes(user.SecurityStamp);
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Issuer = JwtTokenIssuer,

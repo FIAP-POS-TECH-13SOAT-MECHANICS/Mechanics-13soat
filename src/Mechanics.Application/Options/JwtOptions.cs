@@ -3,9 +3,14 @@
 public class JwtOptions
 {
     /// <summary>
-    ///     Chave de assinatura do token JWT.
+    ///     Chave privada do token JWT.
     /// </summary>
-    public required string SecretKey { get; init; }
+    public required string PrivateKey { get; init; }
+
+    /// <summary>
+    ///     Chave pública do token JWT.
+    /// </summary>
+    public required string PublicKey { get; init; }
 
     /// <summary>
     ///     Validade do token em minutos.

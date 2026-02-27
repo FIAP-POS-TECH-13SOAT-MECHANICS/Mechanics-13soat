@@ -34,7 +34,7 @@ public static class AuthExtensions
                     ValidateAudience = false,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = LoadSecurityKey(jwtOptions.PrivateKey),
+                    IssuerSigningKey = LoadSecurityKey(jwtOptions.PublicKey),
                 };
             });
 

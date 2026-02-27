@@ -38,7 +38,9 @@ public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions, TimeProvider timeP
 
     public async Task<bool> ValidateRefreshToken(string refreshToken, string securityStamp)
     {
-        var refreshTokenKey = Encoding.ASCII.GetBytes(securityStamp);
+        var userId = _tokenHandler.ReadJsonWebToken(refreshToken).Subject;
+
+        var refreshTokenKey = Encoding.ASCII.GetBytes($"{userId}:{securityStamp}:{_options.PrivateKey}");
         var validationResult = await _tokenHandler.ValidateTokenAsync(refreshToken, new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
@@ -83,7 +85,7 @@ public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions, TimeProvider timeP
             new("sub", user.Id.ToString()),
         };
 
-        var key = Encoding.ASCII.GetBytes(user.SecurityStamp);
+        var key = Encoding.ASCII.GetBytes($"{user.Id}:{user.SecurityStamp}:{_options.PrivateKey}");
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Issuer = JwtTokenIssuer,

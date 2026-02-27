@@ -115,12 +115,12 @@ public class WorkOrdersControllerTests
                 {
                     Id = attendantUserId,
                     FullName = "Integration Attendant",
-                    UserName = "int_attendant",
-                    Email = "int.attendant@example.com",
+                    CpfNumber = "60975754084",
+                    Email = "int.attendant@mechanics.com",
                     PasswordHash = "hash",
                     SecurityStamp = Guid.NewGuid().ToString(),
                     RoleId = role.Id,
-                    CreationDate = DateTime.UtcNow
+                    CreationDate = DateTime.UtcNow,
                 });
             }
 

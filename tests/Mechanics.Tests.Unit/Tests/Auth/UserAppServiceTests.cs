@@ -44,7 +44,7 @@ public class UserAppServiceTests
             .FirstOrDefaultAsync(user => user.Id == response.CreatedId, TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(created);
         Assert.AreEqual(request.FullName, created.FullName);
-        Assert.AreEqual(request.UserName, created.UserName);
+        Assert.AreEqual(request.CpfNumber, created.CpfNumber);
         Assert.AreEqual(request.RoleId, created.RoleId);
     }
 
@@ -72,7 +72,7 @@ public class UserAppServiceTests
         Assert.IsNotNull(response);
         Assert.AreEqual(userId, response.Id);
         Assert.AreEqual(user.FullName, response.FullName);
-        Assert.AreEqual(user.UserName, response.UserName);
+        Assert.AreEqual(user.CpfNumber, response.CpfNumber);
         Assert.IsNotNull(response.Role);
         Assert.AreEqual(RoleNames.Mechanic, response.Role.Name);
     }
@@ -201,7 +201,7 @@ public class UserAppServiceTests
         var updated = await context.Users.AsNoTracking().FirstOrDefaultAsync(TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(updated);
         Assert.AreEqual(user.FullName, updated.FullName);
-        Assert.AreEqual(user.UserName, updated.UserName);
+        Assert.AreEqual(user.CpfNumber, updated.CpfNumber);
         Assert.AreEqual(administratorRole.Id, updated.RoleId);
     }
 

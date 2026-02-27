@@ -13,7 +13,7 @@ public static class AuthEmailTemplates
         Recipient = user.Email,
         Subject = "Cadastro de senha - FIAP Mechanics",
         Body = $"""
-                <p>Olá, <b>{user.UserName}</b>,</p>
+                <p>Olá, <b>{user.FullName}</b>,</p>
                 <p>Utilize o código abaixo para cadastrar sua senha:</p>
                 <br />
                 <code>{passwordCreationCode}</code>
@@ -25,7 +25,7 @@ public static class AuthEmailTemplates
         Recipient = user.Email,
         Subject = "Senha alterada - FIAP Mechanics",
         Body = $"""
-                <p>Olá, <b>{user.UserName}</b>,</p>
+                <p>Olá, <b>{user.FullName}</b>,</p>
                 <p>Sua senha foi alterada hoje, {DateTime.Now:dd/MM}, às {DateTime.Now:HH:mm}.</p>
                 <p>Por segurança, você foi desconectado de todos os seus dispositivos.</p>
                 """,

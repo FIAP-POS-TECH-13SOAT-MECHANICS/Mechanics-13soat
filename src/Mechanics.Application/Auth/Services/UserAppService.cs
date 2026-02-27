@@ -64,7 +64,6 @@ public class UserAppService(AppDbContext dbContext, IMapper mapper, IEmailServic
             return null;
 
         entity.FullName = request.FullName ?? entity.FullName;
-        entity.UserName = request.UserName ?? entity.UserName;
         entity.RoleId = request.RoleId ?? entity.RoleId;
 
         Validator.ValidateAndThrow(entity);

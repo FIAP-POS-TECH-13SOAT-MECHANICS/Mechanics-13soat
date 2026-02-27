@@ -1,5 +1,4 @@
 ﻿using Mechanics.Application.Auth.Requests;
-using Mechanics.Domain.Auth;
 using Mechanics.Tests.Integration.Helpers;
 using System.Net;
 using System.Net.Http.Json;
@@ -16,7 +15,7 @@ public class ResetPasswordTest(TestContext testContext)
         var client = TestProperties.Factory.CreateClient();
         var emailsCount = await GetEmailsCount(testContext.CancellationTokenSource.Token);
 
-        var request = new ResetPasswordRequest { UserName = RoleNames.Administrator.ToLower() };
+        var request = new ResetPasswordRequest { CpfNumber = "12345678909" };
         var response = await client.PostAsJsonAsync("api/auth/reset-password", request, testContext.CancellationTokenSource.Token);
 
         Assert.AreEqual(HttpStatusCode.NoContent, response.StatusCode);

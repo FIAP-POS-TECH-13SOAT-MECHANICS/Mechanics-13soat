@@ -59,7 +59,7 @@ public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions, TimeProvider timeP
         var claims = new List<Claim>
         {
             new("sub", user.Id.ToString()),
-            new("userName", user.UserName),
+            new("userName", user.CpfNumber),
             new("role", _roles[user.RoleId]),
         };
 

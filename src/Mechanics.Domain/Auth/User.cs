@@ -1,5 +1,6 @@
 ﻿using Mechanics.Domain.Base;
 using Mechanics.Domain.Base.Validation;
+using Mechanics.Domain.Customers;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -10,27 +11,30 @@ public class User : AbstractEntity, INormalizable, IValidatable
     public required string FullName { get; set; }
     public Role? Role { get; init; }
     public required Guid RoleId { get; set; }
-    public required string UserName { get; set; }
+    public required string CpfNumber { get; set; }
     public required string Email { get; set; }
     public required string PasswordHash { get; set; }
     public required string SecurityStamp { get; set; }
+    public Guid? CustomerId { get; init; }
+    public Customer? Customer { get; init; }
 
     public bool IsNormalized() =>
         FullName.IsTrimmedUpperCase() &&
-        UserName.IsTrimmedLowerCase() &&
+        RegexUtils.Cpf().IsMatch(CpfNumber) &&
         Email.IsTrimmedLowerCase();
 
     public void Normalize()
     {
         FullName = FullName.ToUpperInvariant().Trim();
-        UserName = UserName.ToLowerInvariant().Trim();
+        CpfNumber = new string(CpfNumber.Where(char.IsDigit).ToArray());
         Email = Email.ToLowerInvariant().Trim();
     }
 
     public void Validate(ValidationBuilder builder)
     {
-        builder.AddValidation(FullName.Length > 0, nameof(FullName), "Full name is required.")
-            .AddValidation(UserName.Length > 0, nameof(UserName), "User name is required.")
+        builder.AddValidation(FullName.Length > 0, nameof(FullName), "Full Name is required.")
+            .AddValidation(CpfNumber.Length > 0, nameof(CpfNumber), "CPF Number is required.")
+            .AddValidation(DocumentValidations.ValidateCpf(CpfNumber), nameof(CpfNumber), "Invalid CPF.")
             .AddValidation(Email.Length > 0, nameof(Email), "Email is required.");
     }
 

@@ -10,9 +10,9 @@ public class CreateUserRequest
     public required string FullName { get; init; }
 
     /// <summary>
-    ///     Login do usuário.
+    ///     CPF do usuário.
     /// </summary>
-    public required string UserName { get; init; }
+    public required string CpfNumber { get; init; }
 
     /// <summary>
     ///     E-mail do usuário.

@@ -3,9 +3,9 @@
 public class CreatePasswordRequest
 {
     /// <summary>
-    ///     O login do usuário.
+    ///     O CPF do usuário.
     /// </summary>
-    public required string UserName { get; init; }
+    public required string CpfNumber { get; init; }
 
     /// <summary>
     ///     O código para criar uma nova senha, enviado por e-mail.

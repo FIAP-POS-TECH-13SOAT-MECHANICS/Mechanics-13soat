@@ -13,7 +13,7 @@ public static class UserMocks
         new()
         {
             FullName = "MARIA FERNANDA SOUZA",
-            UserName = "maria.souza",
+            CpfNumber = "12345678909",
             RoleId = roleId,
             Email = "maria.souza@mechanics.com",
         };
@@ -30,7 +30,7 @@ public static class UserMocks
         {
             Id = userId,
             FullName = name.ToUpper(),
-            UserName = userName,
+            CpfNumber = userName,
             RoleId = role.Id,
             Role = role,
             Email = $"{userName}@mechanics.com",
@@ -45,7 +45,7 @@ public static class UserMocks
         {
             Id = Guid.NewGuid(),
             FullName = userName.ToUpper(),
-            UserName = userName,
+            CpfNumber = userName,
             RoleId = Roles[RoleNames.Administrator].Id,
             Role = Roles[RoleNames.Administrator],
             Email = $"{userName}@mechanics.com",

@@ -20,7 +20,7 @@ public class CreateUserTest(TestContext testContext)
         var request = new CreateUserRequest
         {
             FullName = "MARIA FERNANDA SOUZA",
-            UserName = "maria.souza",
+            CpfNumber = "12345678909",
             Email = "maria.souza@mechanics.com",
             RoleId = new Guid("f2d59afa-6e85-4557-8ff1-733343ba83f8"),
         };

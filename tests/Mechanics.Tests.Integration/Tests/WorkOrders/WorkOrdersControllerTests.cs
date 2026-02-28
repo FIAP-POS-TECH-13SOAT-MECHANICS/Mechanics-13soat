@@ -141,15 +141,4 @@ public class WorkOrdersControllerTests
             Assert.AreEqual(attendantUserId, wo.LastStatusChangeBy);
         }
     }
-
-    [TestMethod]
-    public async Task It_ShouldReturnNotFound_WhenUserDocumentIsNotFound()
-    {
-        var client = await TestProperties.Factory.GetAuthenticatedClient(RoleNames.Attendant);
-
-        var response = await client.GetAsync("/api/work-orders/track?document=12345678909&accessKey=123456",
-            TestContext.CancellationTokenSource.Token);
-
-        Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
-    }
 }

@@ -141,22 +141,22 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     }
 
     /// <summary>
-    ///     Consulta pública da ordem pelo documento do cliente e chave de acesso.
+    ///     Consulta da ordem de serviço pela chave de acesso.
     /// </summary>
-    /// <param name="document">CPF ou CNPJ do cliente (somente dígitos ou formato armazenado).</param>
     /// <param name="accessKey">Código de acesso de 8 dígitos fornecido ao cliente.</param>
     /// <param name="cancellationToken">Token para cancelamento da operação.</param>
     /// <response code="200">Resultado encontrado.</response>
     /// <response code="404">Não encontrado.</response>
-    [AllowAnonymous]
     [HttpGet("track")]
+    [Authorize(Policy = PolicyNames.CustomersOnly)]
     [Produces("application/json", Type = typeof(GetWorkOrderResponse))]
     [ProducesResponseType(typeof(GetWorkOrderResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Track([FromQuery] string document, [FromQuery] string accessKey,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> Track(string accessKey, CancellationToken cancellationToken)
     {
-        var response = await workOrderService.TrackByDocumentAndAccessKey(document, accessKey, cancellationToken);
+        var customerId = Guid.Parse(User.Claims.First(c => c.Type == "customerId").Value);
+
+        var response = await workOrderService.TrackByAccessKey(customerId, accessKey, cancellationToken);
         return response is not null ? Ok(response) : NotFound();
     }
 
@@ -170,8 +170,7 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     {
         var userId = GetCurrentUserId();
 
-        await workOrderService.ChangeStatus(id, WorkOrderStatus.InProgress, userId,
-            cancellationToken: cancellationToken);
+        await workOrderService.ChangeStatus(id, WorkOrderStatus.InProgress, userId, cancellationToken: cancellationToken);
         return NoContent();
     }
 

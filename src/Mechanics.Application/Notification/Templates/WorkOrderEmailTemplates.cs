@@ -22,21 +22,19 @@ public static class WorkOrderEmailTemplates
                 <li><b>Problema relatado</b>: {workOrder.ReportedProblem ?? "—"}</li>
                 </ul>
 
-                <p>Você pode consultar o andamento do serviço informando seu documento e o código abaixo:<br/>
+                <p>Você pode consultar o andamento do serviço acessando o sistema e informando o código abaixo:<br/>
                 <code style="font-weight: bold;">{workOrder.AccessKey[..4]} {workOrder.AccessKey[4..]}</code></p>
                 """,
     };
 
-    public static EmailMessage WorkOrderPendingApproval(Customer customer, WorkOrder workOrder, Budget budget, string approvalUrl,
-        string rejectUrl) => new()
+    public static EmailMessage WorkOrderPendingApproval(Customer customer, WorkOrder workOrder, Budget budget) => new()
     {
         Recipient = customer.Email,
         Subject = "Orçamento da OS disponível - FIAP Mechanics",
-        Body = BuildPendingApprovalBody(customer, workOrder, budget, approvalUrl, rejectUrl),
+        Body = BuildPendingApprovalBody(customer, workOrder, budget),
     };
 
-    private static string BuildPendingApprovalBody(Customer customer, WorkOrder workOrder, Budget budget, string approvalUrl,
-        string rejectUrl)
+    private static string BuildPendingApprovalBody(Customer customer, WorkOrder workOrder, Budget budget)
     {
         var sb = new StringBuilder();
 
@@ -58,8 +56,7 @@ public static class WorkOrderEmailTemplates
             sb.Append("<li>— Nenhum item listado —</li>");
         sb.Append("</ul>");
 
-        sb.Append($"""<p><a href="{approvalUrl}">Aprovar orçamento</a> | <a href="{rejectUrl}">Rejeitar orçamento</a></p>""");
-        sb.Append("<p>Caso deseje deixar um comentário na sua resposta, acesse nosso sistema.</p>");
+        sb.Append("<p>Para aprovar ou rejeitar o orçamento, acesse nosso sistema.</p><br />");
 
         sb.Append($"<p>O orçamento expira em: {budget.ExpiresAt?.ToString("t") ?? "—"}</p>");
         sb.Append("<p>Obrigado,<br/>FIAP Mechanics</p>");

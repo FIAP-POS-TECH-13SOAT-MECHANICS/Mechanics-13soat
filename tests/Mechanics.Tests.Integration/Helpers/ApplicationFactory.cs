@@ -18,6 +18,7 @@ public class ApplicationFactory : WebApplicationFactory<Program>
         { RoleNames.Administrator, "12345678909" },
         { RoleNames.Attendant, "98765432100" },
         { RoleNames.Mechanic, "11144477735" },
+        { RoleNames.CustomerUser, "11122233344" },
     };
 
     public async Task<HttpClient> GetAuthenticatedClient(string roleName)

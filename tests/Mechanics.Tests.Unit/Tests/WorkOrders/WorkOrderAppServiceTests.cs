@@ -859,14 +859,13 @@ public class WorkOrderAppServiceTests
         IsNull(resp);
     }
 
-    [TestMethod("TrackByDocumentAndAccessKey should return WorkOrder for matching document and access key")]
-    public async Task TrackByDocumentAndAccessKey_ShouldReturnWorkOrder_WhenDocumentAndAccessKeyMatch()
+    [TestMethod("TrackByAccessKey should return WorkOrder for matching customer id and access key")]
+    public async Task TrackByAccessKey_ShouldReturnWorkOrder_WhenCustomerAndAccessKeyMatch()
     {
         var customerId = Guid.NewGuid();
         var vehicleId = Guid.NewGuid();
         var workOrderId = Guid.NewGuid();
         const string rawDocument = "12345678909";
-        const string queryDocument = "123.456.789-09";
         const string storedAccessKey = "123123";
         const string queryAccessKey = "1 2 3 1 2 3";
 
@@ -910,7 +909,7 @@ public class WorkOrderAppServiceTests
         var service = new WorkOrderAppService(context, _mapper, _emailMock, _loggerFactory.CreateLogger<WorkOrderAppService>(),
             budgetService);
 
-        var resp = await service.TrackByDocumentAndAccessKey(queryDocument, queryAccessKey,
+        var resp = await service.TrackByAccessKey(customerId, queryAccessKey,
             TestContext.CancellationTokenSource.Token);
 
         IsNotNull(resp, "Response should not be null");

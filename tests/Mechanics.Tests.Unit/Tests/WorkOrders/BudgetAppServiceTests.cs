@@ -16,15 +16,8 @@ public class BudgetAppServiceTests
 {
     public TestContext TestContext { get; set; }
 
-    private EmailServiceMock _emailMock = null!;
-    private NullLoggerFactory _loggerFactory = null!;
-
-    [TestInitialize]
-    public void Initialize()
-    {
-        _emailMock = new EmailServiceMock();
-        _loggerFactory = new NullLoggerFactory();
-    }
+    private readonly EmailServiceMock _emailMock = new();
+    private readonly NullLoggerFactory _loggerFactory = new();
 
     #region criar orçamento
 
@@ -167,7 +160,7 @@ public class BudgetAppServiceTests
         var handler = new BudgetAppService(context, _emailMock, _loggerFactory.CreateLogger<BudgetAppService>());
 
         // Act
-        await handler.PublicApproveBudget(customer.Document.Number, wo.AccessKey, "OK", TestContext.CancellationTokenSource.Token);
+        await handler.ApproveBudget(customer.Id, wo.AccessKey, "OK", TestContext.CancellationTokenSource.Token);
 
         // Assert
         var updated = await context.Budgets.AsNoTracking()
@@ -212,7 +205,7 @@ public class BudgetAppServiceTests
         // Act + Assert
         await Assert.ThrowsExactlyAsync<BusinessException>(async () =>
         {
-            await handler.PublicApproveBudget(customer.Document.Number, wo.AccessKey, null,
+            await handler.ApproveBudget(customer.Id, wo.AccessKey, null,
                 TestContext.CancellationTokenSource.Token);
         });
     }
@@ -254,7 +247,7 @@ public class BudgetAppServiceTests
         // Act + Assert
         await Assert.ThrowsExactlyAsync<BusinessException>(async () =>
         {
-            await handler.PublicApproveBudget(customer.Document.Number, wo.AccessKey, "trying after expired",
+            await handler.ApproveBudget(customer.Id, wo.AccessKey, "trying after expired",
                 TestContext.CancellationTokenSource.Token);
         });
 
@@ -298,7 +291,7 @@ public class BudgetAppServiceTests
         var handler = new BudgetAppService(context, _emailMock, _loggerFactory.CreateLogger<BudgetAppService>());
 
         // Act
-        await handler.PublicRejectBudget(customer.Document.Number, wo.AccessKey, "muito caro",
+        await handler.RejectBudget(customer.Id, wo.AccessKey, "muito caro",
             TestContext.CancellationTokenSource.Token);
 
         // Assert
@@ -340,7 +333,7 @@ public class BudgetAppServiceTests
         var handler = new BudgetAppService(context, _emailMock, _loggerFactory.CreateLogger<BudgetAppService>());
 
         // Act
-        await handler.PublicRejectBudget(customer.Document.Number, wo.AccessKey, null, TestContext.CancellationTokenSource.Token);
+        await handler.RejectBudget(customer.Id, wo.AccessKey, null, TestContext.CancellationTokenSource.Token);
 
         // Assert
         var histories = await context.WorkOrderHistories.AsNoTracking()
@@ -386,7 +379,7 @@ public class BudgetAppServiceTests
         // Act + Assert
         await Assert.ThrowsExactlyAsync<BusinessException>(async () =>
         {
-            await handler.PublicRejectBudget(customer.Document.Number, wo.AccessKey, "reject after expired",
+            await handler.RejectBudget(customer.Id, wo.AccessKey, "reject after expired",
                 TestContext.CancellationTokenSource.Token);
         });
 

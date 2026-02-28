@@ -16,7 +16,7 @@ Para realizar login, utilize o endpoint `POST /api/auth/login`.
 curl --location 'http://localhost:5000/api/auth/login' \
 --header 'Content-Type: application/json' \
 --data '{
-    "userName": "administrator",
+    "cpfNumber": "12345678909",
     "password": "5eCre+Key"
 }'
 ```
@@ -59,7 +59,7 @@ curl -X 'POST' \
   -H 'Content-Type: application/json' \
   -d '{
   "fullName": "string",
-  "userName": "string",
+  "cpfNumber": "11144477735",
   "email": "user@example.com",
   "roleId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
 }'
@@ -76,7 +76,7 @@ curl -X 'POST' \
   -H 'Authorization: Bearer ...' \
   -H 'Content-Type: application/json' \
   -d '{
-  "userName": "string",
+  "cpfNumber": "11144477735",
   "passwordCreationCode": "B2C16D975B6AD83144A8533E804AA43D",
   "password": "4Nz9c5uQ(&sHZCX"
 }'
@@ -94,7 +94,7 @@ curl -X 'POST' \
   -H 'Authorization: Bearer eyJhbGciOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGRzaWctbW9yZSNobWFjLXNoYTI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJmaWFwLW1lY2hhbmljcyIsImV4cCI6MTc2MjA0NjA1NywiaWF0IjoxNzYyMDQ0MjU3LCJuYmYiOjE3NjIwNDQyNTcsInN1YiI6IjBjNWJjZTQ0LWIxMTItNGI1My1iOTRjLWUyY2I2YTkyNDVmNSIsInVzZXJOYW1lIjoic3RyaW5nIiwicm9sZSI6IkFUVEVOREFOVCJ9.a8VU9Hdu4ttEMmaXhODV5NHuOK0subCxQ75tTRP9nIw' \
   -H 'Content-Type: application/json' \
   -d '{
-  "userName": "string"
+  "cpfNumber": "11144477735"
 }'
 ```
 

@@ -1,16 +1,13 @@
 using Mechanics.Application.Notification.Templates;
-using Mechanics.Application.Options;
 using Mechanics.Domain.Auth;
 using Mechanics.Domain.Customers;
 using Mechanics.Domain.WorkOrders;
 using Mechanics.Infra.Integrations.EmailSender;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Mechanics.Application.Notification.Services;
 
-public class EmailService(ILogger<EmailService> logger, IEmailSenderService senderService, IOptions<AppInfo> appInfo)
-    : IEmailService
+public class EmailService(ILogger<EmailService> logger, IEmailSenderService senderService) : IEmailService
 {
     public async Task SendWorkOrderCreated(Customer customer, WorkOrder workOrder, CancellationToken cancellationToken = default)
     {
@@ -27,12 +24,7 @@ public class EmailService(ILogger<EmailService> logger, IEmailSenderService send
     {
         logger.LogInformation("Sending work order pending approval to '{EmailAddress}'", customer.Email);
 
-        var baseUrl = $"{appInfo.Value.BaseUrl}/api/work-orders";
-        var queryParams = $"document={customer.Document}&accessKey={workOrder.AccessKey}";
-        var approveUrl = $"{baseUrl}/approve-budget?{queryParams}";
-        var rejectUrl = $"{baseUrl}/reject-budget?{queryParams}";
-
-        var message = WorkOrderEmailTemplates.WorkOrderPendingApproval(customer, workOrder, budget, approveUrl, rejectUrl);
+        var message = WorkOrderEmailTemplates.WorkOrderPendingApproval(customer, workOrder, budget);
         await senderService.SendAsync(message, cancellationToken);
 
         logger.LogInformation("Work order pending approval sent to '{EmailAddress}'", customer.Email);
@@ -100,5 +92,16 @@ public class EmailService(ILogger<EmailService> logger, IEmailSenderService send
         await senderService.SendAsync(message, cancellationToken);
 
         logger.LogInformation("Password changed notification sent to '{EmailAddress}'", user.Email);
+    }
+
+    public async Task SendCustomerUserPasswordCreationCode(User user, string passwordCreationCode,
+        CancellationToken cancellationToken = default)
+    {
+        logger.LogInformation("Sending customer password creation code to '{EmailAddress}'", user.Email);
+
+        var message = AuthEmailTemplates.CustomerUserPasswordCreationCode(user, passwordCreationCode);
+        await senderService.SendAsync(message, cancellationToken);
+
+        logger.LogInformation("Customer password creation code sent to '{EmailAddress}'", user.Email);
     }
 }

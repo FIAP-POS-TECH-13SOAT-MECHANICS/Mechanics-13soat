@@ -16,8 +16,8 @@ public class AuthAppService(AppDbContext dbContext, IEmailService emailService, 
 {
     public async Task<TokenResponse?> Login(LoginRequest request, CancellationToken cancellationToken = default)
     {
-        var normalizedUserName = request.UserName.Trim().ToLowerInvariant();
-        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.UserName == normalizedUserName, cancellationToken);
+        var normalizedCpf = new string(request.CpfNumber.Where(char.IsDigit).ToArray());
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.CpfNumber == normalizedCpf, cancellationToken);
         if (user is null)
             return null;
 
@@ -40,8 +40,8 @@ public class AuthAppService(AppDbContext dbContext, IEmailService emailService, 
 
     public async Task<UpdateItemResponse?> CreatePassword(CreatePasswordRequest request, CancellationToken cancellationToken)
     {
-        var normalizedUserName = request.UserName.Trim().ToLowerInvariant();
-        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.UserName == normalizedUserName, cancellationToken);
+        var normalizedCpf = new string(request.CpfNumber.Where(char.IsDigit).ToArray());
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.CpfNumber == normalizedCpf, cancellationToken);
         if (user is null || user.GetPasswordCreationCode() != request.PasswordCreationCode)
             return null;
 
@@ -57,8 +57,8 @@ public class AuthAppService(AppDbContext dbContext, IEmailService emailService, 
 
     public async Task ResetPassword(ResetPasswordRequest request, CancellationToken cancellationToken)
     {
-        var normalizedUserName = request.UserName.Trim().ToLowerInvariant();
-        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.UserName == normalizedUserName, cancellationToken);
+        var normalizedCpf = new string(request.CpfNumber.Where(char.IsDigit).ToArray());
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.CpfNumber == normalizedCpf, cancellationToken);
         if (user is null)
             return;
 

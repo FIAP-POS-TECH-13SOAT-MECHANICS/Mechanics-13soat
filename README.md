@@ -1,6 +1,6 @@
 # Fiap.Mechanics
 
-[![.NET](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/Mechanics-13soat/actions/workflows/dotnet.yml/badge.svg?branch=main)](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/Mechanics-13soat/actions/workflows/dotnet.yml)
+[![.NET](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/Mechanics-13soat/actions/workflows/ci-cd.yml/badge.svg?branch=main)](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/Mechanics-13soat/actions/workflows/ci-cd.yml)
 
 Repositório do projeto destinado aos Tech Challenges da Oficina Mecânica da FIAP.
 
@@ -61,11 +61,11 @@ Veja as instruções em [Autenticação e autorização](./docs/auth.md).
 
 Os seguintes logins podem ser utilizados para testes:
 
-| Usuário         | Senha       | Perfil        | Permissões                    |
-|-----------------|-------------|---------------|-------------------------------|
-| `administrator` | `5eCre+Key` | Administrador | Acesso completo ao sistema    |
-| `attendant`     | `5eCre+Key` | Atendente     | Cadastrar clientes e veículos |
-| `mechanic`      | `5eCre+Key` | Mecânico      | Gerenciar produtos e serviços |
+| CPF           | Senha       | Perfil        | Permissões                    |
+|---------------|-------------|---------------|-------------------------------|
+| `12345678909` | `5eCre+Key` | Administrador | Acesso completo ao sistema    |
+| `98765432100` | `5eCre+Key` | Atendente     | Cadastrar clientes e veículos |
+| `11144477735` | `5eCre+Key` | Mecânico      | Gerenciar produtos e serviços |
 
 Qualquer usuário autenticado pode criar e atualizar ordens de serviço.
 

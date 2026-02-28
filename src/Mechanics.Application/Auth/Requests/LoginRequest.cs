@@ -3,10 +3,10 @@
 public class LoginRequest
 {
     /// <summary>
-    ///     Nome de usuário.
+    ///     CPF do usuário.
     /// </summary>
-    /// <example>administrator</example>
-    public required string UserName { get; init; }
+    /// <example>12345678909</example>
+    public required string CpfNumber { get; init; }
 
     /// <summary>
     ///     Senha da conta.

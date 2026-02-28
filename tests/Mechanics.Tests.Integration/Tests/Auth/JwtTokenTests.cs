@@ -1,7 +1,7 @@
 ﻿using Mechanics.Application.Auth.Requests;
 using Mechanics.Application.Auth.Responses;
 using Mechanics.Application.Options;
-using Mechanics.Application.Utils;
+using Mechanics.Application.Utils.TokenGenerator;
 using Mechanics.Domain.Auth;
 using Mechanics.Infra.Data.Seeds;
 using Mechanics.Tests.Integration.Helpers;

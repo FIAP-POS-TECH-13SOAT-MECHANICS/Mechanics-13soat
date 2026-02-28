@@ -14,7 +14,7 @@ namespace Mechanics.Api.Controllers.Vehicles;
 [ApiController]
 [ApiExplorerSettings(GroupName = "v1")]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = PolicyNames.EmployeesOnly)]
 public class VehiclesController(VehicleAppService service) : ControllerBase
 {
     /// <summary>

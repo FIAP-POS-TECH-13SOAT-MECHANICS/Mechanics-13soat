@@ -12,8 +12,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(entity => entity.FullName).HasMaxLength(100);
         builder.HasIndex(entity => entity.FullName);
 
-        builder.Property(entity => entity.UserName).HasMaxLength(100);
-        builder.HasIndex(entity => entity.UserName).IsUnique();
+        builder.Property(entity => entity.CpfNumber).HasMaxLength(11);
+        builder.HasIndex(entity => entity.CpfNumber).IsUnique();
 
         builder.Property(entity => entity.Email).HasMaxLength(100);
         builder.HasIndex(entity => entity.Email).IsUnique();
@@ -23,6 +23,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.Property(entity => entity.SecurityStamp).HasMaxLength(64);
 
         builder.HasOne(entity => entity.Role).WithMany().OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasOne(entity => entity.Customer).WithMany().OnDelete(DeleteBehavior.NoAction);
 
         builder.HasData(UserSeeds.GetSeeds());
     }

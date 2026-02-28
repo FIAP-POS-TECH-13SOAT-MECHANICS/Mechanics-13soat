@@ -16,7 +16,7 @@ Para realizar login, utilize o endpoint `POST /api/auth/login`.
 curl --location 'http://localhost:5000/api/auth/login' \
 --header 'Content-Type: application/json' \
 --data '{
-    "userName": "administrator",
+    "cpfNumber": "12345678909",
     "password": "5eCre+Key"
 }'
 ```
@@ -59,15 +59,39 @@ curl -X 'POST' \
   -H 'Content-Type: application/json' \
   -d '{
   "fullName": "string",
-  "userName": "string",
+  "cpfNumber": "11144477735",
   "email": "user@example.com",
   "roleId": "3fa85f64-5717-4562-b3fc-2c963f66afa6"
 }'
 ```
 
-O usuário receberá um e-mail no endereço informado com o código para a criação da senha.
-Ele deve usar enviar esse código e a senha para o endpoint `POST /api/auth/create-password`.
-A senha deve conter letras maiúsculas e minúsculas, números e símbolos.
+### Usuários de Clientes
+
+Clientes PJ podem ter seus próprios usuários para gerenciar suas ordens de serviço.
+Ao criar um cliente empresarial (`POST /api/customers/business`), o sistema cria automaticamente um usuário com o perfil `CUSTOMER_ADMIN` vinculado a esse cliente.
+
+Com esse usuário, o cliente pode realizar o login e gerenciar seus próprios usuários adicionais através do endpoint `api/customers/users`. Estes novos usuários terão o perfil `CUSTOMER_USER`.
+
+Para criar um novo usuário de cliente:
+1. Faça login como um funcionário (Admin ou Atendente).
+2. Crie um cliente PJ (`POST /api/customers/business`).
+3. Faça login com o CPF do responsável definido no cadastro do cliente PJ.
+4. Chame o endpoint `POST /api/customers/users` para cadastrar novos usuários.
+
+```shell
+curl -X 'POST' \
+  'http://localhost:5000/api/customers/users' \
+  -H 'accept: application/json' \
+  -H 'Authorization: Bearer ...' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "fullName": "João do Cliente",
+  "email": "joao@cliente.com",
+  "cpfNumber": "111.444.777-35"
+}'
+```
+
+O usuário receberá um e-mail para criação da senha, seguindo o mesmo fluxo de usuários internos.
 
 ```shell
 curl -X 'POST' \
@@ -76,7 +100,7 @@ curl -X 'POST' \
   -H 'Authorization: Bearer ...' \
   -H 'Content-Type: application/json' \
   -d '{
-  "userName": "string",
+  "cpfNumber": "11144477735",
   "passwordCreationCode": "B2C16D975B6AD83144A8533E804AA43D",
   "password": "4Nz9c5uQ(&sHZCX"
 }'
@@ -94,7 +118,7 @@ curl -X 'POST' \
   -H 'Authorization: Bearer eyJhbGciOiJodHRwOi8vd3d3LnczLm9yZy8yMDAxLzA0L3htbGRzaWctbW9yZSNobWFjLXNoYTI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJmaWFwLW1lY2hhbmljcyIsImV4cCI6MTc2MjA0NjA1NywiaWF0IjoxNzYyMDQ0MjU3LCJuYmYiOjE3NjIwNDQyNTcsInN1YiI6IjBjNWJjZTQ0LWIxMTItNGI1My1iOTRjLWUyY2I2YTkyNDVmNSIsInVzZXJOYW1lIjoic3RyaW5nIiwicm9sZSI6IkFUVEVOREFOVCJ9.a8VU9Hdu4ttEMmaXhODV5NHuOK0subCxQ75tTRP9nIw' \
   -H 'Content-Type: application/json' \
   -d '{
-  "userName": "string"
+  "cpfNumber": "11144477735"
 }'
 ```
 

@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
+using Mechanics.Application.Auth.Services;
 using Mechanics.Application.Customers.Requests;
 using Mechanics.Application.Customers.Services;
 using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Domain.Base.Validation;
 using Mechanics.Domain.Customers;
+using Mechanics.Infra.Data;
 using Mechanics.Tests.Unit.Helpers;
 using Mechanics.Tests.Unit.Mocks;
 using Microsoft.EntityFrameworkCore;
@@ -20,15 +22,15 @@ public class CustomerAppServiceTests
     #region cadastrar cliente
 
     [TestMethod("Cria cliente pessoa física (CPF)")]
-    public async Task It_ShouldCreateCustomer_WhenCpfIsValid()
+    public async Task It_ShouldCreateIndividualCustomer_WhenCpfIsValid()
     {
         // Arrange
         await using var context = new DbContextTestBuilder().Build();
-        var handler = new CustomerAppService(context, _mapper);
+        var handler = new CustomerAppService(context, CreateUserAppService(context), _mapper);
         var request = CustomerMocks.BuildCreateRequestPf();
 
         // Act
-        var response = await handler.Create(request, CancellationToken.None);
+        var response = await handler.CreateIndividual(request, CancellationToken.None);
 
         // Assert
         Assert.IsNotNull(response);
@@ -36,21 +38,21 @@ public class CustomerAppServiceTests
         var created = await context.Customers.AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == response.CreatedId, TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(created);
-        Assert.AreEqual(request.Name.Trim().ToUpper(), created.Name);
+        Assert.AreEqual(request.FullName.Trim().ToUpper(), created.Name);
         Assert.AreEqual(request.Email.Trim().ToLower(), created.Email);
         Assert.AreEqual(DocumentType.Cpf, created.Document.Type);
     }
 
     [TestMethod("Cria cliente pessoa jurídica (CNPJ)")]
-    public async Task It_ShouldCreateCustomer_WhenCnpjIsValid()
+    public async Task It_ShouldCreateBusinessCustomer_WhenCnpjIsValid()
     {
         // Arrange
         await using var context = new DbContextTestBuilder().Build();
-        var handler = new CustomerAppService(context, _mapper);
+        var handler = new CustomerAppService(context, CreateUserAppService(context), _mapper);
         var request = CustomerMocks.BuildCreateRequestPj();
 
         // Act
-        var response = await handler.Create(request, CancellationToken.None);
+        var response = await handler.CreateBusiness(request, CancellationToken.None);
 
         // Assert
         Assert.IsNotNull(response);
@@ -61,18 +63,18 @@ public class CustomerAppServiceTests
         Assert.AreEqual(DocumentType.Cnpj, created.Document.Type);
     }
 
-    [TestMethod("Falha ao criar cliente inválido")]
-    public async Task It_ShouldThrow_WhenCreateCustomerIsInvalid()
+    [TestMethod("Falha ao criar cliente individual inválido")]
+    public async Task It_ShouldThrow_WhenCreateIndividualCustomerIsInvalid()
     {
         // Arrange
         await using var context = new DbContextTestBuilder().Build();
-        var handler = new CustomerAppService(context, _mapper);
+        var handler = new CustomerAppService(context, CreateUserAppService(context), _mapper);
         var request = CustomerMocks.BuildInvalidCreateRequest();
 
         // Act + Assert
         await Assert.ThrowsExactlyAsync<DomainValidationException>(async () =>
         {
-            await handler.Create(request, CancellationToken.None);
+            await handler.CreateIndividual(request, CancellationToken.None);
         });
     }
 
@@ -87,7 +89,7 @@ public class CustomerAppServiceTests
         var id = Guid.NewGuid();
         var existing = CustomerMocks.CreateCustomerPf(id);
         await using var context = new DbContextTestBuilder().WithData(ctx => ctx.Customers.Add(existing)).Build();
-        var handler = new CustomerAppService(context, _mapper);
+        var handler = new CustomerAppService(context, CreateUserAppService(context), _mapper);
         var request = CustomerMocks.BuildUpdateRequest();
 
         // Act
@@ -96,7 +98,8 @@ public class CustomerAppServiceTests
         // Assert
         Assert.IsNotNull(response);
         Assert.IsInstanceOfType<UpdateItemResponse>(response);
-        var updated = await context.Customers.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id, TestContext.CancellationTokenSource.Token);
+        var updated = await context.Customers.AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == id, TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(updated);
         Assert.AreEqual(request.Name!.Trim().ToUpper(), updated.Name);
         Assert.AreEqual(request.Email!.Trim().ToLower(), updated.Email);
@@ -111,7 +114,7 @@ public class CustomerAppServiceTests
         var id = Guid.NewGuid();
         var existing = CustomerMocks.CreateCustomerPf(id);
         await using var context = new DbContextTestBuilder().WithData(ctx => ctx.Customers.Add(existing)).Build();
-        var handler = new CustomerAppService(context, _mapper);
+        var handler = new CustomerAppService(context, CreateUserAppService(context), _mapper);
         var request = CustomerMocks.BuildInvalidUpdateRequest();
 
         // Act + Assert
@@ -132,7 +135,7 @@ public class CustomerAppServiceTests
         var id = Guid.NewGuid();
         var existing = CustomerMocks.CreateCustomerPf(id);
         await using var context = new DbContextTestBuilder().WithData(ctx => ctx.Customers.Add(existing)).Build();
-        var handler = new CustomerAppService(context, _mapper);
+        var handler = new CustomerAppService(context, CreateUserAppService(context), _mapper);
 
         // Act
         var response = await handler.Get(id, TestContext.CancellationTokenSource.Token);
@@ -155,7 +158,7 @@ public class CustomerAppServiceTests
             CustomerMocks.CreateCustomerPj(Guid.NewGuid()),
         };
         await using var context = new DbContextTestBuilder().WithData(customers).Build();
-        var handler = new CustomerAppService(context, _mapper);
+        var handler = new CustomerAppService(context, CreateUserAppService(context), _mapper);
         var request = new GetCustomersRequest { Page = 1, ItemsPerPage = 10 };
 
         // Act
@@ -168,4 +171,7 @@ public class CustomerAppServiceTests
     }
 
     #endregion
+
+    private static UserAppService CreateUserAppService(AppDbContext context) => new(context,
+        AutoMapperFactory.CreateMap("Mechanics.Application"), new EmailServiceMock());
 }

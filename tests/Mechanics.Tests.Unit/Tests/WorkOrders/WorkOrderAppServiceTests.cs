@@ -277,7 +277,7 @@ public class WorkOrderAppServiceTests
         {
             Id = performingUserId,
             FullName = "Test Mechanic",
-            UserName = "test_mechanic",
+            CpfNumber = "45678901234",
             Email = "test_mechanic@example.com",
             PasswordHash = "hash",
             SecurityStamp = Guid.NewGuid().ToString(),
@@ -301,7 +301,7 @@ public class WorkOrderAppServiceTests
         {
             Id = statusChangedBy,
             FullName = "Another Mechanic",
-            UserName = "another_mechanic",
+            CpfNumber = "56789012345",
             Email = "another_mechanic@example.com",
             PasswordHash = "hash",
             SecurityStamp = Guid.NewGuid().ToString(),
@@ -386,7 +386,7 @@ public class WorkOrderAppServiceTests
         {
             Id = actorId,
             FullName = "Actor User",
-            UserName = "actor_user",
+            CpfNumber = "67890123456",
             Email = "actor@example.com",
             PasswordHash = "hash",
             SecurityStamp = Guid.NewGuid().ToString(),
@@ -589,7 +589,7 @@ public class WorkOrderAppServiceTests
                 {
                     Id = assignedToUserId,
                     FullName = "Assigned Mechanic",
-                    UserName = "assigned_mechanic",
+                    CpfNumber = "78901234567",
                     Email = "assigned@example.com",
                     PasswordHash = "hash",
                     SecurityStamp = Guid.NewGuid().ToString(),
@@ -602,7 +602,7 @@ public class WorkOrderAppServiceTests
                 {
                     Id = performedByUserId,
                     FullName = "Supervisor",
-                    UserName = "supervisor",
+                    CpfNumber = "89012345678",
                     Email = "sup@example.com",
                     PasswordHash = "hash",
                     SecurityStamp = Guid.NewGuid().ToString(),
@@ -692,13 +692,13 @@ public class WorkOrderAppServiceTests
                 // non-mechanic user
                 ctx.Users.Add(new User
                 {
-                    Id = assignedToUserId, FullName = "Admin User", UserName = "admin", Email = "admin@example.com",
+                    Id = assignedToUserId, FullName = "Admin User", CpfNumber = "11122233344", Email = "admin@example.com",
                     PasswordHash = "h", SecurityStamp = Guid.NewGuid().ToString(), RoleId = nonMechanicRoleId,
                     CreationDate = DateTime.UtcNow,
                 });
                 ctx.Users.Add(new User
                 {
-                    Id = performerId, FullName = "Perf", UserName = "perf", Email = "perf@example.com", PasswordHash = "h",
+                    Id = performerId, FullName = "Perf", CpfNumber = "22233344455", Email = "perf@example.com", PasswordHash = "h",
                     SecurityStamp = Guid.NewGuid().ToString(), RoleId = nonMechanicRoleId, CreationDate = DateTime.UtcNow,
                 });
 
@@ -752,7 +752,7 @@ public class WorkOrderAppServiceTests
         var someUserId = Guid.NewGuid();
         await context.Users.AddAsync(new User
         {
-            Id = someUserId, FullName = "Mec A", UserName = "meca", Email = "meca@example.com", PasswordHash = "h",
+            Id = someUserId, FullName = "Mec A", CpfNumber = "33344455566", Email = "meca@example.com", PasswordHash = "h",
             SecurityStamp = Guid.NewGuid().ToString(), RoleId = mechanicRoleId, CreationDate = DateTime.UtcNow,
         }, TestContext.CancellationTokenSource.Token);
         await context.SaveChangesAsync(TestContext.CancellationTokenSource.Token);
@@ -859,14 +859,13 @@ public class WorkOrderAppServiceTests
         IsNull(resp);
     }
 
-    [TestMethod("TrackByDocumentAndAccessKey should return WorkOrder for matching document and access key")]
-    public async Task TrackByDocumentAndAccessKey_ShouldReturnWorkOrder_WhenDocumentAndAccessKeyMatch()
+    [TestMethod("TrackByAccessKey should return WorkOrder for matching customer id and access key")]
+    public async Task TrackByAccessKey_ShouldReturnWorkOrder_WhenCustomerAndAccessKeyMatch()
     {
         var customerId = Guid.NewGuid();
         var vehicleId = Guid.NewGuid();
         var workOrderId = Guid.NewGuid();
         const string rawDocument = "12345678909";
-        const string queryDocument = "123.456.789-09";
         const string storedAccessKey = "123123";
         const string queryAccessKey = "1 2 3 1 2 3";
 
@@ -910,7 +909,7 @@ public class WorkOrderAppServiceTests
         var service = new WorkOrderAppService(context, _mapper, _emailMock, _loggerFactory.CreateLogger<WorkOrderAppService>(),
             budgetService);
 
-        var resp = await service.TrackByDocumentAndAccessKey(queryDocument, queryAccessKey,
+        var resp = await service.TrackByAccessKey(customerId, queryAccessKey,
             TestContext.CancellationTokenSource.Token);
 
         IsNotNull(resp, "Response should not be null");

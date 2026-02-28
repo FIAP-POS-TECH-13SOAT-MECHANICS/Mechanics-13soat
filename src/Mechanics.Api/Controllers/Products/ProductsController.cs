@@ -8,14 +8,13 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Mechanics.Api.Controllers.Products;
 
-
 /// <summary>
 ///     Controller para gerenciar produtos.
 /// </summary>
 [ApiController]
 [ApiExplorerSettings(GroupName = "v1")]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = PolicyNames.EmployeesOnly)]
 public class ProductsController(ProductAppService service) : ControllerBase
 {
     /// <summary>
@@ -27,7 +26,8 @@ public class ProductsController(ProductAppService service) : ControllerBase
     [Produces("application/json", Type = typeof(GetProductsResponse))]
     [ProducesResponseType(typeof(GetProductsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetProducts([FromQuery] GetProductsRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetProducts([FromQuery] GetProductsRequest request,
+        CancellationToken cancellationToken = default)
     {
         var response = await service.GetList(request, cancellationToken);
         return Ok(response);
@@ -57,7 +57,7 @@ public class ProductsController(ProductAppService service) : ControllerBase
     /// <response code="201">Registro cadastrado.</response>
     /// <response code="400">Registro inválido.</response>
     [HttpPost]
-    //[Authorize(Roles = $"{RoleNames.Administrator},{RoleNames.Attendant}")]
+    [Authorize(Roles = $"{RoleNames.Administrator},{RoleNames.Attendant}")]
     [Consumes(typeof(CreateProductRequest), "application/json")]
     [Produces("application/json", Type = typeof(CreateItemResponse))]
     [ProducesResponseType(typeof(CreateItemResponse), StatusCodes.Status201Created)]
@@ -79,7 +79,8 @@ public class ProductsController(ProductAppService service) : ControllerBase
     [Produces("application/json", Type = typeof(CreateItemResponse))]
     [ProducesResponseType(typeof(CreateItemResponse), StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UpdateProduct(Guid id, UpdateProductRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> UpdateProduct(Guid id, UpdateProductRequest request,
+        CancellationToken cancellationToken = default)
     {
         var response = await service.Update(id, request, cancellationToken);
         return response is null ? NotFound() : NoContent();

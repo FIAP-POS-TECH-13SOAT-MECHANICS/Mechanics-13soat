@@ -14,7 +14,7 @@ public static class UserSeeds
             {
                 Id = new Guid("db27b85d-b0f3-4300-bb45-7841f0d11617"),
                 FullName = "Administrator User",
-                UserName = "administrator",
+                CpfNumber = "12345678909",
                 Email = "administrator@mechanics.com",
                 RoleId = GetRoleId(RoleNames.Administrator),
                 SecurityStamp = new Guid("efcaaf76-0535-45fc-a79c-06ab92c064bb").ToString(),
@@ -25,7 +25,7 @@ public static class UserSeeds
             {
                 Id = new Guid("c2a83e5a-27c7-440a-97e3-86234eebb3c7"),
                 FullName = "Attendant User",
-                UserName = "attendant",
+                CpfNumber = "98765432100",
                 Email = "attendant@mechanics.com",
                 RoleId = GetRoleId(RoleNames.Attendant),
                 SecurityStamp = new Guid("370c4d16-8e11-46ca-9004-e1fb9311e49e").ToString(),
@@ -36,7 +36,7 @@ public static class UserSeeds
             {
                 Id = new Guid("4c3b8777-6c4a-4bf3-8ad5-aad48981f7f2"),
                 FullName = "Mechanic User",
-                UserName = "mechanic",
+                CpfNumber = "11144477735",
                 Email = "mechanic@mechanics.com",
                 RoleId = GetRoleId(RoleNames.Mechanic),
                 SecurityStamp = new Guid("0a3bc211-1220-4d20-80e9-bd850d0dc200").ToString(),

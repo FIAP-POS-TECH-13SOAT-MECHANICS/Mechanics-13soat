@@ -63,7 +63,8 @@ public class EmailServiceMock : IEmailService
         return Task.CompletedTask;
     }
 
-    public Task SendMechanicBudgetDecision(User mechanic, WorkOrder workOrder, Budget budget, bool approved, CancellationToken cancellationToken = default)
+    public Task SendMechanicBudgetDecision(User mechanic, WorkOrder workOrder, Budget budget, bool approved,
+        CancellationToken cancellationToken = default)
     {
         SendMechanicBudgetDecisionCalled = true;
         LastMechanic = mechanic;
@@ -77,5 +78,9 @@ public class EmailServiceMock : IEmailService
         Task.CompletedTask;
 
     public Task UserPasswordChanged(User user, CancellationToken cancellationToken = default) =>
+        Task.CompletedTask;
+
+    public Task SendCustomerUserPasswordCreationCode(User user, string passwordCreationCode,
+        CancellationToken cancellationToken = default) =>
         Task.CompletedTask;
 }

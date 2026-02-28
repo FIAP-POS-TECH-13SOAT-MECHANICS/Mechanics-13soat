@@ -19,7 +19,7 @@ public static class WorkOrderMocks
             Status = WorkOrderStatus.Received,
             CreationDate = now,
             LastUpdate = now,
-            AssignedToUser = UserMocks.CreateUser(userId, $"meca-{userId:N}", RoleNames.Mechanic),
+            AssignedToUser = UserMocks.CreateUser(userId, $"meca-{userId:N}", "63196372006", RoleNames.Mechanic),
             AssignedToUserId = userId,
         };
     }
@@ -45,7 +45,8 @@ public static class WorkOrderMocks
             CreationDate = now,
             LastUpdate = now,
             ServiceCatalog = new List<ServiceCatalog> { service },
-            AssignedToUser = UserMocks.CreateUser(new Guid("380038b3-5118-484a-bfd3-35df9363d969"), "meca", RoleNames.Mechanic),
+            AssignedToUser = UserMocks.CreateUser(new Guid("380038b3-5118-484a-bfd3-35df9363d969"), "meca", "77184822005",
+                RoleNames.Mechanic),
             AssignedToUserId = new Guid("380038b3-5118-484a-bfd3-35df9363d969"),
         };
     }

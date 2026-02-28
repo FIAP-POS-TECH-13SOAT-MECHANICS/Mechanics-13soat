@@ -126,18 +126,17 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
     }
 
     /// <summary>
-    ///     Aprova um budget publicamente via documento + accessKey
+    ///     Aprova um orçamento.
     /// </summary>
-    public async Task PublicApproveBudget(string document, string accessKey, string? description = null,
+    public async Task ApproveBudget(Guid customerId, string accessKey, string? description = null,
         CancellationToken cancellationToken = default)
     {
-        var normalizedDocument = new string(document.Where(char.IsDigit).ToArray());
         var normalizedAccessKey = accessKey.Replace(" ", "");
 
         var customer = await dbContext.Customers
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Document.Number == normalizedDocument, cancellationToken);
-        EntityNotFoundException.ThrowIfNull(customer, document);
+            .FirstOrDefaultAsync(c => c.Id == customerId, cancellationToken);
+        EntityNotFoundException.ThrowIfNull(customer, customerId);
 
         var wo = await dbContext.WorkOrders
             .FirstOrDefaultAsync(w => w.CustomerId == customer.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
@@ -163,7 +162,7 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
         // Approve
         budget.Status = BudgetStatus.Approved;
         budget.ApprovedAt = DateTime.Now;
-        budget.ApprovedByCustomerDocument = normalizedDocument;
+        budget.ApprovedByCustomerDocument = customer.Document.Number;
         budget.Description = description;
 
         wo.Status = WorkOrderStatus.InProgress;
@@ -174,8 +173,8 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
             WorkOrderId = wo.Id,
             Action = "BudgetApprovedPublic",
             Details = description is null
-                ? $"Budget {budget.Id} approved by customer {normalizedDocument}."
-                : $"Budget {budget.Id} approved by customer {normalizedDocument}. Description: {description}",
+                ? $"Budget {budget.Id} approved by customer {customer.Document.Number}."
+                : $"Budget {budget.Id} approved by customer {customer.Document.Number}. Description: {description}",
             PerformedByUserId = null,
         };
         await dbContext.WorkOrderHistories.AddAsync(hist, cancellationToken);
@@ -209,19 +208,18 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
     }
 
     /// <summary>
-    ///     Rejeita um budget publicamente via documento + accessKey.
+    ///     Rejeita um orçamento.
     ///     Marca o budget como Rejected, coloca a OS novamente em UnderDiagnosis e notifica o mecânico.
     /// </summary>
-    public async Task PublicRejectBudget(string document, string accessKey, string? description = null,
+    public async Task RejectBudget(Guid customerId, string accessKey, string? description = null,
         CancellationToken cancellationToken = default)
     {
-        var normalizedDocument = new string(document.Where(char.IsDigit).ToArray());
         var normalizedAccessKey = accessKey.Replace(" ", "");
 
         var customer = await dbContext.Customers
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Document.Number == normalizedDocument, cancellationToken);
-        EntityNotFoundException.ThrowIfNull(customer, document);
+            .FirstOrDefaultAsync(c => c.Id == customerId, cancellationToken);
+        EntityNotFoundException.ThrowIfNull(customer, customerId);
 
         var wo = await dbContext.WorkOrders
             .FirstOrDefaultAsync(w => w.CustomerId == customer.Id && w.AccessKey == normalizedAccessKey, cancellationToken);
@@ -253,8 +251,8 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
             WorkOrderId = wo.Id,
             Action = "BudgetRejectedByCustomer",
             Details = description is null
-                ? $"Budget {budget.Id} rejected by customer {normalizedDocument}."
-                : $"Budget {budget.Id} rejected by customer {normalizedDocument}. Description: {description}",
+                ? $"Budget {budget.Id} rejected by customer {customer.Document.Number}."
+                : $"Budget {budget.Id} rejected by customer {customer.Document.Number}. Description: {description}",
             PerformedByUserId = null,
         };
         await dbContext.WorkOrderHistories.AddAsync(hist, cancellationToken);

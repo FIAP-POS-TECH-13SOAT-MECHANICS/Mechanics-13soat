@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Mechanics.Application.Auth.Requests;
 using Mechanics.Application.Auth.Services;
+using Mechanics.Application.Customers.Requests;
 using Mechanics.Application.Notification.Services;
 using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Domain.Auth;
@@ -44,8 +45,41 @@ public class UserAppServiceTests
             .FirstOrDefaultAsync(user => user.Id == response.CreatedId, TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(created);
         Assert.AreEqual(request.FullName, created.FullName);
-        Assert.AreEqual(request.UserName, created.UserName);
+        Assert.AreEqual(request.CpfNumber, created.CpfNumber);
         Assert.AreEqual(request.RoleId, created.RoleId);
+    }
+
+    [TestMethod("Cria usuário para cliente.")]
+    public async Task It_ShouldCreateUserForCustomer()
+    {
+        // Arrange
+        var customerId = Guid.NewGuid();
+        var customerUserRole = RoleSeeds.GetSeeds().First(r => r.Name == RoleNames.CustomerUser);
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(ctx => ctx.Roles.Add(customerUserRole))
+            .Build();
+
+        var handler = new UserAppService(context, _mapper, _mailService);
+        var individualRequest = new CreateIndividualCustomerRequest
+        {
+            FullName = "Joao Cliente",
+            Email = "joao@cliente.com",
+            CpfNumber = "341.041.040-60",
+        };
+        var request = new CreateUserForCustomerRequest(customerId, individualRequest);
+
+        // Act
+        var response = await handler.Create(request, TestContext.CancellationTokenSource.Token);
+
+        // Assert
+        Assert.IsNotNull(response);
+        Assert.AreNotEqual(Guid.Empty, response.CreatedId);
+        var created = await context.Users.AsNoTracking()
+            .FirstAsync(u => u.Id == response.CreatedId, TestContext.CancellationTokenSource.Token);
+        Assert.AreEqual(customerId, created.CustomerId);
+        Assert.AreEqual(customerUserRole.Id, created.RoleId);
+        Assert.AreEqual("JOAO CLIENTE", created.FullName);
     }
 
     #endregion
@@ -57,7 +91,7 @@ public class UserAppServiceTests
     {
         // Arrange
         var userId = Guid.NewGuid();
-        var user = UserMocks.CreateUser(userId, "Maria da Silva", RoleNames.Mechanic);
+        var user = UserMocks.CreateUser(userId, "Maria da Silva", "46387073006", RoleNames.Mechanic);
 
         await using var context = new DbContextTestBuilder()
             .WithData(ctx => ctx.Users.Add(user))
@@ -72,7 +106,7 @@ public class UserAppServiceTests
         Assert.IsNotNull(response);
         Assert.AreEqual(userId, response.Id);
         Assert.AreEqual(user.FullName, response.FullName);
-        Assert.AreEqual(user.UserName, response.UserName);
+        Assert.AreEqual(user.CpfNumber, response.CpfNumber);
         Assert.IsNotNull(response.Role);
         Assert.AreEqual(RoleNames.Mechanic, response.Role.Name);
     }
@@ -92,6 +126,51 @@ public class UserAppServiceTests
         Assert.IsNull(response);
     }
 
+    [TestMethod("Retorna usuário pelo ID e CustomerId.")]
+    public async Task It_ShouldReturnUser_WhenIdAndCustomerIdMatch()
+    {
+        // Arrange
+        var customerId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var user = UserMocks.CreateUser(userId, "Joao Cliente", "12345678909", RoleNames.CustomerUser);
+        typeof(User).GetProperty(nameof(User.CustomerId))?.SetValue(user, customerId);
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(ctx => ctx.Users.Add(user))
+            .Build();
+
+        var handler = new UserAppService(context, _mapper, _mailService);
+
+        // Act
+        var response = await handler.GetByIdAndCustomerId(customerId, userId, TestContext.CancellationTokenSource.Token);
+
+        // Assert
+        Assert.IsNotNull(response);
+        Assert.AreEqual(userId, response.Id);
+    }
+
+    [TestMethod("Retorna null quando o Id existe mas CustomerId não coincide.")]
+    public async Task It_ShouldReturnNull_WhenCustomerIdDoesNotMatch()
+    {
+        // Arrange
+        var customerId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var user = UserMocks.CreateUser(userId, "Joao Cliente", "12345678909", RoleNames.CustomerUser);
+        typeof(User).GetProperty(nameof(User.CustomerId))?.SetValue(user, Guid.NewGuid()); // Outro customerId
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(ctx => ctx.Users.Add(user))
+            .Build();
+
+        var handler = new UserAppService(context, _mapper, _mailService);
+
+        // Act
+        var response = await handler.GetByIdAndCustomerId(customerId, userId, TestContext.CancellationTokenSource.Token);
+
+        // Assert
+        Assert.IsNull(response);
+    }
+
     #endregion
 
     #region listar usuários
@@ -102,8 +181,8 @@ public class UserAppServiceTests
         // Arrange
         List<User> users =
         [
-            UserMocks.CreateUser(Guid.NewGuid(), "Joao Silva", RoleNames.Mechanic),
-            UserMocks.CreateUser(Guid.NewGuid(), "Jose Silva", RoleNames.Administrator),
+            UserMocks.CreateUser(Guid.NewGuid(), "Joao Silva", "54744567002", RoleNames.Mechanic),
+            UserMocks.CreateUser(Guid.NewGuid(), "Jose Silva", "92969731045", RoleNames.Administrator),
         ];
         await using var context = new DbContextTestBuilder().WithData(users).Build();
         var handler = new UserAppService(context, _mapper, _mailService);
@@ -126,8 +205,8 @@ public class UserAppServiceTests
         var userId2 = new Guid("bc272ac4-c97a-4997-9871-7e4f4c023797");
         List<User> users =
         [
-            UserMocks.CreateUser(userId1, "Joao Silva", RoleNames.Mechanic),
-            UserMocks.CreateUser(userId2, "Jose Silva", RoleNames.Administrator),
+            UserMocks.CreateUser(userId1, "Joao Silva", "59600903093", RoleNames.Mechanic),
+            UserMocks.CreateUser(userId2, "Jose Silva", "16026321039", RoleNames.Administrator),
         ];
         await using var context = new DbContextTestBuilder().WithData(users).Build();
         var handler = new UserAppService(context, _mapper, _mailService);
@@ -155,8 +234,8 @@ public class UserAppServiceTests
         // Arrange
         List<User> users =
         [
-            UserMocks.CreateUser(Guid.NewGuid(), "Joao Silva", RoleNames.Mechanic),
-            UserMocks.CreateUser(Guid.NewGuid(), "Jose Silva", RoleNames.Administrator),
+            UserMocks.CreateUser(Guid.NewGuid(), "Joao Silva", "62697237011", RoleNames.Mechanic),
+            UserMocks.CreateUser(Guid.NewGuid(), "Jose Silva", "61991950004", RoleNames.Administrator),
         ];
         await using var context = new DbContextTestBuilder().WithData(users).Build();
         var handler = new UserAppService(context, _mapper, _mailService);
@@ -172,6 +251,33 @@ public class UserAppServiceTests
         Assert.Contains(user => user.Id == users[0].Id, response.Items);
     }
 
+    [TestMethod("Retorna lista de usuários por CustomerId.")]
+    public async Task It_ShouldReturnUsers_ByCustomerId()
+    {
+        // Arrange
+        var customerId = Guid.NewGuid();
+        var user1 = UserMocks.CreateUser(Guid.NewGuid(), "User 1", "41594921008", RoleNames.CustomerUser);
+        typeof(User).GetProperty(nameof(User.CustomerId))?.SetValue(user1, customerId);
+
+        var user2 = UserMocks.CreateUser(Guid.NewGuid(), "User 2", "56559792036", RoleNames.CustomerUser);
+        typeof(User).GetProperty(nameof(User.CustomerId))?.SetValue(user2, Guid.NewGuid()); // Outro customer
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(new List<User> { user1, user2 })
+            .Build();
+
+        var handler = new UserAppService(context, _mapper, _mailService);
+        var request = new GetUsersRequest { Page = 1, ItemsPerPage = 10 };
+
+        // Act
+        var response = await handler.GetListByCustomerId(customerId, request, TestContext.CancellationTokenSource.Token);
+
+        // Assert
+        Assert.IsNotNull(response);
+        Assert.AreEqual(1, response.TotalCount);
+        Assert.AreEqual("USER 1", response.Items.First().FullName);
+    }
+
     #endregion
 
     #region atualizar usuário
@@ -180,7 +286,7 @@ public class UserAppServiceTests
     public async Task It_ShouldUpdateUserRole_WhenOtherDataIsNull()
     {
         var administratorRole = RoleSeeds.GetSeeds().First(role => role.Name == RoleNames.Administrator);
-        var user = UserMocks.CreateUser(Guid.NewGuid(), "Maria da Silva", RoleNames.Attendant);
+        var user = UserMocks.CreateUser(Guid.NewGuid(), "Maria da Silva", "42386508080", RoleNames.Attendant);
         await using var context = new DbContextTestBuilder()
             .WithData(ctx =>
             {
@@ -192,16 +298,14 @@ public class UserAppServiceTests
         var handler = new UserAppService(context, _mapper, _mailService);
         var request = UserMocks.BuildUpdateRequest(administratorRole.Id);
 
-        // Act
         var response = await handler.Update(userId, request, CancellationToken.None);
 
-        // Assert
         Assert.IsNotNull(response);
         Assert.IsInstanceOfType<UpdateItemResponse>(response);
         var updated = await context.Users.AsNoTracking().FirstOrDefaultAsync(TestContext.CancellationTokenSource.Token);
         Assert.IsNotNull(updated);
         Assert.AreEqual(user.FullName, updated.FullName);
-        Assert.AreEqual(user.UserName, updated.UserName);
+        Assert.AreEqual(user.CpfNumber, updated.CpfNumber);
         Assert.AreEqual(administratorRole.Id, updated.RoleId);
     }
 
@@ -214,6 +318,64 @@ public class UserAppServiceTests
 
         var response = await handler.Update(Guid.NewGuid(), request, TestContext.CancellationTokenSource.Token);
 
+        Assert.IsNull(response);
+    }
+
+    [TestMethod("Ignora alteração de Role ao atualizar usuário por CustomerId.")]
+    public async Task It_ShouldIgnoreRoleUpdate_WhenUpdatingByCustomerId()
+    {
+        // Arrange
+        var customerId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var customerUserRole = RoleSeeds.GetSeeds().First(r => r.Name == RoleNames.CustomerUser);
+        var adminRole = RoleSeeds.GetSeeds().First(r => r.Name == RoleNames.Administrator);
+
+        var user = UserMocks.CreateUser(userId, "User Before", "12345678909", RoleNames.CustomerUser);
+        typeof(User).GetProperty(nameof(User.CustomerId))?.SetValue(user, customerId);
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(new List<User> { user })
+            .Build();
+
+        var handler = new UserAppService(context, _mapper, _mailService);
+        var request = new UpdateUserRequest
+        {
+            FullName = "User After",
+            RoleId = adminRole.Id // Tentativa de mudar para Admin
+        };
+
+        // Act
+        var response =
+            await handler.UpdateByIdAndCustomerId(customerId, userId, request, TestContext.CancellationTokenSource.Token);
+
+        // Assert
+        Assert.IsNotNull(response);
+        var updated = await context.Users.AsNoTracking().FirstAsync(u => u.Id == userId);
+        Assert.AreEqual("USER AFTER", updated.FullName);
+        Assert.AreEqual(customerUserRole.Id, updated.RoleId); // Role deve permanecer a mesma
+    }
+
+    [TestMethod("Retorna null ao atualizar quando CustomerId não coincide.")]
+    public async Task It_ShouldReturnNull_WhenUpdatingWithWrongCustomerId()
+    {
+        // Arrange
+        var customerId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var user = UserMocks.CreateUser(userId, "User Before", "12345678909", RoleNames.CustomerUser);
+        typeof(User).GetProperty(nameof(User.CustomerId))?.SetValue(user, Guid.NewGuid()); // Outro customer
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(new List<User> { user })
+            .Build();
+
+        var handler = new UserAppService(context, _mapper, _mailService);
+        var request = new UpdateUserRequest { FullName = "User After" };
+
+        // Act
+        var response =
+            await handler.UpdateByIdAndCustomerId(customerId, userId, request, TestContext.CancellationTokenSource.Token);
+
+        // Assert
         Assert.IsNull(response);
     }
 

@@ -1,5 +1,4 @@
 using Mechanics.Application.ServicesCatalog.Requests;
-using Mechanics.Domain.Base;
 using Mechanics.Domain.ServicesCatalog;
 
 namespace Mechanics.Tests.Unit.Mocks;

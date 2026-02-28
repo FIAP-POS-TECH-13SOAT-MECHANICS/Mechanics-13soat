@@ -8,11 +8,6 @@ public class UpdateUserRequest
     public string? FullName { get; init; }
 
     /// <summary>
-    ///     Login do usuário.
-    /// </summary>
-    public string? UserName { get; init; }
-
-    /// <summary>
     ///     Perfil de acesso associado ao usuário.
     /// </summary>
     public Guid? RoleId { get; init; }

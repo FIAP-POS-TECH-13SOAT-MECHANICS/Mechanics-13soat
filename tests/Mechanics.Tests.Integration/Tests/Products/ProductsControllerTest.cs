@@ -1,7 +1,6 @@
 ﻿using Mechanics.Application.Products.Requests;
 using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Domain.Auth;
-using Mechanics.Domain.Base;
 using Mechanics.Domain.Products;
 using Mechanics.Tests.Integration.Helpers;
 using System.Net;

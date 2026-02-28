@@ -26,13 +26,14 @@ public class AuthAppServiceTests
     {
         var token = Guid.NewGuid().ToString();
         var tokenHandlerStub = CreateTokenHandlerStub(token);
+        var user = UserMocks.CreateUser("12345678909", "TEST_5eCre+Key");
         await using var context = new DbContextTestBuilder()
-            .WithData([UserMocks.CreateUser("maria.silva", "TEST_5eCre+Key")])
+            .WithData([user])
             .Build();
         var appService = new AuthAppService(context, _mailService, tokenHandlerStub.Object);
         var request = new LoginRequest
         {
-            UserName = "maria.silva",
+            CpfNumber = "12345678909",
             Password = "TEST_5eCre+Key",
         };
 
@@ -48,13 +49,14 @@ public class AuthAppServiceTests
     {
         var token = Guid.NewGuid().ToString();
         var tokenHandlerStub = CreateTokenHandlerStub(token);
+        var user = UserMocks.CreateUser("12345678909", "TEST_5eCre+Key");
         await using var context = new DbContextTestBuilder()
-            .WithData([UserMocks.CreateUser("maria.silva", "TEST_5eCre+Key")])
+            .WithData([user])
             .Build();
         var appService = new AuthAppService(context, _mailService, tokenHandlerStub.Object);
         var request = new LoginRequest
         {
-            UserName = "maria.silva",
+            CpfNumber = "12345678909",
             Password = "wrong-password",
         };
 
@@ -67,7 +69,7 @@ public class AuthAppServiceTests
     public async Task It_ShouldReturnToken_WithValidRefreshToken()
     {
         var userId = new Guid("5bb2ae44-cbc7-44c4-9eda-cfb860b6e2f5");
-        var user = UserMocks.CreateUser(userId, "jose-santos", RoleNames.Mechanic);
+        var user = UserMocks.CreateUser(userId, "jose-santos", "38446983028", RoleNames.Mechanic);
         var token = Guid.NewGuid().ToString();
         var refreshToken = Guid.NewGuid().ToString();
         var tokenHandlerStub = CreateTokenHandlerStub(token, refreshToken, userId.ToString(), userId);
@@ -89,7 +91,7 @@ public class AuthAppServiceTests
     [TestMethod("Deve enviar e-mail se o usuário existir")]
     public async Task It_ShouldSendPasswordResetEmail_WithValidUserName()
     {
-        var user = UserMocks.CreateUser("9Fkk9BESd8", "TEST_5eCre+Key");
+        var user = UserMocks.CreateUser("12345678909", "TEST_5eCre+Key");
         await using var context = new DbContextTestBuilder()
             .WithData([user])
             .Build();
@@ -99,7 +101,7 @@ public class AuthAppServiceTests
                     TestContext.CancellationTokenSource.Token))
             .Verifiable(Times.Once());
         var appService = new AuthAppService(context, emailServiceStub.Object, null!);
-        var request = new ResetPasswordRequest { UserName = "9Fkk9BESd8" };
+        var request = new ResetPasswordRequest { CpfNumber = "12345678909" };
 
         await appService.ResetPassword(request, TestContext.CancellationTokenSource.Token);
 
@@ -116,7 +118,7 @@ public class AuthAppServiceTests
                     TestContext.CancellationTokenSource.Token))
             .Verifiable(Times.Never());
         var appService = new AuthAppService(context, emailServiceStub.Object, null!);
-        var request = new ResetPasswordRequest { UserName = "lHo6vmvH2" };
+        var request = new ResetPasswordRequest { CpfNumber = "11144477735" };
 
         await appService.ResetPassword(request, TestContext.CancellationTokenSource.Token);
 
@@ -126,7 +128,7 @@ public class AuthAppServiceTests
     [TestMethod("Deve alterar a senha se o código for válido")]
     public async Task It_ShouldChangePassword_WithValidCode()
     {
-        var user = UserMocks.CreateUser("9Fkk9BESd8", "TEST_5eCre+Key");
+        var user = UserMocks.CreateUser("12345678909", "TEST_5eCre+Key");
         await using var context = new DbContextTestBuilder()
             .WithData([CloneHelper.DeepClone(user)])
             .Build();
@@ -137,7 +139,7 @@ public class AuthAppServiceTests
         var appService = new AuthAppService(context, emailServiceStub.Object, null!);
         var request = new CreatePasswordRequest
         {
-            UserName = "9Fkk9BESd8",
+            CpfNumber = "12345678909",
             Password = "TEST2_5eCre+Key1",
             PasswordCreationCode = user.GetPasswordCreationCode(),
         };
@@ -155,7 +157,7 @@ public class AuthAppServiceTests
     [TestMethod("Deve manter a senha atual se o código for inválido")]
     public async Task It_ShouldNotChangePassword_WithInvalidCode()
     {
-        var user = UserMocks.CreateUser("9Fkk9BESd8", "TEST_5eCre+Key");
+        var user = UserMocks.CreateUser("12345678909", "TEST_5eCre+Key");
         await using var context = new DbContextTestBuilder()
             .WithData([CloneHelper.DeepClone(user)])
             .Build();
@@ -166,7 +168,7 @@ public class AuthAppServiceTests
         var appService = new AuthAppService(context, emailServiceStub.Object, null!);
         var request = new CreatePasswordRequest
         {
-            UserName = "9Fkk9BESd8",
+            CpfNumber = "12345678909",
             Password = "TEST2_5eCre+Key2",
             PasswordCreationCode = "3ef19994-2a12-4618-9ca4-a9110b15ca9c",
         };

@@ -16,9 +16,8 @@ namespace Mechanics.Api.Controllers.WorkOrders;
 [ApiController]
 [ApiExplorerSettings(GroupName = "v1")]
 [Route("api/[controller]")]
-[Authorize]
-public class WorkOrdersController(WorkOrderAppService workOrderService)
-    : ControllerBase
+[Authorize(Policy = PolicyNames.EmployeesOnly)]
+public class WorkOrdersController(WorkOrderAppService workOrderService) : ControllerBase
 {
     /// <summary>
     ///     Cria uma nova ordem de serviço.
@@ -64,7 +63,6 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     /// <response code="204">Solicitação realizada.</response>
     /// <response code="400">Requisição inválida.</response>
     [HttpPost("{id:guid}/request-approval")]
-    [Authorize(Roles = $"{RoleNames.Mechanic},{RoleNames.Administrator},{RoleNames.Attendant}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> RequestApproval(Guid id, CancellationToken cancellationToken)
@@ -106,7 +104,6 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     /// <response code="204">Status alterado com sucesso.</response>
     /// <response code="400">Requisição inválida.</response>
     [HttpPost("{id:guid}/status")]
-    [Authorize]
     [Consumes(typeof(ChangeStatusRequest), "application/json")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
@@ -129,7 +126,6 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     /// <response code="400">Requisição inválida.</response>
     /// <response code="401">Usuário não autenticado.</response>
     [HttpPut("{id:guid}")]
-    [Authorize]
     [Consumes(typeof(UpdateWorkOrderRequest), "application/json")]
     [Produces("application/json", Type = typeof(object))]
     [ProducesResponseType(typeof(object), (int)HttpStatusCode.NoContent)]
@@ -144,26 +140,6 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     }
 
     /// <summary>
-    ///     Consulta pública da ordem pelo documento do cliente e chave de acesso.
-    /// </summary>
-    /// <param name="document">CPF ou CNPJ do cliente (somente dígitos ou formato armazenado).</param>
-    /// <param name="accessKey">Código de acesso de 8 dígitos fornecido ao cliente.</param>
-    /// <param name="cancellationToken">Token para cancelamento da operação.</param>
-    /// <response code="200">Resultado encontrado.</response>
-    /// <response code="404">Não encontrado.</response>
-    [AllowAnonymous]
-    [HttpGet("track")]
-    [Produces("application/json", Type = typeof(GetWorkOrderResponse))]
-    [ProducesResponseType(typeof(GetWorkOrderResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Track([FromQuery] string document, [FromQuery] string accessKey,
-        CancellationToken cancellationToken)
-    {
-        var response = await workOrderService.TrackByDocumentAndAccessKey(document, accessKey, cancellationToken);
-        return response is not null ? Ok(response) : NotFound();
-    }
-
-    /// <summary>
     ///     Inicia a execução da OS (Status: InProgress). (Mechanic)
     /// </summary>
     [HttpPost("{id:guid}/start")]
@@ -173,8 +149,7 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     {
         var userId = GetCurrentUserId();
 
-        await workOrderService.ChangeStatus(id, WorkOrderStatus.InProgress, userId,
-            cancellationToken: cancellationToken);
+        await workOrderService.ChangeStatus(id, WorkOrderStatus.InProgress, userId, cancellationToken: cancellationToken);
         return NoContent();
     }
 

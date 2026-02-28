@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using Mechanics.Application.Auth.Requests;
+using Mechanics.Application.Auth.Services;
 using Mechanics.Application.Customers.Requests;
 using Mechanics.Application.Customers.Responses;
 using Mechanics.Application.Utils;
@@ -11,22 +13,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Mechanics.Application.Customers.Services;
 
-public class CustomerAppService(AppDbContext dbContext, IMapper mapper) : IAppService
+public class CustomerAppService(AppDbContext dbContext, UserAppService userAppService, IMapper mapper) : IAppService
 {
-    public async Task<CreateItemResponse> Create(CreateCustomerRequest request, CancellationToken cancellationToken)
-    {
-        var entity = mapper.Map<Customer>(request);
-
-        if (!entity.IsNormalized())
-            entity.Normalize();
-        Validator.ValidateAndThrow(entity);
-
-        await dbContext.Customers.AddAsync(entity, cancellationToken);
-        await dbContext.SaveChangesAsync(cancellationToken);
-
-        return new CreateItemResponse { CreatedId = entity.Id };
-    }
-
     public async Task<GetCustomerResponse?> Get(Guid id, CancellationToken cancellationToken)
     {
         var customer = await dbContext.Customers
@@ -68,5 +56,51 @@ public class CustomerAppService(AppDbContext dbContext, IMapper mapper) : IAppSe
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return new UpdateItemResponse { UpdatedItemId = id };
+    }
+
+    public async Task<CreateItemResponse> CreateIndividual(CreateIndividualCustomerRequest request,
+        CancellationToken cancellationToken)
+    {
+        var entity = new Customer
+        {
+            Name = request.FullName,
+            Email = request.Email,
+            Document = new PersonalDocument(DocumentType.Cpf, request.CpfNumber),
+        };
+
+        if (!entity.IsNormalized())
+            entity.Normalize();
+        Validator.ValidateAndThrow(entity);
+
+        await dbContext.Customers.AddAsync(entity, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var userRequest = new CreateUserForCustomerRequest(entity.Id, request);
+        await userAppService.Create(userRequest, cancellationToken);
+
+        return new CreateItemResponse { CreatedId = entity.Id };
+    }
+
+    public async Task<CreateItemResponse> CreateBusiness(CreateBusinessCustomerRequest request,
+        CancellationToken cancellationToken)
+    {
+        var entity = new Customer
+        {
+            Name = request.CompanyName,
+            Email = request.ResponsibleEmail,
+            Document = new PersonalDocument(DocumentType.Cnpj, request.CnpjNumber),
+        };
+
+        if (!entity.IsNormalized())
+            entity.Normalize();
+        Validator.ValidateAndThrow(entity);
+
+        await dbContext.Customers.AddAsync(entity, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var userRequest = new CreateUserForCustomerRequest(entity.Id, request, true);
+        await userAppService.Create(userRequest, cancellationToken);
+
+        return new CreateItemResponse { CreatedId = entity.Id };
     }
 }

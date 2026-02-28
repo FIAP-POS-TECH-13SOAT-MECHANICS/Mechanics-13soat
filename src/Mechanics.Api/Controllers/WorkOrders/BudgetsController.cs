@@ -1,5 +1,6 @@
 using Mechanics.Application.WorkOrders.Requests;
 using Mechanics.Application.WorkOrders.Services;
+using Mechanics.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,6 +12,7 @@ namespace Mechanics.Api.Controllers.WorkOrders;
 [ApiController]
 [ApiExplorerSettings(GroupName = "v1")]
 [Route("api/work-orders")]
+[Authorize(Policy = PolicyNames.EmployeesOnly)]
 public class BudgetsController(BudgetAppService budgetService) : ControllerBase
 {
     /// <summary>

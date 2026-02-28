@@ -10,6 +10,7 @@ public class AuthMapperProfile : Profile
     public AuthMapperProfile()
     {
         CreateMap<CreateUserRequest, User>();
+        CreateMap<CreateUserForCustomerRequest, User>();
         CreateMap<User, GetUserResponse>();
 
         CreateMap<Role, RoleResponse>();

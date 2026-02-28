@@ -16,7 +16,7 @@ namespace Mechanics.Api.Controllers.WorkOrders;
 [ApiController]
 [ApiExplorerSettings(GroupName = "v1")]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = PolicyNames.EmployeesOnly)]
 public class WorkOrdersController(WorkOrderAppService workOrderService)
     : ControllerBase
 {
@@ -64,7 +64,6 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     /// <response code="204">Solicitação realizada.</response>
     /// <response code="400">Requisição inválida.</response>
     [HttpPost("{id:guid}/request-approval")]
-    [Authorize(Roles = $"{RoleNames.Mechanic},{RoleNames.Administrator},{RoleNames.Attendant}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> RequestApproval(Guid id, CancellationToken cancellationToken)
@@ -106,7 +105,6 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     /// <response code="204">Status alterado com sucesso.</response>
     /// <response code="400">Requisição inválida.</response>
     [HttpPost("{id:guid}/status")]
-    [Authorize]
     [Consumes(typeof(ChangeStatusRequest), "application/json")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
@@ -129,7 +127,6 @@ public class WorkOrdersController(WorkOrderAppService workOrderService)
     /// <response code="400">Requisição inválida.</response>
     /// <response code="401">Usuário não autenticado.</response>
     [HttpPut("{id:guid}")]
-    [Authorize]
     [Consumes(typeof(UpdateWorkOrderRequest), "application/json")]
     [Produces("application/json", Type = typeof(object))]
     [ProducesResponseType(typeof(object), (int)HttpStatusCode.NoContent)]

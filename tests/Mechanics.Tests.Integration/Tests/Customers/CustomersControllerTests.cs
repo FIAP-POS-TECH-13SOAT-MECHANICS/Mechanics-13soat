@@ -1,7 +1,6 @@
 ﻿using Mechanics.Application.Customers.Requests;
 using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Domain.Auth;
-using Mechanics.Domain.Customers;
 using Mechanics.Tests.Integration.Helpers;
 using System.Net;
 using System.Net.Http.Json;
@@ -15,26 +14,50 @@ public class CustomersControllerTests
 {
     public TestContext TestContext { get; set; }
 
-    [TestMethod("Cadastro de cliente")]
-    public async Task It_ShouldCreateCustomer()
+    [TestMethod("Cadastro de cliente individual")]
+    public async Task It_ShouldCreateIndividualCustomer()
     {
         // Arrange
         var factory = TestProperties.Factory;
         var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
 
-        var request = new CreateCustomerRequest
+        var request = new CreateIndividualCustomerRequest
         {
-            Name = "Joao da Silva",
+            FullName = "Joao da Silva",
             Email = "joao@example.com",
-            Document = new PersonalDocumentRequest
-            {
-                Type = DocumentType.Cpf,
-                Number = "111.444.777-35",
-            },
+            CpfNumber = "294.604.050-02",
         };
 
         // Act
-        var httpResponse = await client.PostAsJsonAsync("api/customers", request, TestContext.CancellationTokenSource.Token);
+        var httpResponse =
+            await client.PostAsJsonAsync("api/customers/individual", request, TestContext.CancellationTokenSource.Token);
+
+        // Assert
+        Assert.AreEqual(HttpStatusCode.Created, httpResponse.StatusCode);
+        var content = await httpResponse.Content.ReadFromJsonAsync<CreateItemResponse>(TestContext.CancellationTokenSource.Token);
+        Assert.IsNotNull(content);
+        Assert.AreNotEqual(Guid.Empty, content.CreatedId);
+    }
+
+    [TestMethod("Cadastro de cliente empresarial")]
+    public async Task It_ShouldCreateBusinessCustomer()
+    {
+        // Arrange
+        var factory = TestProperties.Factory;
+        var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
+
+        var request = new CreateBusinessCustomerRequest
+        {
+            CompanyName = "Empresa XYZ Ltda",
+            CnpjNumber = "72.933.819/0001-12",
+            ResponsibleFullName = "Responsavel XYZ",
+            ResponsibleEmail = "contato@xyz.com",
+            ResponsibleCpfNumber = "225.405.130-00",
+        };
+
+        // Act
+        var httpResponse =
+            await client.PostAsJsonAsync("api/customers/business", request, TestContext.CancellationTokenSource.Token);
 
         // Assert
         Assert.AreEqual(HttpStatusCode.Created, httpResponse.StatusCode);
@@ -50,19 +73,18 @@ public class CustomersControllerTests
         var factory = TestProperties.Factory;
         var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
 
-        var invalidRequest = new CreateCustomerRequest
+        var invalidRequest = new CreateBusinessCustomerRequest
         {
-            Name = "Empresa XYZ Ltda",
-            Email = "contato@xyz.com",
-            Document = new PersonalDocumentRequest
-            {
-                Type = DocumentType.Cnpj,
-                Number = "12.345.678/0001-00",
-            },
+            CompanyName = "Empresa XYZ Ltda",
+            CnpjNumber = "34.444.828/0001-21",
+            ResponsibleFullName = "Responsavel XYZ",
+            ResponsibleEmail = "contato@xyz.com",
+            ResponsibleCpfNumber = "770.259.350-42",
         };
 
         // Act
-        var httpResponse = await client.PostAsJsonAsync("api/customers", invalidRequest, TestContext.CancellationTokenSource.Token);
+        var httpResponse =
+            await client.PostAsJsonAsync("api/customers/business", invalidRequest, TestContext.CancellationTokenSource.Token);
 
         // Assert
         Assert.AreEqual(HttpStatusCode.BadRequest, httpResponse.StatusCode);

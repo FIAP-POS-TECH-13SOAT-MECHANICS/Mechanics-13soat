@@ -1,5 +1,6 @@
 ﻿using Mechanics.Application.Options;
 using Mechanics.Application.Utils.TokenGenerator;
+using Mechanics.Domain.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -38,7 +39,13 @@ public static class AuthExtensions
                 };
             });
 
-        services.AddAuthorization();
+        services.AddAuthorizationBuilder()
+            .AddPolicy(PolicyNames.EmployeesOnly, policy =>
+                policy.RequireRole(RoleNames.Administrator, RoleNames.Attendant, RoleNames.Mechanic))
+            .AddPolicy(PolicyNames.CustomersOnly, policy =>
+                policy.RequireRole(RoleNames.CustomerAdmin, RoleNames.CustomerUser))
+            .AddPolicy(PolicyNames.AllAuthenticated, policy => policy.RequireAuthenticatedUser());
+
         services.AddSingleton<IJwtTokenHandler, JwtTokenHandler>();
 
         return services;

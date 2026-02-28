@@ -101,4 +101,15 @@ public class EmailService(ILogger<EmailService> logger, IEmailSenderService send
 
         logger.LogInformation("Password changed notification sent to '{EmailAddress}'", user.Email);
     }
+
+    public async Task SendCustomerUserPasswordCreationCode(User user, string passwordCreationCode,
+        CancellationToken cancellationToken = default)
+    {
+        logger.LogInformation("Sending customer password creation code to '{EmailAddress}'", user.Email);
+
+        var message = AuthEmailTemplates.CustomerUserPasswordCreationCode(user, passwordCreationCode);
+        await senderService.SendAsync(message, cancellationToken);
+
+        logger.LogInformation("Customer password creation code sent to '{EmailAddress}'", user.Email);
+    }
 }

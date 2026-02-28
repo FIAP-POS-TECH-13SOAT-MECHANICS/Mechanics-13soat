@@ -1,6 +1,7 @@
 ﻿using Mechanics.Application.Auth.Requests;
 using Mechanics.Application.Auth.Responses;
 using Mechanics.Application.Auth.Services;
+using Mechanics.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
@@ -14,6 +15,7 @@ namespace Mechanics.Api.Controllers.Auth;
 [ApiController]
 [ApiExplorerSettings(GroupName = "v1")]
 [Route("api/auth")]
+[Authorize(Policy = PolicyNames.AllAuthenticated)]
 public class AuthController(AuthAppService service) : ControllerBase
 {
     /// <summary>

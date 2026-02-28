@@ -3,7 +3,6 @@ using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Application.Vehicles.Requests;
 using Mechanics.Application.Vehicles.Responses;
 using Mechanics.Domain.Auth;
-using Mechanics.Domain.Customers;
 using Mechanics.Domain.Vehicles;
 using Mechanics.Tests.Integration.Helpers;
 using System.Net;
@@ -96,19 +95,15 @@ public class VehiclesControllerTests
         var factory = TestProperties.Factory;
         var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
 
-        var customerRequest = new CreateCustomerRequest
+        var customerRequest = new CreateIndividualCustomerRequest
         {
-            Name = "Owner Test",
+            FullName = "Owner Test",
             Email = $"owner_{Guid.NewGuid():N}@example.com",
-            Document = new PersonalDocumentRequest
-            {
-                Type = DocumentType.Cpf,
-                Number = document,
-            },
+            CpfNumber = document,
         };
 
         var createdCustomer =
-            await client.PostAsJsonAsync("api/customers", customerRequest, TestContext.CancellationTokenSource.Token);
+            await client.PostAsJsonAsync("api/customers/individual", customerRequest, TestContext.CancellationTokenSource.Token);
         var customerResponse =
             await createdCustomer.Content.ReadFromJsonAsync<CreateItemResponse>(TestContext.CancellationTokenSource.Token);
         return (client, customerResponse!.CreatedId);

@@ -69,7 +69,7 @@ public class AuthAppServiceTests
     public async Task It_ShouldReturnToken_WithValidRefreshToken()
     {
         var userId = new Guid("5bb2ae44-cbc7-44c4-9eda-cfb860b6e2f5");
-        var user = UserMocks.CreateUser(userId, "jose-santos", RoleNames.Mechanic);
+        var user = UserMocks.CreateUser(userId, "jose-santos", "38446983028", RoleNames.Mechanic);
         var token = Guid.NewGuid().ToString();
         var refreshToken = Guid.NewGuid().ToString();
         var tokenHandlerStub = CreateTokenHandlerStub(token, refreshToken, userId.ToString(), userId);

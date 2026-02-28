@@ -21,19 +21,18 @@ public static class UserMocks
     public static UpdateUserRequest BuildUpdateRequest(Guid roleId) =>
         new() { RoleId = roleId };
 
-    public static User CreateUser(Guid userId, string name, string roleName)
+    public static User CreateUser(Guid userId, string name, string cpf, string roleName)
     {
-        var userName = name.Replace(' ', '.').ToLower();
         var role = Roles[roleName];
 
         return new User
         {
             Id = userId,
             FullName = name.ToUpper(),
-            CpfNumber = userName,
+            CpfNumber = cpf,
             RoleId = role.Id,
             Role = role,
-            Email = $"{userName}@mechanics.com",
+            Email = $"{name.Replace(' ', '.').ToLower()}@mechanics.com",
             PasswordHash = "",
             SecurityStamp = userId.ToString(),
         };

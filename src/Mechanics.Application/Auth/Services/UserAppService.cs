@@ -18,6 +18,8 @@ public class UserAppService(AppDbContext dbContext, IMapper mapper, IEmailServic
     public async Task<CreateItemResponse> Create(CreateUserRequest request, CancellationToken cancellationToken)
     {
         var entity = mapper.Map<User>(request);
+
+        entity.Normalize();
         Validator.ValidateAndThrow(entity);
 
         entity.PasswordHash = new PasswordHasher<User>().HashPassword(entity, Guid.NewGuid().ToString());
@@ -66,9 +68,28 @@ public class UserAppService(AppDbContext dbContext, IMapper mapper, IEmailServic
         entity.FullName = request.FullName ?? entity.FullName;
         entity.RoleId = request.RoleId ?? entity.RoleId;
 
+        if (!entity.IsNormalized())
+            entity.Normalize();
         Validator.ValidateAndThrow(entity);
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return new UpdateItemResponse { UpdatedItemId = id };
+    }
+
+    public async Task Create(CreateUserForCustomerRequest request, CancellationToken cancellationToken)
+    {
+        var entity = mapper.Map<User>(request);
+
+        entity.Normalize();
+        Validator.ValidateAndThrow(entity);
+
+        entity.PasswordHash = new PasswordHasher<User>().HashPassword(entity, Guid.NewGuid().ToString());
+        entity.SecurityStamp = Guid.NewGuid().ToString();
+
+        await dbContext.Users.AddAsync(entity, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var passwordCreationCode = entity.GetPasswordCreationCode();
+        await emailService.SendCustomerUserPasswordCreationCode(entity, passwordCreationCode, cancellationToken);
     }
 }

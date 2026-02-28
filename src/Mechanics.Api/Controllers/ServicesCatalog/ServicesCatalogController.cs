@@ -14,7 +14,7 @@ namespace Mechanics.Api.Controllers.ServicesCatalog;
 [ApiController]
 [ApiExplorerSettings(GroupName = "v1")]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = PolicyNames.EmployeesOnly)]
 public class ServiceCatalogController(ServiceCatalogAppService service) : ControllerBase
 {
     /// <summary>

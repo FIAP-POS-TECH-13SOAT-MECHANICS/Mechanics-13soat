@@ -176,7 +176,7 @@ public class EmailServiceTests
 
         var service = CreateInstance(senderServiceMock.Object);
         var customer = CustomerMocks.CreateCustomerPf(Guid.NewGuid());
-        var mechanic = UserMocks.CreateUser(Guid.NewGuid(), "Joao Mecânico", RoleNames.Mechanic);
+        var mechanic = UserMocks.CreateUser(Guid.NewGuid(), "Joao Mecânico", "70629831017", RoleNames.Mechanic);
 
         var workOrder = new WorkOrder
         {
@@ -268,6 +268,34 @@ public class EmailServiceTests
         Assert.AreEqual(mechanic.Email, emailMessage.Recipient);
         Assert.IsNotNull(emailMessage.Subject);
         Assert.Contains(code, emailMessage.Body);
+    }
+
+    [TestMethod]
+    public async Task It_ShouldSendEmail_WithCustomerUserPasswordCreationCode()
+    {
+        // Arrange
+        var senderServiceMock = new Mock<IEmailSenderService>();
+        senderServiceMock
+            .Setup(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var service = CreateInstance(senderServiceMock.Object);
+        var user = UserMocks.CreateUser("cliente.teste", "12345678901");
+        const string code = "YHLur6lSn";
+
+        // Act
+        await service.SendCustomerUserPasswordCreationCode(user, code, CancellationToken.None);
+
+        // Assert
+        senderServiceMock.Verify(s => s.SendAsync(It.IsAny<EmailMessage>(), It.IsAny<CancellationToken>()), Times.Once);
+
+        var emailMessage = senderServiceMock.Invocations[0].Arguments[0] as EmailMessage;
+        Assert.IsNotNull(emailMessage);
+        Assert.AreEqual(user.Email, emailMessage.Recipient);
+        Assert.IsNotNull(emailMessage.Subject);
+        Assert.Contains(code, emailMessage.Body);
+        Assert.Contains(user.CpfNumber, emailMessage.Body);
+        Assert.Contains("ordens de serviço", emailMessage.Body);
     }
 
     [TestMethod]

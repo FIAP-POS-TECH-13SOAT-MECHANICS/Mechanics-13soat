@@ -1,7 +1,7 @@
 namespace Mechanics.Application.WorkOrders.Requests;
 
 /// <summary>
-///     Requisição pública para aprovação de budget pelo cliente.
+///     Requisição para aprovação de budget pelo cliente.
 /// </summary>
 public class BudgetReviewRequest
 {

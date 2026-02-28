@@ -3,9 +3,9 @@ using Mechanics.Application.WorkOrders.Requests;
 
 namespace Mechanics.Application.WorkOrders.Validators;
 
-public class ApproveBudgetPublicRequestValidator : AbstractValidator<BudgetReviewRequest>
+public class BudgetReviewRequestValidator : AbstractValidator<BudgetReviewRequest>
 {
-    public ApproveBudgetPublicRequestValidator()
+    public BudgetReviewRequestValidator()
     {
         RuleFor(request => request.AccessKey).NotEmpty().Length(8);
     }

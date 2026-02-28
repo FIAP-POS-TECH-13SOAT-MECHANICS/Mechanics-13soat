@@ -38,6 +38,8 @@ public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions, TimeProvider timeP
 
     public async Task<bool> ValidateRefreshToken(string refreshToken, string securityStamp)
     {
+        if (!_tokenHandler.CanReadToken(refreshToken))
+            return false;
         var userId = _tokenHandler.ReadJsonWebToken(refreshToken).Subject;
 
         var refreshTokenKey = Encoding.ASCII.GetBytes($"{userId}:{securityStamp}:{_options.PrivateKey}");
@@ -59,7 +61,7 @@ public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions, TimeProvider timeP
         var claims = new List<Claim>
         {
             new("sub", user.Id.ToString()),
-            new("customerId", user.CustomerId?.ToString() ?? ""),
+            new("customerId", (user.CustomerId ?? Guid.Empty).ToString()),
             new("role", _roles[user.RoleId]),
         };
 

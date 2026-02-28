@@ -59,7 +59,7 @@ public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions, TimeProvider timeP
         var claims = new List<Claim>
         {
             new("sub", user.Id.ToString()),
-            new("userName", user.CpfNumber),
+            new("customerId", user.CustomerId?.ToString() ?? ""),
             new("role", _roles[user.RoleId]),
         };
 
@@ -80,10 +80,7 @@ public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions, TimeProvider timeP
 
     private string GenerateRefreshToken(User user)
     {
-        var claims = new List<Claim>
-        {
-            new("sub", user.Id.ToString()),
-        };
+        var claims = new List<Claim> { new("sub", user.Id.ToString()) };
 
         var key = Encoding.ASCII.GetBytes($"{user.Id}:{user.SecurityStamp}:{_options.PrivateKey}");
         var tokenDescriptor = new SecurityTokenDescriptor

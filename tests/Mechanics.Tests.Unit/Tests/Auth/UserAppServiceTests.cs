@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Mechanics.Application.Auth.Requests;
 using Mechanics.Application.Auth.Services;
+using Mechanics.Application.Customers.Requests;
 using Mechanics.Application.Notification.Services;
 using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Domain.Auth;
@@ -48,6 +49,39 @@ public class UserAppServiceTests
         Assert.AreEqual(request.RoleId, created.RoleId);
     }
 
+    [TestMethod("Cria usuário para cliente.")]
+    public async Task It_ShouldCreateUserForCustomer()
+    {
+        // Arrange
+        var customerId = Guid.NewGuid();
+        var customerUserRole = RoleSeeds.GetSeeds().First(r => r.Name == RoleNames.CustomerUser);
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(ctx => ctx.Roles.Add(customerUserRole))
+            .Build();
+
+        var handler = new UserAppService(context, _mapper, _mailService);
+        var individualRequest = new CreateIndividualCustomerRequest
+        {
+            FullName = "Joao Cliente",
+            Email = "joao@cliente.com",
+            CpfNumber = "341.041.040-60",
+        };
+        var request = new CreateUserForCustomerRequest(customerId, individualRequest);
+
+        // Act
+        var response = await handler.Create(request, TestContext.CancellationTokenSource.Token);
+
+        // Assert
+        Assert.IsNotNull(response);
+        Assert.AreNotEqual(Guid.Empty, response.CreatedId);
+        var created = await context.Users.AsNoTracking()
+            .FirstAsync(u => u.Id == response.CreatedId, TestContext.CancellationTokenSource.Token);
+        Assert.AreEqual(customerId, created.CustomerId);
+        Assert.AreEqual(customerUserRole.Id, created.RoleId);
+        Assert.AreEqual("JOAO CLIENTE", created.FullName);
+    }
+
     #endregion
 
     #region buscar usuário
@@ -87,6 +121,51 @@ public class UserAppServiceTests
 
         // Act
         var response = await handler.Get(userId, CancellationToken.None);
+
+        // Assert
+        Assert.IsNull(response);
+    }
+
+    [TestMethod("Retorna usuário pelo ID e CustomerId.")]
+    public async Task It_ShouldReturnUser_WhenIdAndCustomerIdMatch()
+    {
+        // Arrange
+        var customerId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var user = UserMocks.CreateUser(userId, "Joao Cliente", "12345678909", RoleNames.CustomerUser);
+        typeof(User).GetProperty(nameof(User.CustomerId))?.SetValue(user, customerId);
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(ctx => ctx.Users.Add(user))
+            .Build();
+
+        var handler = new UserAppService(context, _mapper, _mailService);
+
+        // Act
+        var response = await handler.GetByIdAndCustomerId(customerId, userId, TestContext.CancellationTokenSource.Token);
+
+        // Assert
+        Assert.IsNotNull(response);
+        Assert.AreEqual(userId, response.Id);
+    }
+
+    [TestMethod("Retorna null quando o Id existe mas CustomerId não coincide.")]
+    public async Task It_ShouldReturnNull_WhenCustomerIdDoesNotMatch()
+    {
+        // Arrange
+        var customerId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var user = UserMocks.CreateUser(userId, "Joao Cliente", "12345678909", RoleNames.CustomerUser);
+        typeof(User).GetProperty(nameof(User.CustomerId))?.SetValue(user, Guid.NewGuid()); // Outro customerId
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(ctx => ctx.Users.Add(user))
+            .Build();
+
+        var handler = new UserAppService(context, _mapper, _mailService);
+
+        // Act
+        var response = await handler.GetByIdAndCustomerId(customerId, userId, TestContext.CancellationTokenSource.Token);
 
         // Assert
         Assert.IsNull(response);
@@ -172,6 +251,33 @@ public class UserAppServiceTests
         Assert.Contains(user => user.Id == users[0].Id, response.Items);
     }
 
+    [TestMethod("Retorna lista de usuários por CustomerId.")]
+    public async Task It_ShouldReturnUsers_ByCustomerId()
+    {
+        // Arrange
+        var customerId = Guid.NewGuid();
+        var user1 = UserMocks.CreateUser(Guid.NewGuid(), "User 1", "41594921008", RoleNames.CustomerUser);
+        typeof(User).GetProperty(nameof(User.CustomerId))?.SetValue(user1, customerId);
+
+        var user2 = UserMocks.CreateUser(Guid.NewGuid(), "User 2", "56559792036", RoleNames.CustomerUser);
+        typeof(User).GetProperty(nameof(User.CustomerId))?.SetValue(user2, Guid.NewGuid()); // Outro customer
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(new List<User> { user1, user2 })
+            .Build();
+
+        var handler = new UserAppService(context, _mapper, _mailService);
+        var request = new GetUsersRequest { Page = 1, ItemsPerPage = 10 };
+
+        // Act
+        var response = await handler.GetListByCustomerId(customerId, request, TestContext.CancellationTokenSource.Token);
+
+        // Assert
+        Assert.IsNotNull(response);
+        Assert.AreEqual(1, response.TotalCount);
+        Assert.AreEqual("USER 1", response.Items.First().FullName);
+    }
+
     #endregion
 
     #region atualizar usuário
@@ -212,6 +318,64 @@ public class UserAppServiceTests
 
         var response = await handler.Update(Guid.NewGuid(), request, TestContext.CancellationTokenSource.Token);
 
+        Assert.IsNull(response);
+    }
+
+    [TestMethod("Ignora alteração de Role ao atualizar usuário por CustomerId.")]
+    public async Task It_ShouldIgnoreRoleUpdate_WhenUpdatingByCustomerId()
+    {
+        // Arrange
+        var customerId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var customerUserRole = RoleSeeds.GetSeeds().First(r => r.Name == RoleNames.CustomerUser);
+        var adminRole = RoleSeeds.GetSeeds().First(r => r.Name == RoleNames.Administrator);
+
+        var user = UserMocks.CreateUser(userId, "User Before", "12345678909", RoleNames.CustomerUser);
+        typeof(User).GetProperty(nameof(User.CustomerId))?.SetValue(user, customerId);
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(new List<User> { user })
+            .Build();
+
+        var handler = new UserAppService(context, _mapper, _mailService);
+        var request = new UpdateUserRequest
+        {
+            FullName = "User After",
+            RoleId = adminRole.Id // Tentativa de mudar para Admin
+        };
+
+        // Act
+        var response =
+            await handler.UpdateByIdAndCustomerId(customerId, userId, request, TestContext.CancellationTokenSource.Token);
+
+        // Assert
+        Assert.IsNotNull(response);
+        var updated = await context.Users.AsNoTracking().FirstAsync(u => u.Id == userId);
+        Assert.AreEqual("USER AFTER", updated.FullName);
+        Assert.AreEqual(customerUserRole.Id, updated.RoleId); // Role deve permanecer a mesma
+    }
+
+    [TestMethod("Retorna null ao atualizar quando CustomerId não coincide.")]
+    public async Task It_ShouldReturnNull_WhenUpdatingWithWrongCustomerId()
+    {
+        // Arrange
+        var customerId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
+        var user = UserMocks.CreateUser(userId, "User Before", "12345678909", RoleNames.CustomerUser);
+        typeof(User).GetProperty(nameof(User.CustomerId))?.SetValue(user, Guid.NewGuid()); // Outro customer
+
+        await using var context = new DbContextTestBuilder()
+            .WithData(new List<User> { user })
+            .Build();
+
+        var handler = new UserAppService(context, _mapper, _mailService);
+        var request = new UpdateUserRequest { FullName = "User After" };
+
+        // Act
+        var response =
+            await handler.UpdateByIdAndCustomerId(customerId, userId, request, TestContext.CancellationTokenSource.Token);
+
+        // Assert
         Assert.IsNull(response);
     }
 

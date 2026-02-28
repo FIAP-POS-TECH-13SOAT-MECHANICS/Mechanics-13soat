@@ -65,9 +65,33 @@ curl -X 'POST' \
 }'
 ```
 
-O usuário receberá um e-mail no endereço informado com o código para a criação da senha.
-Ele deve usar enviar esse código e a senha para o endpoint `POST /api/auth/create-password`.
-A senha deve conter letras maiúsculas e minúsculas, números e símbolos.
+### Usuários de Clientes
+
+Clientes PJ podem ter seus próprios usuários para gerenciar suas ordens de serviço.
+Ao criar um cliente empresarial (`POST /api/customers/business`), o sistema cria automaticamente um usuário com o perfil `CUSTOMER_ADMIN` vinculado a esse cliente.
+
+Com esse usuário, o cliente pode realizar o login e gerenciar seus próprios usuários adicionais através do endpoint `api/customers/users`. Estes novos usuários terão o perfil `CUSTOMER_USER`.
+
+Para criar um novo usuário de cliente:
+1. Faça login como um funcionário (Admin ou Atendente).
+2. Crie um cliente PJ (`POST /api/customers/business`).
+3. Faça login com o CPF do responsável definido no cadastro do cliente PJ.
+4. Chame o endpoint `POST /api/customers/users` para cadastrar novos usuários.
+
+```shell
+curl -X 'POST' \
+  'http://localhost:5000/api/customers/users' \
+  -H 'accept: application/json' \
+  -H 'Authorization: Bearer ...' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "fullName": "João do Cliente",
+  "email": "joao@cliente.com",
+  "cpfNumber": "111.444.777-35"
+}'
+```
+
+O usuário receberá um e-mail para criação da senha, seguindo o mesmo fluxo de usuários internos.
 
 ```shell
 curl -X 'POST' \

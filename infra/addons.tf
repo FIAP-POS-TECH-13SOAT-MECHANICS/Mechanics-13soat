@@ -49,7 +49,7 @@ resource "helm_release" "mailpit" {
 
   set_sensitive = [{
     name  = "mailpit.smtp.authFile.htpasswd"
-    value = "${random_string.email_smtp_user.result}@${var.email_domain}:${random_string.email_smtp_password.result}"
+    value = "${random_string.email_smtp_user.result}@${var.email_domain}:${random_password.email_smtp_password.result}"
   }]
 
   depends_on = [

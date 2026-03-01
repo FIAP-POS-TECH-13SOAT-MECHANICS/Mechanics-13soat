@@ -1,15 +1,15 @@
 ﻿using Mechanics.Application.Auth.Responses;
 using Mechanics.Application.Options;
-using Mechanics.Application.Utils.TokenGenerator;
 using Mechanics.Domain.Auth;
 using Mechanics.Infra.Data.Seeds;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 
-namespace Mechanics.Application.Utils;
+namespace Mechanics.Application.Utils.TokenGenerator;
 
 public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions, TimeProvider timeProvider) : IJwtTokenHandler
 {
@@ -38,7 +38,11 @@ public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions, TimeProvider timeP
 
     public async Task<bool> ValidateRefreshToken(string refreshToken, string securityStamp)
     {
-        var refreshTokenKey = Encoding.ASCII.GetBytes($"{_options.SecretKey}:{securityStamp}");
+        if (!_tokenHandler.CanReadToken(refreshToken))
+            return false;
+        var userId = _tokenHandler.ReadJsonWebToken(refreshToken).Subject;
+
+        var refreshTokenKey = Encoding.ASCII.GetBytes($"{userId}:{securityStamp}:{_options.PrivateKey}");
         var validationResult = await _tokenHandler.ValidateTokenAsync(refreshToken, new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
@@ -57,17 +61,18 @@ public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions, TimeProvider timeP
         var claims = new List<Claim>
         {
             new("sub", user.Id.ToString()),
-            new("userName", user.UserName),
+            new("customerId", (user.CustomerId ?? Guid.Empty).ToString()),
             new("role", _roles[user.RoleId]),
         };
 
-        var key = Encoding.ASCII.GetBytes(_options.SecretKey);
+        var rsa = RSA.Create();
+        rsa.ImportFromPem(_options.PrivateKey);
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Issuer = JwtTokenIssuer,
             Subject = new ClaimsIdentity(claims),
             Expires = expiration.UtcDateTime,
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+            SigningCredentials = new SigningCredentials(new RsaSecurityKey(rsa), SecurityAlgorithms.RsaSha256),
             IssuedAt = timeProvider.GetUtcNow().UtcDateTime,
             NotBefore = timeProvider.GetUtcNow().UtcDateTime,
         };
@@ -77,12 +82,9 @@ public class JwtTokenHandler(IOptions<JwtOptions> jwtOptions, TimeProvider timeP
 
     private string GenerateRefreshToken(User user)
     {
-        var claims = new List<Claim>
-        {
-            new("sub", user.Id.ToString()),
-        };
+        var claims = new List<Claim> { new("sub", user.Id.ToString()) };
 
-        var key = Encoding.ASCII.GetBytes($"{_options.SecretKey}:{user.SecurityStamp}");
+        var key = Encoding.ASCII.GetBytes($"{user.Id}:{user.SecurityStamp}:{_options.PrivateKey}");
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Issuer = JwtTokenIssuer,

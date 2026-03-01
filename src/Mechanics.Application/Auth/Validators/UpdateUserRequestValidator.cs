@@ -15,5 +15,10 @@ public class UpdateUserRequestValidator : AbstractValidator<UpdateUserRequest>
                 .MustAsync((roleId, cancellationToken) => dbContext.Roles.AnyAsync(r => r.Id == roleId, cancellationToken))
                 .WithMessage("Invalid roleId.");
         });
+
+        When(request => !string.IsNullOrEmpty(request.FullName), () =>
+        {
+            RuleFor(request => request.FullName).MaximumLength(100);
+        });
     }
 }

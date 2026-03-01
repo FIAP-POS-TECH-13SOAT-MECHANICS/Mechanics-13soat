@@ -3,7 +3,7 @@
 public class ResetPasswordRequest
 {
     /// <summary>
-    ///     O nome de usuário cadastrado.
+    ///     O CPF do usuário cadastrado.
     /// </summary>
-    public required string UserName { get; init; }
+    public required string CpfNumber { get; init; }
 }

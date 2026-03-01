@@ -13,7 +13,7 @@ public static class UserMocks
         new()
         {
             FullName = "MARIA FERNANDA SOUZA",
-            UserName = "maria.souza",
+            CpfNumber = "12345678909",
             RoleId = roleId,
             Email = "maria.souza@mechanics.com",
         };
@@ -21,19 +21,18 @@ public static class UserMocks
     public static UpdateUserRequest BuildUpdateRequest(Guid roleId) =>
         new() { RoleId = roleId };
 
-    public static User CreateUser(Guid userId, string name, string roleName)
+    public static User CreateUser(Guid userId, string name, string cpf, string roleName)
     {
-        var userName = name.Replace(' ', '.').ToLower();
         var role = Roles[roleName];
 
         return new User
         {
             Id = userId,
             FullName = name.ToUpper(),
-            UserName = userName,
+            CpfNumber = cpf,
             RoleId = role.Id,
             Role = role,
-            Email = $"{userName}@mechanics.com",
+            Email = $"{name.Replace(' ', '.').ToLower()}@mechanics.com",
             PasswordHash = "",
             SecurityStamp = userId.ToString(),
         };
@@ -45,7 +44,7 @@ public static class UserMocks
         {
             Id = Guid.NewGuid(),
             FullName = userName.ToUpper(),
-            UserName = userName,
+            CpfNumber = userName,
             RoleId = Roles[RoleNames.Administrator].Id,
             Role = Roles[RoleNames.Administrator],
             Email = $"{userName}@mechanics.com",

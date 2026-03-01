@@ -25,7 +25,11 @@ jobs:
       - name: Publish artifact
         run: dotnet publish -c Release -o ./dist --no-restore
 
+      - name: Create compressed file
+        run: zip -r -9 dist.zip dist
+
       - name: Upload artifact
         uses: actions/upload-artifact@v6
         with:
-          path: ./dist
+          name: build
+          path: ./dist.zip

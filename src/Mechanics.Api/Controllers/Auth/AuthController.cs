@@ -1,6 +1,7 @@
 ﻿using Mechanics.Application.Auth.Requests;
 using Mechanics.Application.Auth.Responses;
 using Mechanics.Application.Auth.Services;
+using Mechanics.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
@@ -14,6 +15,7 @@ namespace Mechanics.Api.Controllers.Auth;
 [ApiController]
 [ApiExplorerSettings(GroupName = "v1")]
 [Route("api/auth")]
+[Authorize(Policy = PolicyNames.AllAuthenticated)]
 public class AuthController(AuthAppService service) : ControllerBase
 {
     /// <summary>
@@ -53,9 +55,9 @@ public class AuthController(AuthAppService service) : ControllerBase
     }
 
     /// <summary>
-    ///     Envia um código de criação de senha para o e-mail do usuário informado.
+    ///     Envia um código de criação de senha para o e-mail do usuário associado ao CPF informado.
     /// </summary>
-    /// <remarks>Por segurança é sempre retornado um código de sucesso, mesmo que o usuário informado seja inválido.</remarks>
+    /// <remarks>Por segurança é sempre retornado um código de sucesso, mesmo que o CPF informado seja inválido.</remarks>
     /// <response code="204">Resposta padrão.</response>
     [AllowAnonymous]
     [HttpPost("reset-password")]
@@ -69,10 +71,10 @@ public class AuthController(AuthAppService service) : ControllerBase
     }
 
     /// <summary>
-    ///     Cria uma senha para o usuário informado.
+    ///     Cria uma senha para o usuário associado ao CPF informado.
     /// </summary>
     /// <response code="204">Senha criada com sucesso.</response>
-    /// <response code="401">Usuário ou código de criação de senha inválidos.</response>
+    /// <response code="401">CPF ou código de criação de senha inválidos.</response>
     [AllowAnonymous]
     [HttpPost("create-password")]
     [Consumes(typeof(CreatePasswordRequest), "application/json")]

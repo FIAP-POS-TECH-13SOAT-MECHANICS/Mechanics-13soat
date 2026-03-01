@@ -14,7 +14,7 @@ namespace Mechanics.Api.Controllers.Customers;
 [ApiController]
 [ApiExplorerSettings(GroupName = "v1")]
 [Route("api/[controller]")]
-[Authorize]
+[Authorize(Policy = PolicyNames.EmployeesOnly)]
 public class CustomersController(CustomerAppService service) : ControllerBase
 {
     /// <summary>
@@ -22,15 +22,34 @@ public class CustomersController(CustomerAppService service) : ControllerBase
     /// </summary>
     /// <response code="201">Registro cadastrado.</response>
     /// <response code="400">Registro inválido.</response>
-    [HttpPost]
+    [HttpPost("individual")]
     [Authorize(Roles = $"{RoleNames.Administrator},{RoleNames.Attendant}")]
-    [Consumes(typeof(CreateCustomerRequest), "application/json")]
+    [Consumes(typeof(CreateIndividualCustomerRequest), "application/json")]
     [Produces("application/json", Type = typeof(CreateItemResponse))]
     [ProducesResponseType(typeof(CreateItemResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> CreateCustomer(CreateCustomerRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> CreateIndividual(CreateIndividualCustomerRequest request,
+        CancellationToken cancellationToken = default)
     {
-        var response = await service.Create(request, cancellationToken);
+        var response = await service.CreateIndividual(request, cancellationToken);
+        return CreatedAtAction(nameof(GetCustomer), new { id = response.CreatedId }, response);
+    }
+
+    /// <summary>
+    ///     Cria um novo cliente empresarial.
+    /// </summary>
+    /// <response code="201">Registro cadastrado.</response>
+    /// <response code="400">Registro inválido.</response>
+    [HttpPost("business")]
+    [Authorize(Roles = $"{RoleNames.Administrator},{RoleNames.Attendant}")]
+    [Consumes(typeof(CreateBusinessCustomerRequest), "application/json")]
+    [Produces("application/json", Type = typeof(CreateItemResponse))]
+    [ProducesResponseType(typeof(CreateItemResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateBusiness(CreateBusinessCustomerRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var response = await service.CreateBusiness(request, cancellationToken);
         return CreatedAtAction(nameof(GetCustomer), new { id = response.CreatedId }, response);
     }
 
@@ -43,7 +62,8 @@ public class CustomersController(CustomerAppService service) : ControllerBase
     [Produces("application/json", Type = typeof(GetCustomersResponse))]
     [ProducesResponseType(typeof(GetCustomersResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetCustomers([FromQuery] GetCustomersRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> GetCustomers([FromQuery] GetCustomersRequest request,
+        CancellationToken cancellationToken = default)
     {
         var response = await service.GetList(request, cancellationToken);
         return Ok(response);
@@ -77,7 +97,8 @@ public class CustomersController(CustomerAppService service) : ControllerBase
     [Produces("application/json", Type = typeof(CreateItemResponse))]
     [ProducesResponseType(typeof(CreateItemResponse), StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> UpdateCustomer(Guid id, UpdateCustomerRequest request, CancellationToken cancellationToken = default)
+    public async Task<IActionResult> UpdateCustomer(Guid id, UpdateCustomerRequest request,
+        CancellationToken cancellationToken = default)
     {
         var response = await service.Update(id, request, cancellationToken);
         return response is null ? NotFound() : NoContent();

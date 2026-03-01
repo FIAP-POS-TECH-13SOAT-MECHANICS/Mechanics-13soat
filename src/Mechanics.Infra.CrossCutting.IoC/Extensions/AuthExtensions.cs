@@ -1,11 +1,11 @@
 ﻿using Mechanics.Application.Options;
-using Mechanics.Application.Utils;
 using Mechanics.Application.Utils.TokenGenerator;
+using Mechanics.Domain.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using System.Security.Cryptography;
 
 namespace Mechanics.Infra.CrossCutting.IoC.Extensions;
 
@@ -19,7 +19,7 @@ public static class AuthExtensions
         services.Configure<JwtOptions>(configurationSection);
         var jwtOptions = configurationSection.Get<JwtOptions>();
         if (jwtOptions is null)
-            throw new InvalidOperationException("JWT Secret Key is not set.");
+            throw new InvalidOperationException("JWT Public Key is not set.");
 
         services.AddAuthentication(options =>
             {
@@ -35,13 +35,27 @@ public static class AuthExtensions
                     ValidateAudience = false,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SecretKey)),
+                    IssuerSigningKey = LoadSecurityKey(jwtOptions.PublicKey),
                 };
             });
 
-        services.AddAuthorization();
+        services.AddAuthorizationBuilder()
+            .AddPolicy(PolicyNames.EmployeesOnly, policy =>
+                policy.RequireRole(RoleNames.Administrator, RoleNames.Attendant, RoleNames.Mechanic))
+            .AddPolicy(PolicyNames.CustomersOnly, policy =>
+                policy.RequireRole(RoleNames.CustomerAdmin, RoleNames.CustomerUser))
+            .AddPolicy(PolicyNames.AllAuthenticated, policy => policy.RequireAuthenticatedUser());
+
         services.AddSingleton<IJwtTokenHandler, JwtTokenHandler>();
 
         return services;
+    }
+
+    private static RsaSecurityKey LoadSecurityKey(string publicKey)
+    {
+        var rsa = RSA.Create();
+        rsa.ImportFromPem(publicKey);
+
+        return new RsaSecurityKey(rsa);
     }
 }

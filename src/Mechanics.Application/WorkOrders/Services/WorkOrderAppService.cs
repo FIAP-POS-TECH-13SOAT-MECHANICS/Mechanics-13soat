@@ -159,21 +159,18 @@ public class WorkOrderAppService(
     }
 
     /// <summary>
-    ///     Consulta pública por documento do cliente e accessKey.
-    ///     Usado pelo cliente para acompanhar o progresso da OS.
+    ///     Consulta pela accessKey.
     /// </summary>
-    public async Task<GetWorkOrderResponse?> TrackByDocumentAndAccessKey(string document, string accessKey,
+    /// <remarks>Usado pelo cliente para acompanhar o progresso da OS.</remarks>
+    public async Task<GetWorkOrderResponse?> TrackByAccessKey(Guid customerId, string accessKey,
         CancellationToken cancellationToken = default)
     {
-        var normalizedDocument = new string(document.Where(char.IsDigit).ToArray());
         var normalizedAccessKey = accessKey.Replace(" ", "");
 
         var customer = await db.Customers
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Document.Number == normalizedDocument, cancellationToken);
-
-        if (customer is null)
-            return null;
+            .FirstOrDefaultAsync(c => c.Id == customerId, cancellationToken);
+        EntityNotFoundException.ThrowIfNull(customer, customerId);
 
         var wo = await db.WorkOrders
             .Include(w => w.Products)

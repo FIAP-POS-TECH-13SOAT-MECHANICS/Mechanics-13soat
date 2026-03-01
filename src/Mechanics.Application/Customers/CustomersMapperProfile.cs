@@ -11,7 +11,6 @@ public class CustomersMapperProfile : Profile
     {
         CreateMap<PersonalDocumentRequest, PersonalDocument>()
             .ConstructUsing(src => new PersonalDocument(src.Type!.Value, src.Number));
-        CreateMap<CreateCustomerRequest, Customer>();
 
         CreateMap<PersonalDocument, PersonalDocumentResponse>();
         CreateMap<Customer, GetCustomerResponse>();

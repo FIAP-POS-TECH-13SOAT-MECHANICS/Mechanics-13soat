@@ -61,11 +61,11 @@ Veja as instruções em [Autenticação e autorização](./docs/auth.md).
 
 Os seguintes logins podem ser utilizados para testes:
 
-| Usuário         | Senha       | Perfil        | Permissões                    |
-|-----------------|-------------|---------------|-------------------------------|
-| `administrator` | `5eCre+Key` | Administrador | Acesso completo ao sistema    |
-| `attendant`     | `5eCre+Key` | Atendente     | Cadastrar clientes e veículos |
-| `mechanic`      | `5eCre+Key` | Mecânico      | Gerenciar produtos e serviços |
+| CPF           | Senha       | Perfil        | Permissões                    |
+|---------------|-------------|---------------|-------------------------------|
+| `12345678909` | `5eCre+Key` | Administrador | Acesso completo ao sistema    |
+| `98765432100` | `5eCre+Key` | Atendente     | Cadastrar clientes e veículos |
+| `11144477735` | `5eCre+Key` | Mecânico      | Gerenciar produtos e serviços |
 
 Qualquer usuário autenticado pode criar e atualizar ordens de serviço.
 
@@ -90,6 +90,7 @@ Esse repositório contém instruções para execução local das análises com *
 - [Diagramas](./docs/diagrams.md)
 - [Diretrizes de design do projeto](./docs/design-guidelines.md)
 - [Fluxo de Ordem de Serviço](./docs/work-order-flow.md)
+- [Kubernetes e Helm chart](./k8s/README.md)
 - [Informações sobre a Infraestrutura](./infra/README.md)
 - [Migrações do banco de dados](./docs/migrations.md)
 - [Objetivos](./docs/objectives.md)

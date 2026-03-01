@@ -18,6 +18,8 @@ public class UserAppService(AppDbContext dbContext, IMapper mapper, IEmailServic
     public async Task<CreateItemResponse> Create(CreateUserRequest request, CancellationToken cancellationToken)
     {
         var entity = mapper.Map<User>(request);
+
+        entity.Normalize();
         Validator.ValidateAndThrow(entity);
 
         entity.PasswordHash = new PasswordHasher<User>().HashPassword(entity, Guid.NewGuid().ToString());
@@ -64,9 +66,73 @@ public class UserAppService(AppDbContext dbContext, IMapper mapper, IEmailServic
             return null;
 
         entity.FullName = request.FullName ?? entity.FullName;
-        entity.UserName = request.UserName ?? entity.UserName;
         entity.RoleId = request.RoleId ?? entity.RoleId;
 
+        if (!entity.IsNormalized())
+            entity.Normalize();
+        Validator.ValidateAndThrow(entity);
+
+        await dbContext.SaveChangesAsync(cancellationToken);
+        return new UpdateItemResponse { UpdatedItemId = id };
+    }
+
+    public async Task<CreateItemResponse> Create(CreateUserForCustomerRequest request, CancellationToken cancellationToken)
+    {
+        var entity = mapper.Map<User>(request);
+
+        entity.Normalize();
+        Validator.ValidateAndThrow(entity);
+
+        entity.PasswordHash = new PasswordHasher<User>().HashPassword(entity, Guid.NewGuid().ToString());
+        entity.SecurityStamp = Guid.NewGuid().ToString();
+
+        await dbContext.Users.AddAsync(entity, cancellationToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        var passwordCreationCode = entity.GetPasswordCreationCode();
+        await emailService.SendCustomerUserPasswordCreationCode(entity, passwordCreationCode, cancellationToken);
+
+        return new CreateItemResponse { CreatedId = entity.Id };
+    }
+
+    public async Task<GetUsersResponse> GetListByCustomerId(Guid customerId, GetUsersRequest request,
+        CancellationToken cancellationToken)
+    {
+        var normalizedName = request.Name.Trim().ToUpper();
+        var emptyName = string.IsNullOrWhiteSpace(request.Name);
+
+        var query = dbContext.Users
+            .Include(user => user.Role)
+            .Where(user => user.CustomerId == customerId)
+            .Where(user => emptyName || user.FullName.Contains(normalizedName));
+
+        var (items, count) = await query.GetPaginatedList(request, cancellationToken);
+        return new GetUsersResponse(mapper.Map<IEnumerable<GetUserResponse>>(items), count);
+    }
+
+    public async Task<GetUserResponse?> GetByIdAndCustomerId(Guid customerId, Guid id, CancellationToken cancellationToken)
+    {
+        var user = await dbContext.Users
+            .AsNoTracking()
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.Id == id && u.CustomerId == customerId, cancellationToken);
+
+        return user is null ? null : mapper.Map<GetUserResponse>(user);
+    }
+
+    public async Task<UpdateItemResponse?> UpdateByIdAndCustomerId(Guid customerId, Guid id, UpdateUserRequest request,
+        CancellationToken cancellationToken)
+    {
+        var entity = await dbContext.Users
+            .FirstOrDefaultAsync(u => u.Id == id && u.CustomerId == customerId, cancellationToken);
+
+        if (entity is null)
+            return null;
+
+        entity.FullName = request.FullName ?? entity.FullName;
+
+        if (!entity.IsNormalized())
+            entity.Normalize();
         Validator.ValidateAndThrow(entity);
 
         await dbContext.SaveChangesAsync(cancellationToken);

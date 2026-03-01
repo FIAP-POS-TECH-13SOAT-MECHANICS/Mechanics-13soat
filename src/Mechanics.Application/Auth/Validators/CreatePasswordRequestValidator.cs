@@ -7,8 +7,8 @@ public class CreatePasswordRequestValidator : AbstractValidator<CreatePasswordRe
 {
     public CreatePasswordRequestValidator()
     {
-        RuleFor(request => request.UserName)
-            .NotEmpty().WithMessage("UserName is required.");
+        RuleFor(request => request.CpfNumber)
+            .NotEmpty().WithMessage("CPF number is required.");
 
         RuleFor(request => request.PasswordCreationCode)
             .NotEmpty().WithMessage("Password creation code is required.");

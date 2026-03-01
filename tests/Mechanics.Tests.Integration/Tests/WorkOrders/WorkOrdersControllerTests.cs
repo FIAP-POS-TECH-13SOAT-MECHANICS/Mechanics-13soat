@@ -1,6 +1,5 @@
 using Mechanics.Application.WorkOrders.Requests;
 using Mechanics.Domain.Auth;
-using Mechanics.Domain.Base;
 using Mechanics.Domain.Customers;
 using Mechanics.Domain.ServicesCatalog;
 using Mechanics.Domain.Vehicles;
@@ -116,12 +115,12 @@ public class WorkOrdersControllerTests
                 {
                     Id = attendantUserId,
                     FullName = "Integration Attendant",
-                    UserName = "int_attendant",
-                    Email = "int.attendant@example.com",
+                    CpfNumber = "60975754084",
+                    Email = "int.attendant@mechanics.com",
                     PasswordHash = "hash",
                     SecurityStamp = Guid.NewGuid().ToString(),
                     RoleId = role.Id,
-                    CreationDate = DateTime.UtcNow
+                    CreationDate = DateTime.UtcNow,
                 });
             }
 
@@ -141,16 +140,5 @@ public class WorkOrdersControllerTests
             Assert.IsNotNull(wo.ApprovalRequestedAt);
             Assert.AreEqual(attendantUserId, wo.LastStatusChangeBy);
         }
-    }
-
-    [TestMethod]
-    public async Task It_ShouldReturnNotFound_WhenUserDocumentIsNotFound()
-    {
-        var client = await TestProperties.Factory.GetAuthenticatedClient(RoleNames.Attendant);
-
-        var response = await client.GetAsync("/api/work-orders/track?document=12345678909&accessKey=123456",
-            TestContext.CancellationTokenSource.Token);
-
-        Assert.AreEqual(HttpStatusCode.NotFound, response.StatusCode);
     }
 }

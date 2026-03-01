@@ -5,37 +5,27 @@ namespace Mechanics.Tests.Unit.Mocks;
 
 public static class CustomerMocks
 {
-    public static CreateCustomerRequest BuildCreateRequestPf(string? cpf = null) => new()
+    public static CreateIndividualCustomerRequest BuildCreateRequestPf(string? cpf = null) => new()
     {
-        Name = "Joao da Silva",
+        FullName = "Joao da Silva",
         Email = "joao@teste.com",
-        Document = new PersonalDocumentRequest
-        {
-            Type = DocumentType.Cpf,
-            Number = cpf ?? "11144477735",
-        },
+        CpfNumber = cpf ?? "11144477735",
     };
 
-    public static CreateCustomerRequest BuildCreateRequestPj(string? cnpj = null) => new()
+    public static CreateBusinessCustomerRequest BuildCreateRequestPj(string? cnpj = null) => new()
     {
-        Name = "Empresa XYZ Ltda",
-        Email = "contato@xyz.com",
-        Document = new PersonalDocumentRequest
-        {
-            Type = DocumentType.Cnpj,
-            Number = cnpj ?? "11444777000161",
-        },
+        CompanyName = "Empresa XYZ Ltda",
+        CnpjNumber = cnpj ?? "11444777000161",
+        ResponsibleFullName = "Responsavel XYZ",
+        ResponsibleEmail = "contato@xyz.com",
+        ResponsibleCpfNumber = "11144477735",
     };
 
-    public static CreateCustomerRequest BuildInvalidCreateRequest() => new()
+    public static CreateIndividualCustomerRequest BuildInvalidCreateRequest() => new()
     {
-        Name = "",
+        FullName = "",
         Email = "",
-        Document = new PersonalDocumentRequest
-        {
-            Type = DocumentType.Cpf,
-            Number = "00000000000",
-        },
+        CpfNumber = "00000000000",
     };
 
     public static UpdateCustomerRequest BuildUpdateRequest() => new()

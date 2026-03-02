@@ -19,7 +19,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0-noble-chiseled-extra AS final
 ENV LANG=pt_BR.UTF-8 LANGUAGE=pt_BR:pt LC_ALL=pt_BR.UTF-8
 EXPOSE 8080
 
-WORKDIR /dist
+WORKDIR /app
 COPY --from=build /dist .
 
 ENTRYPOINT ["dotnet", "Mechanics.Api.dll"]

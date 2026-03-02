@@ -4,11 +4,12 @@
 
 Repositório do projeto destinado aos Tech Challenges da Oficina Mecânica da FIAP.
 
-A implementação está dividida em 5 fases. Para os detalhes de cada fase, veja os [objetivos do projeto](./docs/objectives.md).
+A implementação está dividida em 5 fases. Para os detalhes de cada fase, veja
+os [objetivos do projeto](./docs/objectives.md).
 
 - [x] **Fase 1**: Implementação inicial em arquitetura monolítica
 - [x] **Fase 2**: Evolução da arquitetura e CI/CD para infraestrutura e deploy
-- [ ] Fase 3
+- [x] **Fase 3**: Implementação de login via AWS Lambda e monitoramento
 - [ ] Fase 4
 - [ ] Fase 5
 
@@ -17,6 +18,7 @@ A implementação está dividida em 5 fases. Para os detalhes de cada fase, veja
 - SDK: .NET 8.0
 - Banco de dados: MSSQL 2025
 - Serviço de E-mail: MailPit
+- Chave pública para JWT: AWS Secrets Manager
 
 ## Execução do projeto
 
@@ -25,6 +27,12 @@ de dados criado em fases anteriores. Para fazer isso, execute o seguinte comando
 
 ```bash
 docker compose down -v
+```
+
+Baixe a chave pública do AWS Secrets Manager (ajuste o nome de acordo o ambiente):
+
+```powershell
+aws secretsmanager get-secret-value --secret-id "fiap-mechanics-dev-jwt/public-key" --query SecretString --output text > "src/Mechanics.Api/keys/jwt-public.pem"
 ```
 
 Inicie o projeto via Docker Compose:

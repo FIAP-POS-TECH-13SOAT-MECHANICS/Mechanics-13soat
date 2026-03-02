@@ -35,7 +35,7 @@ public static class AuthExtensions
                     ValidateAudience = false,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = LoadSecurityKey(jwtOptions.PublicKey),
+                    IssuerSigningKey = LoadSecurityKey(),
                 };
             });
 
@@ -51,8 +51,14 @@ public static class AuthExtensions
         return services;
     }
 
-    private static RsaSecurityKey LoadSecurityKey(string publicKey)
+    private static RsaSecurityKey LoadSecurityKey()
     {
+        var publicKeyPath = Path.Combine(AppContext.BaseDirectory, "keys", "jwt-public.pem");
+        if (!File.Exists(publicKeyPath))
+            throw new InvalidOperationException("JWT Public Key is not available.");
+
+        var publicKey = File.ReadAllText(publicKeyPath);
+
         var rsa = RSA.Create();
         rsa.ImportFromPem(publicKey);
 

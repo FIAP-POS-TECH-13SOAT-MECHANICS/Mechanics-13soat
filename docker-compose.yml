@@ -11,6 +11,7 @@ services:
       - "5000:8080"
     volumes:
       - dotnet:/home/app
+      - ./src/Mechanics.Api/keys:/app/keys:ro
     depends_on:
       mssql:
         condition: service_healthy

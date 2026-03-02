@@ -20,6 +20,11 @@ spec:
           ports:
             - containerPort: 8080
 
+          volumeMounts:
+            - name: keys
+              mountPath: /app/keys
+              readOnly: true
+
           resources:
             requests:
               cpu: "250m"
@@ -55,3 +60,8 @@ spec:
               port: 8080
             initialDelaySeconds: 40
             periodSeconds: 10
+
+      volumes:
+        - name: keys
+          secret:
+            secretName: {{ .Values.app.name }}-keys

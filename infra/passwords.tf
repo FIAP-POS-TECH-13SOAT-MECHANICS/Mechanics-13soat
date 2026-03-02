@@ -22,3 +22,8 @@ resource "random_password" "email_smtp_password" {
   length  = 16
   special = false
 }
+
+resource "tls_private_key" "jwt" {
+  algorithm = "RSA"
+  rsa_bits  = 2048
+}

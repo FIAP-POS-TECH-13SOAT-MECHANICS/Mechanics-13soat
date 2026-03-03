@@ -21,7 +21,7 @@ public class WorkOrdersControllerTests
     [TestMethod]
     public async Task Create_And_RequestApproval_Flow_Works()
     {
-        var client = await TestProperties.Factory.GetAuthenticatedClient(RoleNames.Attendant);
+        var client = TestProperties.Factory.GetAuthenticatedClient(RoleNames.Attendant);
 
         var customerId = Guid.NewGuid();
         var vehicleId = Guid.NewGuid();

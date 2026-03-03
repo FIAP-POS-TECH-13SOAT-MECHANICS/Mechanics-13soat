@@ -42,8 +42,8 @@ resource "aws_autoscaling_attachment" "asg_attachment" {
 
 resource "aws_security_group_rule" "allow_nlb_http" {
   type              = "ingress"
-  from_port         = 30080
-  to_port           = 30080
+  from_port         = var.node_port
+  to_port           = var.node_port
   protocol          = "tcp"
   security_group_id = data.aws_eks_cluster.cluster.vpc_config[0].cluster_security_group_id
   cidr_blocks       = ["0.0.0.0/0"]

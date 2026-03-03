@@ -15,7 +15,7 @@ public class CreateUserTest(TestContext testContext)
     public async Task It_ShouldFail_WhenRoleIdIsInvalid()
     {
         var factory = TestProperties.Factory;
-        var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
+        var client = factory.GetAuthenticatedClient(RoleNames.Administrator);
 
         var request = new CreateUserRequest
         {
@@ -35,7 +35,7 @@ public class CreateUserTest(TestContext testContext)
     public async Task It_ShouldCreateUser_WhenCpfIsFormatted()
     {
         var factory = TestProperties.Factory;
-        var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
+        var client = factory.GetAuthenticatedClient(RoleNames.Administrator);
 
         var request = new CreateUserRequest
         {

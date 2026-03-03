@@ -19,7 +19,7 @@ public class CustomersControllerTests
     {
         // Arrange
         var factory = TestProperties.Factory;
-        var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
+        var client = factory.GetAuthenticatedClient(RoleNames.Administrator);
 
         var request = new CreateIndividualCustomerRequest
         {
@@ -44,7 +44,7 @@ public class CustomersControllerTests
     {
         // Arrange
         var factory = TestProperties.Factory;
-        var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
+        var client = factory.GetAuthenticatedClient(RoleNames.Administrator);
 
         var request = new CreateBusinessCustomerRequest
         {
@@ -71,7 +71,7 @@ public class CustomersControllerTests
     {
         // Arrange
         var factory = TestProperties.Factory;
-        var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
+        var client = factory.GetAuthenticatedClient(RoleNames.Administrator);
 
         var invalidRequest = new CreateBusinessCustomerRequest
         {

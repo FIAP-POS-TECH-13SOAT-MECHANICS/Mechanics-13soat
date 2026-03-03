@@ -1,44 +1,38 @@
 ﻿using Mechanics.Api;
-using Mechanics.Application.Auth.Requests;
-using Mechanics.Application.Auth.Responses;
-using Mechanics.Domain.Auth;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System.Collections.Concurrent;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
+using System.Security.Cryptography;
 
 namespace Mechanics.Tests.Integration.Helpers;
 
 public class ApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly ConcurrentDictionary<string, string?> _tokens = new();
+    private readonly RSA _rsa = RSA.Create();
 
-    private static readonly Dictionary<string, string> RoleToCpf = new()
-    {
-        { RoleNames.Administrator, "12345678909" },
-        { RoleNames.Attendant, "98765432100" },
-        { RoleNames.Mechanic, "11144477735" },
-        { RoleNames.CustomerUser, "11122233344" },
-    };
-
-    public async Task<HttpClient> GetAuthenticatedClient(string roleName)
+    public HttpClient GetAuthenticatedClient(string roleName)
     {
         var authenticatedClient = CreateClient();
-        var token = _tokens.GetOrAdd(roleName, await GetToken());
+        var token = _tokens.GetOrAdd(roleName, GetToken());
         authenticatedClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         return authenticatedClient;
 
-        async Task<string> GetToken()
+        string GetToken()
         {
-            var client = CreateClient();
-            var cpfNumber = RoleToCpf[roleName];
-            var response = await client.PostAsJsonAsync("api/auth/login",
-                new LoginRequest { CpfNumber = cpfNumber, Password = "5eCre+Key" });
-
-            var content = await response.Content.ReadFromJsonAsync<TokenResponse>();
-            _tokens[roleName] = content!.AccessToken;
-            return content.AccessToken;
+            var tokenGenerator = new TestTokenGenerator(_rsa);
+            return tokenGenerator.GenerateAccessTokenByRoleName(roleName);
         }
+    }
+
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        Directory.CreateDirectory(Path.Combine(AppContext.BaseDirectory, "keys"));
+        var publicKeyPath = Path.Combine(AppContext.BaseDirectory, "keys", "jwt-public.pem");
+        File.WriteAllText(publicKeyPath, _rsa.ExportRSAPublicKeyPem());
+
+        base.ConfigureWebHost(builder);
     }
 }

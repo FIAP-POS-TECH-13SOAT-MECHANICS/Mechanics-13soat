@@ -28,6 +28,7 @@ kubectl create secret generic aws-credentials `
   --from-literal=session-token="$(aws configure get aws_session_token)" `
   --dry-run=client `
   --output yaml | kubectl apply -f -
+kubectl wait --for=condition=Ready pod --all -n external-secrets --timeout=120s
 
 Write-Host
 Write-Host -ForegroundColor Green "Infrastructure for environment '$environment' has been applied."

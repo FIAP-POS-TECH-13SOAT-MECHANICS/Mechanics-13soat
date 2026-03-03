@@ -9,7 +9,7 @@ variable "project_name" {
 }
 
 variable "email_domain" {
-  type = string
+  type    = string
   default = "mechanics.com"
 }
 
@@ -49,6 +49,11 @@ variable "availability_zones" {
 variable "vpc_cidr" {
   type    = string
   default = "10.0.0.0/16"
+}
+
+variable "node_port" {
+  type    = number
+  default = 30080
 }
 
 locals {

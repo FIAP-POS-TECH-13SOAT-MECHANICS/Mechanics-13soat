@@ -30,6 +30,19 @@ resource "helm_release" "ingress_nginx" {
   repository = "https://kubernetes.github.io/ingress-nginx"
   chart      = "ingress-nginx"
 
+  values = [
+    yamlencode({
+      controller = {
+        service = {
+          type = "NodePort"
+          nodePorts = {
+            http = var.node_port
+          }
+        }
+      }
+    })
+  ]
+
   depends_on = [
     aws_eks_node_group.node_group
   ]

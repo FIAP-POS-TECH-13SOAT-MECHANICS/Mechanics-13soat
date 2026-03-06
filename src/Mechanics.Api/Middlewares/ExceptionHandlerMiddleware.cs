@@ -17,49 +17,53 @@ public class ExceptionHandlerMiddleware(RequestDelegate next, ILogger<ExceptionH
         }
         catch (Exception e)
         {
+            var method = context.Request.Method;
+            var path = context.Request.Path.ToString();
+            var routePattern = (context.GetEndpoint() as RouteEndpoint)?.RoutePattern?.RawText;
+            var httpRoute = routePattern ?? path;
+
             if (context.Response.HasStarted)
             {
                 logger.LogError(e,
-                    "Response already started, cannot handle exception | {Method} {Endpoint}",
-                    context.Request.Method,
-                    context.Request.Path);
+                    "Response already started, cannot handle exception | {http.method} {http.route}",
+                    method,
+                    httpRoute);
 
                 throw;
             }
 
-            await HandleException(context, e);
+            await HandleException(context, e, method, httpRoute);
         }
     }
-    private async Task HandleException(HttpContext context, Exception exception)
+    private async Task HandleException(HttpContext context, Exception exception, string method, string httpRoute)
     {
-        var method = context.Request.Method;
-        var endpoint = $"{context.Request.Path}{context.Request.QueryString}";
-
         switch (exception)
         {
             case EntityNotFoundException e:
                 logger.LogWarning(e,
-                    "Entity not found | {Method} {Endpoint}",
+                    "Entity not found | {http.method} {http.route}",
                     method,
-                    endpoint);
+                    httpRoute);
 
                 await WriteProblemDetails(context, StatusCodes.Status400BadRequest, e);
                 break;
 
             case BusinessException e:
                 logger.LogWarning(e,
-                    "Business rule violation | {Method} {Endpoint}",
+                    "Business rule violation | {http.method} {http.route}",
                     method,
-                    endpoint);
+                    httpRoute);
 
                 await WriteProblemDetails(context, StatusCodes.Status400BadRequest, e);
                 break;
 
             default:
                 logger.LogError(exception,
-                    "Unhandled exception | {Method} {Endpoint}",
+                    "Unhandled exception | {http.method} {http.route} | {ExceptionType}: {ExceptionMessage}",
                     method,
-                    endpoint);
+                    httpRoute,
+                    exception.GetType().Name,
+                    exception.Message);
 
                 await WriteProblemDetails(context, StatusCodes.Status500InternalServerError, exception);
                 break;
@@ -68,6 +72,7 @@ public class ExceptionHandlerMiddleware(RequestDelegate next, ILogger<ExceptionH
 
     private static async Task WriteProblemDetails(HttpContext context, int statusCode, Exception e)
     {
+
         context.Response.StatusCode = statusCode;
         context.Response.ContentType = "application/problem+json";
 

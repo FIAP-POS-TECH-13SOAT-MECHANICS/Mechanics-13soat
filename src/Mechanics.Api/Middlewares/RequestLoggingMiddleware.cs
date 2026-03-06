@@ -9,41 +9,33 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
         var stopwatch = Stopwatch.StartNew();
 
         var method = context.Request.Method;
-        var endpoint = $"{context.Request.Path}{context.Request.QueryString}";
-        var scheme = context.Request.Scheme;
-
-        var endpointName = context.GetEndpoint()?.DisplayName;
+        var path = context.Request.Path.ToString();
+        var queryString = context.Request.QueryString.HasValue
+            ? context.Request.QueryString.Value
+            : null;
 
         var clientIp =
             context.Request.Headers["X-Forwarded-For"].FirstOrDefault()
-            ?.Split(',').FirstOrDefault()?.Trim()
+                ?.Split(',').FirstOrDefault()?.Trim()
             ?? context.Connection.RemoteIpAddress?.ToString()
             ?? "unknown";
 
         var userAgent = context.Request.Headers.UserAgent.ToString();
+        var scheme = context.Request.Scheme;
 
         try
         {
             await next(context);
         }
-        catch (Exception ex)
-        {
-            stopwatch.Stop();
-
-            logger.LogError(ex,
-                "Unhandled exception on HTTP {Method} {Endpoint} from {ClientIp} after {Duration}ms",
-                method,
-                endpoint,
-                clientIp,
-                stopwatch.ElapsedMilliseconds);
-
-            throw;
-        }
         finally
         {
             stopwatch.Stop();
 
+            var routePattern = (context.GetEndpoint() as RouteEndpoint)?.RoutePattern?.RawText;
+            var httpRoute = routePattern ?? path;
+
             var statusCode = context.Response.StatusCode;
+            var durationMs = stopwatch.ElapsedMilliseconds;
 
             var level =
                 statusCode >= 500 ? LogLevel.Error :
@@ -52,15 +44,25 @@ public class RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggi
 
             logger.Log(
                 level,
-                "HTTP {Method} {Endpoint} ({EndpointName}) {Scheme} from {ClientIp} responded {StatusCode} in {Duration}ms | UA: {UserAgent}",
+                "HTTP request completed | {http.method} {http.route} {http.status_code} {http.response_duration_ms}ms",
                 method,
-                endpoint,
-                endpointName,
-                scheme,
-                clientIp,
+                httpRoute,
                 statusCode,
-                stopwatch.ElapsedMilliseconds,
-                userAgent);
+                durationMs);
+
+            if (logger.IsEnabled(LogLevel.Debug))
+            {
+                logger.LogDebug(
+                    "HTTP request details | {http.method} {http.route} {http.status_code} {http.response_duration_ms}ms {http.client_ip} {http.scheme} {http.query_string} {http.user_agent}",
+                    method,
+                    httpRoute,
+                    statusCode,
+                    durationMs,
+                    clientIp,
+                    scheme,
+                    queryString,
+                    userAgent);
+            }
         }
     }
 }

@@ -1,4 +1,5 @@
 using Mechanics.Api.Extensions;
+using Mechanics.Api.Infrastructure.Observability;
 using Mechanics.Api.Middlewares;
 using Mechanics.Infra.CrossCutting.IoC.Extensions;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
@@ -18,6 +19,8 @@ public class Program
     public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
+
+        builder.AddStructuredLogging();
 
         builder.Services.AddControllers(options =>
         {
@@ -42,6 +45,11 @@ public class Program
 
         var app = builder.Build();
 
+        app.UseMiddleware<CorrelationIdMiddleware>();
+        app.UseMiddleware<RequestLoggingMiddleware>();
+        app.UseMiddleware<ExceptionHandlerMiddleware>();
+        app.UseMiddleware<DomainValidationMiddleware>();
+
         app.UseRouting();
         app.UseCors("AllowAllOrigins");
         app.UseAuthentication();
@@ -49,8 +57,6 @@ public class Program
         app.MapControllers()
             .RequireAuthorization();
 
-        app.UseMiddleware<ExceptionHandlerMiddleware>()
-            .UseMiddleware<DomainValidationMiddleware>();
 
         if (app.Environment.IsDevelopment())
             await app.ApplyMigrations();

@@ -80,7 +80,7 @@ public class ExceptionHandlerMiddleware(RequestDelegate next, ILogger<ExceptionH
         {
             Status = statusCode,
             Type = e.GetType().FullName,
-            Title = $"Application error: {e.Message}",
+            Title = GetErrorTitle(statusCode, e),
             Extensions =
             {
                 ["traceId"] = Activity.Current?.TraceId.ToString() ?? context.TraceIdentifier
@@ -92,6 +92,12 @@ public class ExceptionHandlerMiddleware(RequestDelegate next, ILogger<ExceptionH
         await context.Response.WriteAsync(JsonSerializer.Serialize(response, SerializerOptions));
     }
 
+    private static string GetErrorTitle(int statusCode, Exception exception)
+    {
+        return statusCode == StatusCodes.Status500InternalServerError
+            ? "Internal server error."
+            : exception.Message;
+    }
 
     public class ExceptionDetails(Exception e)
     {

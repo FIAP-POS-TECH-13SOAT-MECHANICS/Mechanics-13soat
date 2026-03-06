@@ -865,6 +865,14 @@
           "Serilog": "4.0.0"
         }
       },
+      "Serilog.Enrichers.Process": {
+        "type": "Transitive",
+        "resolved": "3.0.0",
+        "contentHash": "/wPYz2PDCJGSHNI+Z0PAacZvrgZgrGduWqLXeC2wvW6pgGM/Bi45JrKy887MRcRPHIZVU0LAlkmJ7TkByC0boQ==",
+        "dependencies": {
+          "Serilog": "4.0.0"
+        }
+      },
       "Serilog.Enrichers.Span": {
         "type": "Transitive",
         "resolved": "3.1.0",
@@ -1253,6 +1261,7 @@
           "Mechanics.Infra.Data": "[1.0.0, )",
           "Serilog.AspNetCore": "[8.0.3, )",
           "Serilog.Enrichers.Environment": "[3.0.0, )",
+          "Serilog.Enrichers.Process": "[3.0.0, )",
           "Serilog.Enrichers.Span": "[3.1.0, )",
           "Serilog.Enrichers.Thread": "[4.0.0, )",
           "Serilog.Formatting.Compact": "[3.0.0, )",

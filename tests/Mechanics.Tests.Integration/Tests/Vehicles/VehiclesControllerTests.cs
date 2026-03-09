@@ -93,7 +93,7 @@ public class VehiclesControllerTests
     private async Task<(HttpClient client, Guid ownerId)> GetClientAndOwner(string document)
     {
         var factory = TestProperties.Factory;
-        var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
+        var client = factory.GetAuthenticatedClient(RoleNames.Administrator);
 
         var customerRequest = new CreateIndividualCustomerRequest
         {

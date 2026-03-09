@@ -8,6 +8,7 @@ public class TestDatabaseContainer : IAsyncDisposable
         .WithImage("mcr.microsoft.com/mssql/server:2025-latest")
         .WithPassword("b0I6h9G%1zJo")
         .WithEnvironment("MSSQL_PID", "Express")
+        .WithName($"testcontainers-db-{Guid.NewGuid()}")
         .WithCleanUp(true)
         .Build();
 

@@ -37,25 +37,15 @@ jobs:
       environment: ${{ steps.resolve.outputs.environment }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v5
       - name: Resolve Environment
         id: resolve
-        uses: ./.github/actions/resolve-environment
-
-  terraform:
-    name: Apply infrastructure
-    needs:
-      - tests
-      - resolve-environment
-    uses: ./.github/workflows/infra.yml
-    with:
-      environment: ${{ needs.resolve-environment.outputs.environment }}
-    secrets: inherit
+        uses: FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-infra/.github/actions/resolve-environment@main
 
   deploy:
     name: Deploy on EKS
     needs:
-      - terraform
+      - tests
       - resolve-environment
     uses: ./.github/workflows/deploy.yml
     with:

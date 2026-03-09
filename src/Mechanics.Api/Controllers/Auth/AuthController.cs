@@ -1,10 +1,8 @@
 ﻿using Mechanics.Application.Auth.Requests;
-using Mechanics.Application.Auth.Responses;
 using Mechanics.Application.Auth.Services;
 using Mechanics.Domain.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Net;
 using System.Security.Claims;
 
 namespace Mechanics.Api.Controllers.Auth;
@@ -18,42 +16,6 @@ namespace Mechanics.Api.Controllers.Auth;
 [Authorize(Policy = PolicyNames.AllAuthenticated)]
 public class AuthController(AuthAppService service) : ControllerBase
 {
-    /// <summary>
-    ///     Gera um token JWT para o usuário fornecido.
-    /// </summary>
-    /// <returns>Um <see cref="TokenResponse"/> contendo o token JWT.</returns>
-    /// <response code="200">Usuário autenticado com sucesso.</response>
-    /// <response code="401">Usuário ou senha inválidos.</response>
-    [AllowAnonymous]
-    [HttpPost("login")]
-    [Consumes(typeof(LoginRequest), "application/json")]
-    [Produces("application/json", Type = typeof(TokenResponse))]
-    [ProducesResponseType(typeof(TokenResponse), (int)HttpStatusCode.OK)]
-    [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Login(LoginRequest request, CancellationToken cancellationToken)
-    {
-        var response = await service.Login(request, cancellationToken);
-        return response is not null ? Ok(response) : Unauthorized();
-    }
-
-    /// <summary>
-    ///     Gera um token JWT a partir de um refresh token.
-    /// </summary>
-    /// <returns>Um <see cref="TokenResponse"/> contendo o token JWT.</returns>
-    /// <response code="200">Usuário autenticado com sucesso.</response>
-    /// <response code="401">Token inválido.</response>
-    [AllowAnonymous]
-    [HttpPost("refresh")]
-    [Consumes(typeof(RefreshTokenRequest), "application/json")]
-    [Produces("application/json", Type = typeof(TokenResponse))]
-    [ProducesResponseType(typeof(TokenResponse), (int)HttpStatusCode.OK)]
-    [ProducesResponseType(typeof(void), StatusCodes.Status401Unauthorized)]
-    public async Task<IActionResult> Refresh(RefreshTokenRequest request, CancellationToken cancellationToken)
-    {
-        var response = await service.Refresh(request, cancellationToken);
-        return response is not null ? Ok(response) : Unauthorized();
-    }
-
     /// <summary>
     ///     Envia um código de criação de senha para o e-mail do usuário associado ao CPF informado.
     /// </summary>

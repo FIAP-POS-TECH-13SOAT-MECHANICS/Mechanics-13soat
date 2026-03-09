@@ -1,9 +1,7 @@
 ﻿using Mechanics.Application.Auth.Requests;
-using Mechanics.Application.Auth.Responses;
 using Mechanics.Application.Notification.Services;
 using Mechanics.Application.Utils;
 using Mechanics.Application.Utils.CommonResponses;
-using Mechanics.Application.Utils.TokenGenerator;
 using Mechanics.Domain.Auth;
 using Mechanics.Domain.Base.Validation;
 using Mechanics.Infra.Data;
@@ -12,32 +10,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Mechanics.Application.Auth.Services;
 
-public class AuthAppService(AppDbContext dbContext, IEmailService emailService, IJwtTokenHandler tokenHandler) : IAppService
+public class AuthAppService(AppDbContext dbContext, IEmailService emailService) : IAppService
 {
-    public async Task<TokenResponse?> Login(LoginRequest request, CancellationToken cancellationToken = default)
-    {
-        var normalizedCpf = new string(request.CpfNumber.Where(char.IsDigit).ToArray());
-        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.CpfNumber == normalizedCpf, cancellationToken);
-        if (user is null)
-            return null;
-
-        var passwordVerificationResult = new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.Password);
-        return passwordVerificationResult is not PasswordVerificationResult.Failed ? tokenHandler.CreateTokenResponse(user) : null;
-    }
-
-    public async Task<TokenResponse?> Refresh(RefreshTokenRequest request, CancellationToken cancellationToken)
-    {
-        var userId = tokenHandler.GetUserId(request.RefreshToken);
-        if (userId is null)
-            return null;
-
-        var user = await dbContext.Users.FindAsync([userId], cancellationToken: cancellationToken);
-        if (user is null || !await tokenHandler.ValidateRefreshToken(request.RefreshToken, user.SecurityStamp))
-            return null;
-
-        return tokenHandler.CreateTokenResponse(user);
-    }
-
     public async Task<UpdateItemResponse?> CreatePassword(CreatePasswordRequest request, CancellationToken cancellationToken)
     {
         var normalizedCpf = new string(request.CpfNumber.Where(char.IsDigit).ToArray());

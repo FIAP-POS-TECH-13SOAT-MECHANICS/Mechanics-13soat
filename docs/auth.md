@@ -1,19 +1,18 @@
 ﻿# Autenticação e autorização
 
-## Perfis de acesso
+O fluxo de geração e renovação de token foi movido para o [serviço de autenticação](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-auth).
 
-- **Administrador**: Acesso completo ao sistema. É o único que pode cadastrar novos usuários.
-- **Atendente**: Possui as permissões para cadastrar novos clientes e seus veículos.
-- **Mecânico**: Possui as permissões para cadastrar e alterar produtos e serviços oferecidos.
+Com o serviço em execução, é possível realizar login através da Lambda Function.
+Primeiro é preciso obter a URL do API Gateway:
 
-No fluxo de ordens de serviço, os perfis Atendente e Mecânico possuem alguns acessos específicos. Acesse [Fluxo de Ordem de Serviço](./work-order-flow.md) para mais detalhes.
+```powershell
+aws apigatewayv2 get-apis --query "Items[?Name=='fiap-mechanics-dev-api'].ApiEndpoint" --output text
+```
 
-## Login
-
-Para realizar login, utilize o endpoint `POST /api/auth/login`.
+Utilize o comando abaixo para realizar gerar um token com perfil Administrador:
 
 ```shell
-curl --location 'http://localhost:5000/api/auth/login' \
+curl --location 'URL_API_GATEWAY/api/auth/login' \
 --header 'Content-Type: application/json' \
 --data '{
     "cpfNumber": "12345678909",
@@ -21,29 +20,15 @@ curl --location 'http://localhost:5000/api/auth/login' \
 }'
 ```
 
-A resposta contém o token de acesso e o de atualização.
-O token de acesso possui uma validade de poucos minutos e pode ser renovado utilizando o token de atualização.
+É possível usar [scripts](./../scripts/README.md) para obter um novo token de acesso.
 
-```json
-{
-    "accessToken": "...",
-    "refreshToken": "...",
-    "expirationDate": "2025-11-02T00:39:54.1120047+00:00"
-}
-```
+## Perfis de acesso
 
-Para renovar o token de acesso, utilize o endpoint `POST /api/auth/refresh-token`.
+- **Administrador**: Acesso completo ao sistema. É o único que pode cadastrar novos usuários.
+- **Atendente**: Possui as permissões para cadastrar novos clientes e seus veículos.
+- **Mecânico**: Possui as permissões para cadastrar e alterar produtos e serviços oferecidos.
 
-```shell
-curl --location 'http://localhost:5000/api/auth/refresh' \
---header 'accept: application/json' \
---header 'Content-Type: application/json' \
---data '{
-  "refreshToken": "..."
-}'
-```
-
-O token de atualização é válido por 12 horas e é cancelado quando o usuário altera a senha.
+No fluxo de ordens de serviço, os perfis Atendente e Mecânico possuem alguns acessos específicos. Acesse [Fluxo de Ordem de Serviço](./work-order-flow.md) para mais detalhes.
 
 ## Criação de novo usuário
 

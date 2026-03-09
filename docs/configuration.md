@@ -46,10 +46,6 @@ O exemplo abaixo contém algumas configurações comuns:
             "Microsoft": "Information"
         }
     },
-    "JwtOptions": {
-        // aumentar o tempo de expiração do token JWT
-        "AccessTokenLifetime": 30
-    },
     "ConnectionStrings": {
         // acessar outro banco de dados
         "Default": "Server=xxx.rds.amazonaws.com;Database=fiap-mechanics;User Id=sa;Password=2%r6dZ6Xk@g3;TrustServerCertificate=True;"

@@ -4,11 +4,12 @@
 
 Repositório do projeto destinado aos Tech Challenges da Oficina Mecânica da FIAP.
 
-A implementação está dividida em 5 fases. Para os detalhes de cada fase, veja os [objetivos do projeto](./docs/objectives.md).
+A implementação está dividida em 5 fases. Para os detalhes de cada fase, veja
+os [objetivos do projeto](./docs/objectives.md).
 
 - [x] **Fase 1**: Implementação inicial em arquitetura monolítica
 - [x] **Fase 2**: Evolução da arquitetura e CI/CD para infraestrutura e deploy
-- [ ] Fase 3
+- [x] **Fase 3**: Implementação de login via AWS Lambda e monitoramento
 - [ ] Fase 4
 - [ ] Fase 5
 
@@ -17,6 +18,7 @@ A implementação está dividida em 5 fases. Para os detalhes de cada fase, veja
 - SDK: .NET 8.0
 - Banco de dados: MSSQL 2025
 - Serviço de E-mail: MailPit
+- Chave pública para JWT: AWS Secrets Manager
 
 ## Execução do projeto
 
@@ -27,6 +29,12 @@ de dados criado em fases anteriores. Para fazer isso, execute o seguinte comando
 docker compose down -v
 ```
 
+Baixe a chave pública do AWS Secrets Manager (ajuste o nome de acordo o ambiente):
+
+```powershell
+aws secretsmanager get-secret-value --secret-id "fiap-mechanics-dev-jwt/public-key" --query SecretString --output text > "src/Mechanics.Api/keys/jwt-public.pem"
+```
+
 Inicie o projeto via Docker Compose:
 
 ```bash
@@ -35,8 +43,8 @@ docker compose up -d --build
 
 Após o processo concluir, o projeto estará disponível nas seguintes URLs:
 
-- Swagger do projeto: http://localhost:5000/swagger
-- Cliente de e-mail: http://localhost:8025
+- Swagger do projeto: <http://localhost:5000/swagger>
+- Cliente de e-mail: <http://localhost:8025>
 
 > **Opcional**
 > Utilize o script [dev-seeds](./dev-seeds/README.md) para popular o banco com dados de exemplo.
@@ -55,7 +63,8 @@ Algumas dessas configurações também poder ser definidas no [Helm chart](./k8s
 
 ## Usuários padrão
 
-Utilize o endpoint `/api/auth/login` para gerar um token.
+Utilize o [serviço de autenticação](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-auth) para gerar um
+token.
 O token possui validade de poucos minutos, mas pode ser renovado.
 Veja as instruções em [Autenticação e autorização](./docs/auth.md).
 
@@ -84,14 +93,12 @@ Esse repositório contém instruções para execução local das análises com *
 
 <!-- Mantenha a lista em ordem alfabética -->
 
-- [Autenticação e autorização](./docs/auth.md)
 - [Configuração do ambiente](./docs/configuration.md)
 - [Dados de exemplo](./dev-seeds/README.md)
 - [Diagramas](./docs/diagrams.md)
 - [Diretrizes de design do projeto](./docs/design-guidelines.md)
 - [Fluxo de Ordem de Serviço](./docs/work-order-flow.md)
 - [Kubernetes e Helm chart](./k8s/README.md)
-- [Informações sobre a Infraestrutura](./infra/README.md)
 - [Migrações do banco de dados](./docs/migrations.md)
 - [Objetivos](./docs/objectives.md)
 - [Relatórios](./docs/reports/README.md)

@@ -11,6 +11,7 @@ Ao instalar o chart, os seguintes hooks são executados:
 Somente após os hooks terem rodado com sucesso é que os demais recursos são provisionados:
 
 - `email-secret`
+- `keys-secret`
 - `config-map`
 - `service`
 - `deployment`
@@ -86,3 +87,5 @@ O ESO busca as secrets seguindo o seguinte padrão:
   - `password`: senha do servidor SMTP
 - `$AppName-$AppEnv-database`:
   - `value`: connectionString do banco de dados
+- `$AppName-$AppEnv-jwt/public-key`:
+  - `value`: chave pública para assinatura de tokens JWT

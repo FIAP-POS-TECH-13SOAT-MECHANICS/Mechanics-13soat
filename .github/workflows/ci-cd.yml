@@ -42,20 +42,10 @@ jobs:
         id: resolve
         uses: ./.github/actions/resolve-environment
 
-  terraform:
-    name: Apply infrastructure
-    needs:
-      - tests
-      - resolve-environment
-    uses: ./.github/workflows/infra.yml
-    with:
-      environment: ${{ needs.resolve-environment.outputs.environment }}
-    secrets: inherit
-
   deploy:
     name: Deploy on EKS
     needs:
-      - terraform
+      - tests
       - resolve-environment
     uses: ./.github/workflows/deploy.yml
     with:

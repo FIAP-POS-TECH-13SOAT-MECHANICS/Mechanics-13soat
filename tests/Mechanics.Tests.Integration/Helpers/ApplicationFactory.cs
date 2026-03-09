@@ -15,7 +15,7 @@ public class ApplicationFactory : WebApplicationFactory<Program>
     public HttpClient GetAuthenticatedClient(string roleName)
     {
         var authenticatedClient = CreateClient();
-        var token = _tokens.GetOrAdd(roleName, GetToken());
+        var token = _tokens.GetOrAdd(roleName, _ => GetToken());
         authenticatedClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 
         return authenticatedClient;

@@ -30,7 +30,7 @@ jobs:
 
       - name: Check if ECR tag exists
         id: ecr_check
-        uses: ./.github/actions/ecr-tag-exists
+        uses: FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-infra/.github/actions/ecr-tag-exists@main
         with:
           environment: ${{ inputs.environment }}
           aws-region: ${{ secrets.AWS_REGION }}

@@ -43,8 +43,8 @@ docker compose up -d --build
 
 Após o processo concluir, o projeto estará disponível nas seguintes URLs:
 
-- Swagger do projeto: http://localhost:5000/swagger
-- Cliente de e-mail: http://localhost:8025
+- Swagger do projeto: <http://localhost:5000/swagger>
+- Cliente de e-mail: <http://localhost:8025>
 
 > **Opcional**
 > Utilize o script [dev-seeds](./dev-seeds/README.md) para popular o banco com dados de exemplo.
@@ -63,7 +63,8 @@ Algumas dessas configurações também poder ser definidas no [Helm chart](./k8s
 
 ## Usuários padrão
 
-Utilize o endpoint `/api/auth/login` para gerar um token.
+Utilize o [serviço de autenticação](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-auth) para gerar um
+token.
 O token possui validade de poucos minutos, mas pode ser renovado.
 Veja as instruções em [Autenticação e autorização](./docs/auth.md).
 

@@ -1,5 +1,8 @@
 ﻿# Autenticação e autorização
 
+O fluxo de geração e renovação de token foi movido para o [serviço de autenticação](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-auth).
+Consulte a documentação para realizar o login.
+
 ## Perfis de acesso
 
 - **Administrador**: Acesso completo ao sistema. É o único que pode cadastrar novos usuários.
@@ -7,43 +10,6 @@
 - **Mecânico**: Possui as permissões para cadastrar e alterar produtos e serviços oferecidos.
 
 No fluxo de ordens de serviço, os perfis Atendente e Mecânico possuem alguns acessos específicos. Acesse [Fluxo de Ordem de Serviço](./work-order-flow.md) para mais detalhes.
-
-## Login
-
-Para realizar login, utilize o endpoint `POST /api/auth/login`.
-
-```shell
-curl --location 'http://localhost:5000/api/auth/login' \
---header 'Content-Type: application/json' \
---data '{
-    "cpfNumber": "12345678909",
-    "password": "5eCre+Key"
-}'
-```
-
-A resposta contém o token de acesso e o de atualização.
-O token de acesso possui uma validade de poucos minutos e pode ser renovado utilizando o token de atualização.
-
-```json
-{
-    "accessToken": "...",
-    "refreshToken": "...",
-    "expirationDate": "2025-11-02T00:39:54.1120047+00:00"
-}
-```
-
-Para renovar o token de acesso, utilize o endpoint `POST /api/auth/refresh-token`.
-
-```shell
-curl --location 'http://localhost:5000/api/auth/refresh' \
---header 'accept: application/json' \
---header 'Content-Type: application/json' \
---data '{
-  "refreshToken": "..."
-}'
-```
-
-O token de atualização é válido por 12 horas e é cancelado quando o usuário altera a senha.
 
 ## Criação de novo usuário
 

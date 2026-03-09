@@ -1,6 +1,4 @@
-﻿using Mechanics.Application.Options;
-using Mechanics.Application.Utils.TokenGenerator;
-using Mechanics.Domain.Auth;
+﻿using Mechanics.Domain.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,12 +13,6 @@ public static class AuthExtensions
 
     public static IServiceCollection AddCustomAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
-        var configurationSection = configuration.GetSection(nameof(JwtOptions));
-        services.Configure<JwtOptions>(configurationSection);
-        var jwtOptions = configurationSection.Get<JwtOptions>();
-        if (jwtOptions is null)
-            throw new InvalidOperationException("JWT Public Key is not set.");
-
         services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -45,8 +37,6 @@ public static class AuthExtensions
             .AddPolicy(PolicyNames.CustomersOnly, policy =>
                 policy.RequireRole(RoleNames.CustomerAdmin, RoleNames.CustomerUser))
             .AddPolicy(PolicyNames.AllAuthenticated, policy => policy.RequireAuthenticatedUser());
-
-        services.AddSingleton<IJwtTokenHandler, JwtTokenHandler>();
 
         return services;
     }

@@ -1,8 +1,6 @@
 ﻿using Mechanics.Application.Auth.Requests;
-using Mechanics.Application.Auth.Responses;
 using Mechanics.Application.Auth.Services;
 using Mechanics.Application.Notification.Services;
-using Mechanics.Application.Utils.TokenGenerator;
 using Mechanics.Domain.Auth;
 using Mechanics.Domain.Base.Validation;
 using Mechanics.Tests.Unit.Helpers;
@@ -19,73 +17,6 @@ public class AuthAppServiceTests
     public TestContext TestContext { get; set; }
     private readonly IEmailService _mailService = Mock.Of<IEmailService>();
 
-    #region efetuar login
-
-    [TestMethod("Efetuar login com usuário válido deve retornar token")]
-    public async Task It_ShouldReturnToken_WithValidCredentials()
-    {
-        var token = Guid.NewGuid().ToString();
-        var tokenHandlerStub = CreateTokenHandlerStub(token);
-        var user = UserMocks.CreateUser("12345678909", "TEST_5eCre+Key");
-        await using var context = new DbContextTestBuilder()
-            .WithData([user])
-            .Build();
-        var appService = new AuthAppService(context, _mailService, tokenHandlerStub.Object);
-        var request = new LoginRequest
-        {
-            CpfNumber = "12345678909",
-            Password = "TEST_5eCre+Key",
-        };
-
-        var result = await appService.Login(request, TestContext.CancellationTokenSource.Token);
-
-        Assert.IsNotNull(result);
-        Assert.AreEqual(token, result.AccessToken);
-        Assert.IsNotNull(result.RefreshToken);
-    }
-
-    [TestMethod("Efetuar login com senha incorreta deve retornar null")]
-    public async Task It_ShouldReturnToken_WithInvalidCredentials()
-    {
-        var token = Guid.NewGuid().ToString();
-        var tokenHandlerStub = CreateTokenHandlerStub(token);
-        var user = UserMocks.CreateUser("12345678909", "TEST_5eCre+Key");
-        await using var context = new DbContextTestBuilder()
-            .WithData([user])
-            .Build();
-        var appService = new AuthAppService(context, _mailService, tokenHandlerStub.Object);
-        var request = new LoginRequest
-        {
-            CpfNumber = "12345678909",
-            Password = "wrong-password",
-        };
-
-        var result = await appService.Login(request, TestContext.CancellationTokenSource.Token);
-
-        Assert.IsNull(result);
-    }
-
-    [TestMethod("Efetuar login usando refresh token válido")]
-    public async Task It_ShouldReturnToken_WithValidRefreshToken()
-    {
-        var userId = new Guid("5bb2ae44-cbc7-44c4-9eda-cfb860b6e2f5");
-        var user = UserMocks.CreateUser(userId, "jose-santos", "38446983028", RoleNames.Mechanic);
-        var token = Guid.NewGuid().ToString();
-        var refreshToken = Guid.NewGuid().ToString();
-        var tokenHandlerStub = CreateTokenHandlerStub(token, refreshToken, userId.ToString(), userId);
-        await using var context = new DbContextTestBuilder().WithData([user]).Build();
-        var appService = new AuthAppService(context, _mailService, tokenHandlerStub.Object);
-        var request = new RefreshTokenRequest { RefreshToken = refreshToken };
-
-        var result = await appService.Refresh(request, TestContext.CancellationTokenSource.Token);
-
-        Assert.IsNotNull(result);
-        Assert.AreEqual(token, result.AccessToken);
-        Assert.IsNotNull(result.RefreshToken);
-    }
-
-    #endregion
-
     #region recuperação de senha
 
     [TestMethod("Deve enviar e-mail se o usuário existir")]
@@ -100,7 +31,7 @@ public class AuthAppServiceTests
                 handler.SendUserPasswordCreationCode(user, user.GetPasswordCreationCode(),
                     TestContext.CancellationTokenSource.Token))
             .Verifiable(Times.Once());
-        var appService = new AuthAppService(context, emailServiceStub.Object, null!);
+        var appService = new AuthAppService(context, emailServiceStub.Object);
         var request = new ResetPasswordRequest { CpfNumber = "12345678909" };
 
         await appService.ResetPassword(request, TestContext.CancellationTokenSource.Token);
@@ -117,7 +48,7 @@ public class AuthAppServiceTests
                 handler.SendUserPasswordCreationCode(It.IsAny<User>(), It.IsAny<string>(),
                     TestContext.CancellationTokenSource.Token))
             .Verifiable(Times.Never());
-        var appService = new AuthAppService(context, emailServiceStub.Object, null!);
+        var appService = new AuthAppService(context, emailServiceStub.Object);
         var request = new ResetPasswordRequest { CpfNumber = "11144477735" };
 
         await appService.ResetPassword(request, TestContext.CancellationTokenSource.Token);
@@ -136,7 +67,7 @@ public class AuthAppServiceTests
         emailServiceStub.Setup(handler =>
                 handler.UserPasswordChanged(user, TestContext.CancellationTokenSource.Token))
             .Verifiable(Times.Once());
-        var appService = new AuthAppService(context, emailServiceStub.Object, null!);
+        var appService = new AuthAppService(context, emailServiceStub.Object);
         var request = new CreatePasswordRequest
         {
             CpfNumber = "12345678909",
@@ -165,7 +96,7 @@ public class AuthAppServiceTests
         emailServiceStub.Setup(handler =>
                 handler.UserPasswordChanged(user, TestContext.CancellationTokenSource.Token))
             .Verifiable(Times.Never());
-        var appService = new AuthAppService(context, emailServiceStub.Object, null!);
+        var appService = new AuthAppService(context, emailServiceStub.Object);
         var request = new CreatePasswordRequest
         {
             CpfNumber = "12345678909",
@@ -198,7 +129,7 @@ public class AuthAppServiceTests
         emailServiceStub.Setup(handler =>
                 handler.UserPasswordChanged(user, TestContext.CancellationTokenSource.Token))
             .Verifiable(Times.Once());
-        var appService = new AuthAppService(context, emailServiceStub.Object, null!);
+        var appService = new AuthAppService(context, emailServiceStub.Object);
         var request = new ChangePasswordRequest
         {
             CurrentPassword = "TEST_5eCre+Key1",
@@ -227,7 +158,7 @@ public class AuthAppServiceTests
         emailServiceStub.Setup(handler =>
                 handler.UserPasswordChanged(user, TestContext.CancellationTokenSource.Token))
             .Verifiable(Times.Never());
-        var appService = new AuthAppService(context, emailServiceStub.Object, null!);
+        var appService = new AuthAppService(context, emailServiceStub.Object);
         var request = new ChangePasswordRequest
         {
             CurrentPassword = "TEST_5eCre+Key0",
@@ -245,23 +176,4 @@ public class AuthAppServiceTests
     }
 
     #endregion
-
-    private static Mock<IJwtTokenHandler> CreateTokenHandlerStub(string? accessToken = null, string? refreshToken = null,
-        string? securityStamp = null, Guid? userId = null)
-    {
-        var tokenHandler = new Mock<IJwtTokenHandler>();
-        tokenHandler.Setup(handler => handler.CreateTokenResponse(It.IsAny<User>())).Returns(new TokenResponse
-        {
-            AccessToken = accessToken ?? Guid.NewGuid().ToString(),
-            RefreshToken = refreshToken ?? Guid.NewGuid().ToString(),
-            ExpirationDate = new DateTime(2025, 10, 15, 10, 0, 0, DateTimeKind.Utc),
-        });
-        tokenHandler.Setup(handler =>
-                handler.ValidateRefreshToken(refreshToken ?? Guid.NewGuid().ToString(), securityStamp ?? Guid.NewGuid().ToString()))
-            .ReturnsAsync(true);
-        tokenHandler.Setup(handler => handler.GetUserId(refreshToken ?? Guid.NewGuid().ToString()))
-            .Returns(userId ?? Guid.NewGuid());
-
-        return tokenHandler;
-    }
 }

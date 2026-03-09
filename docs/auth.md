@@ -1,7 +1,26 @@
 ﻿# Autenticação e autorização
 
 O fluxo de geração e renovação de token foi movido para o [serviço de autenticação](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-auth).
-Consulte a documentação para realizar o login.
+
+Com o serviço em execução, é possível realizar login através da Lambda Function.
+Primeiro é preciso obter a URL do API Gateway:
+
+```powershell
+aws apigatewayv2 get-apis --query "Items[?Name=='fiap-mechanics-dev-api'].ApiEndpoint" --output text
+```
+
+Utilize o comando abaixo para realizar gerar um token com perfil Administrador:
+
+```shell
+curl --location 'URL_API_GATEWAY/api/auth/login' \
+--header 'Content-Type: application/json' \
+--data '{
+    "cpfNumber": "12345678909",
+    "password": "5eCre+Key"
+}'
+```
+
+É possível usar [scripts](./../scripts/README.md) para obter um novo token de acesso.
 
 ## Perfis de acesso
 

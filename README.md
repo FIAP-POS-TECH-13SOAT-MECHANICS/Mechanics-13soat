@@ -93,14 +93,12 @@ Esse repositório contém instruções para execução local das análises com *
 
 <!-- Mantenha a lista em ordem alfabética -->
 
-- [Autenticação e autorização](./docs/auth.md)
 - [Configuração do ambiente](./docs/configuration.md)
 - [Dados de exemplo](./dev-seeds/README.md)
 - [Diagramas](./docs/diagrams.md)
 - [Diretrizes de design do projeto](./docs/design-guidelines.md)
 - [Fluxo de Ordem de Serviço](./docs/work-order-flow.md)
 - [Kubernetes e Helm chart](./k8s/README.md)
-- [Informações sobre a Infraestrutura](./infra/README.md)
 - [Migrações do banco de dados](./docs/migrations.md)
 - [Objetivos](./docs/objectives.md)
 - [Relatórios](./docs/reports/README.md)

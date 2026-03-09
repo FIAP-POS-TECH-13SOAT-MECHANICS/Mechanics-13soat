@@ -8,6 +8,7 @@
    - Colando no arquivo de configuração (se já existir): `notepad $ENV:USERPROFILE\.aws\credentials`;
 3. Utilize o script `deploy-image.ps1` para subir a aplicação.
    - Repita o comando para gerar uma nova release.
+4. Utilize o script `get-token.ps1` para gerar um token de acesso.
 
 O comando abaixo sobe a infraestrutura e faz deploy no ambiente DEV.
 Execute na raiz do projeto.

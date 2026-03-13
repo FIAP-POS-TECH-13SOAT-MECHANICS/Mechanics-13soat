@@ -7,6 +7,8 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__Default=Server=mssql;Database=fiap-mechanics;User Id=sa;Password=2%r6dZ6Xk@g3;TrustServerCertificate=True;
       - EmailSenderOptions__SmtpServer=mailpit
+      - SERVICE_VERSION=local
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://datadog-agent:4317
     ports:
       - "5000:8080"
     volumes:
@@ -15,6 +17,8 @@ services:
       mssql:
         condition: service_healthy
       mailpit:
+        condition: service_healthy
+      datadog-agent:
         condition: service_healthy
 
   mssql:
@@ -53,6 +57,27 @@ services:
       interval: 2s
       timeout: 5s
       retries: 10
+  
+  datadog-agent:
+    image: gcr.io/datadoghq/agent:7
+    environment:
+      - DD_API_KEY=${DD_API_KEY:?}
+      - DD_SITE=us5.datadoghq.com
+      - DD_ENV=dev
+      - DD_APM_ENABLED=true
+      - DD_APM_NON_LOCAL_TRAFFIC=true
+      - DD_DOGSTATSD_NON_LOCAL_TRAFFIC=true
+      - DD_OTLP_CONFIG_RECEIVER_PROTOCOLS_GRPC_ENDPOINT=0.0.0.0:4317
+    ports:
+      - "4317:4317"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: ["CMD-SHELL", "agent health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
 
 volumes:
   dotnet:

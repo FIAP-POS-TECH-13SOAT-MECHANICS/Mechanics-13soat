@@ -14,3 +14,8 @@ data:
   EmailSenderOptions__SslRequired: {{ .Values.email.sslRequired | quote }}
   EmailSenderOptions__SenderInformation__Name: {{ .Values.email.senderName | quote }}
   EmailSenderOptions__SenderInformation__Address: {{ .Values.email.senderAddress | quote }}
+
+  SERVICE_VERSION: {{ .Values.image.tag | quote }}
+  {{- if .Values.otel.otlpEndpoint }}
+  OTEL_EXPORTER_OTLP_ENDPOINT: {{ .Values.otel.otlpEndpoint | quote }}
+  {{- end }}

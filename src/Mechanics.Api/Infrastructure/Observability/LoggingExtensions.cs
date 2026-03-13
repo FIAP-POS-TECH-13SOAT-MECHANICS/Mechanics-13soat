@@ -8,9 +8,9 @@ public static class LoggingExtensions
 {
     public static WebApplicationBuilder AddStructuredLogging(this WebApplicationBuilder builder)
     {
-        var serviceName = builder.Configuration["Application:Name"] ?? "mechanics-api";
-        var serviceVersion = Environment.GetEnvironmentVariable("SERVICE_VERSION") ?? "0.0.0";
-        var deploymentEnvironment = builder.Environment.EnvironmentName;
+        var serviceName = ObservabilityConstants.ResolveServiceName(builder.Configuration);
+        var serviceVersion = ObservabilityConstants.ResolveServiceVersion();
+        var deploymentEnvironment = ObservabilityConstants.ResolveDeploymentEnvironment(builder.Environment);
 
         builder.Host.UseSerilog((context, services, configuration) =>
         {

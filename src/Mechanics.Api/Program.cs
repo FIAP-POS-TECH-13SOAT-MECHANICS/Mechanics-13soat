@@ -21,6 +21,7 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         builder.AddStructuredLogging();
+        builder.AddOpenTelemetryObservability();
 
         builder.Services.AddControllers(options =>
         {

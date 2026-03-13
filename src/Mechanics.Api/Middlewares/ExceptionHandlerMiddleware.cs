@@ -94,9 +94,10 @@ public class ExceptionHandlerMiddleware(RequestDelegate next, ILogger<ExceptionH
 
     private static string GetErrorTitle(int statusCode, Exception exception)
     {
-        return statusCode == StatusCodes.Status500InternalServerError
-            ? "Internal server error."
-            : exception.Message;
+        if (statusCode >= 500)
+            return "Internal server error.";
+
+        return exception.Message;
     }
 
     public class ExceptionDetails(Exception e)

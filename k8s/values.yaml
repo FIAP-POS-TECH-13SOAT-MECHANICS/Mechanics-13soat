@@ -16,6 +16,3 @@ email:
   sslRequired: false
   senderName: FIAP Mechanics
   senderAddress: "postmaster@mechanics.com"
-
-otel:
-  otlpEndpoint: ""

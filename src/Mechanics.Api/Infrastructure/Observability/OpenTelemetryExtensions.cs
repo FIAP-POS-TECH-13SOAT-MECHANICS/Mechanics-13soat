@@ -58,28 +58,18 @@ public static class OpenTelemetryExtensions
                                 activity.SetTag("http.client_ip", clientIp);
                         };
 
-                        options.EnrichWithHttpResponse = (activity, response) =>
-                        {
-                            if (response.HttpContext.Items.TryGetValue(
-                                    "CorrelationId", out var cid))
-                            {
-                                activity.SetTag("correlation_id", cid?.ToString());
-                            }
-                        };
-
                         options.RecordException = true;
                     })
-                    .AddHttpClientInstrumentation()              
+                    .AddHttpClientInstrumentation()
                     .AddSqlClientInstrumentation(options =>
                     {
-                        options.SetDbStatementForText = true;
-                        options.Filter = (object activityObj) =>
+                        options.SetDbStatementForText = !builder.Environment.IsProduction();
+                        options.Filter = (object obj) =>
                         {
-                            if (activityObj is Activity activity)
+                            if (obj is Microsoft.Data.SqlClient.SqlCommand cmd)
                             {
-                                var stmt = activity.GetTagItem("db.statement")?.ToString();
-                                return stmt == null
-                                    || !stmt.Contains("__EFMigrationsHistory");
+                                return cmd.CommandText == null
+                                    || !cmd.CommandText.Contains("__EFMigrationsHistory");
                             }
                             return true;
                         };

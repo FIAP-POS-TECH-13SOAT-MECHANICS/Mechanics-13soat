@@ -22,6 +22,7 @@ public static class LoggingExtensions
                 .Enrich.WithThreadId()
                 .Enrich.WithProcessId()
                 .Enrich.WithSpan()
+                .Enrich.With(new DatadogTraceEnricher())
                 .Enrich.WithProperty("service.name", serviceName)
                 .Enrich.WithProperty("service.version", serviceVersion)
                 .Enrich.WithProperty("deployment.environment", deploymentEnvironment)

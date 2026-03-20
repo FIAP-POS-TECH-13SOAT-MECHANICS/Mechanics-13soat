@@ -13,6 +13,7 @@ A pipeline de CI/CD seleciona o ambiente automaticamente de acordo com a branch.
 O Docker Compose está configurado para rodar em ambiente de desenvolvimento.
 
 O projeto possui os seguintes ambientes:
+
 - `Production` (main): modo de produção. Por segurança, o Swagger é desativado.
 - `Staging` (release): ambiente de homologação. O Swagger está ativo, mas as migrações do banco devem ser executadas manualmente.
 - `Development` (develop): ambiente de desenvolvimento. Swagger ativo e as migrações são executadas ao iniciar o projeto.

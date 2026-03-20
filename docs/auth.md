@@ -58,6 +58,7 @@ Ao criar um cliente empresarial (`POST /api/customers/business`), o sistema cria
 Com esse usuário, o cliente pode realizar o login e gerenciar seus próprios usuários adicionais através do endpoint `api/customers/users`. Estes novos usuários terão o perfil `CUSTOMER_USER`.
 
 Para criar um novo usuário de cliente:
+
 1. Faça login como um funcionário (Admin ou Atendente).
 2. Crie um cliente PJ (`POST /api/customers/business`).
 3. Faça login com o CPF do responsável definido no cadastro do cliente PJ.

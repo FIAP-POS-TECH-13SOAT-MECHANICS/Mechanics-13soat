@@ -24,6 +24,14 @@ A infraestrutura da aplicação deve ser preparada para ambientes além da execu
 
 A documentação deve ser revisada para incluir instruções para execução, provisionamento e deploy da aplicação em ambiente em nuvem, além de detalhes sobre o ambiente provisionado e os recursos criados.
 
+### Terceira fase
+
+Deve ser implementado monitoramento e observabilidade da aplicação e da infraestrutura, com coleta, armazenamento e visualização de métricas, logs e traces. A solução deve utilizar ferramentas como Datadog ou New Relic, incluindo monitoramento de latência, consumo de recursos, healthchecks, logs estruturados e alertas para falhas.
+
+A aplicação também deve ser reorganizada em múltiplos repositórios (infraestrutura, banco de dados, função serverless e aplicação principal), todos com CI/CD e deploy automatizado. A documentação deve ser atualizada para refletir a arquitetura, decisões técnicas e indicadores monitorados.
+
+Também devem ser elaborados diagramas de arquitetura, incluindo visão de componentes com infraestrutura em nuvem e fluxos de sequência para autenticação e gestão de ordens de serviço.
+
 #### Endpoints exigidos
 
 Os endpoints abaixo são requisitos para a segunda fase:

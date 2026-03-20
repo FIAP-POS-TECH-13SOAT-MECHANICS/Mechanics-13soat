@@ -14,6 +14,7 @@ public class TestSmtpServerContainer : IAsyncDisposable
         .WithPortBinding(8025, true)
         .WithEnvironment("MP_SMTP_AUTH", $"{UserName}:{Password}")
         .WithEnvironment("MP_SMTP_AUTH_ALLOW_INSECURE", "true")
+        .WithName($"testcontainers-smtp-{Guid.NewGuid()}")
         .WithCleanUp(true)
         .Build();
 

@@ -15,7 +15,7 @@ public class GetRolesTest(TestContext testContext)
     public async Task It_ShouldReturnNonEmptyList()
     {
         var factory = TestProperties.Factory;
-        var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
+        var client = factory.GetAuthenticatedClient(RoleNames.Administrator);
 
         var response = await client.GetAsync("api/auth/roles", testContext.CancellationTokenSource.Token);
 
@@ -30,7 +30,7 @@ public class GetRolesTest(TestContext testContext)
     public async Task It_ShouldReturnForbiddenIfNotAdministrator()
     {
         var factory = TestProperties.Factory;
-        var client = await factory.GetAuthenticatedClient(RoleNames.Attendant);
+        var client = factory.GetAuthenticatedClient(RoleNames.Attendant);
 
         var response = await client.GetAsync("api/auth/roles", testContext.CancellationTokenSource.Token);
 

@@ -20,7 +20,7 @@ public class ProductsControllerTest
     {
         // Arrange
         var factory = TestProperties.Factory;
-        var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
+        var client = factory.GetAuthenticatedClient(RoleNames.Administrator);
 
         var request = new CreateProductRequest
         {
@@ -47,7 +47,7 @@ public class ProductsControllerTest
     {
         // Arrange
         var factory = TestProperties.Factory;
-        var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
+        var client = factory.GetAuthenticatedClient(RoleNames.Administrator);
 
         var invalidRequest = new CreateProductRequest
         {

@@ -21,13 +21,7 @@ permissions:
 jobs:
   tests:
     name: Run tests
-    uses: ./.github/workflows/tests.yml
-
-  export-artifact:
-    name: Export build artifact
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    needs: tests
-    uses: ./.github/workflows/artifact.yml
+    uses: FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-infra/.github/workflows/dotnet-tests.yml@main
 
   resolve-environment:
     name: Resolve environment name
@@ -37,17 +31,18 @@ jobs:
       environment: ${{ steps.resolve.outputs.environment }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v5
       - name: Resolve Environment
         id: resolve
-        uses: ./.github/actions/resolve-environment
+        uses: FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-infra/.github/actions/resolve-environment@main
 
-  terraform:
-    name: Apply infrastructure
+  export-artifact:
+    name: Export build artifact
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     needs:
       - tests
       - resolve-environment
-    uses: ./.github/workflows/infra.yml
+    uses: FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-infra/.github/workflows/dotnet-artifact.yml@main
     with:
       environment: ${{ needs.resolve-environment.outputs.environment }}
     secrets: inherit
@@ -55,9 +50,10 @@ jobs:
   deploy:
     name: Deploy on EKS
     needs:
-      - terraform
+      - tests
       - resolve-environment
-    uses: ./.github/workflows/deploy.yml
+    uses: FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-infra/.github/workflows/deploy-eks.yml@main
     with:
       environment: ${{ needs.resolve-environment.outputs.environment }}
+      project: 'fiap-mechanics'
     secrets: inherit

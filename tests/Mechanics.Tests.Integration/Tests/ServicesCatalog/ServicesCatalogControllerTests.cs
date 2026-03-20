@@ -20,7 +20,7 @@ public class ServiceCatalogControllerTests
     {
         // Arrange
         var factory = TestProperties.Factory;
-        var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
+        var client = factory.GetAuthenticatedClient(RoleNames.Administrator);
 
         // Act
         var response = await client.GetAsync("api/service-catalog", TestContext.CancellationTokenSource.Token);
@@ -36,7 +36,7 @@ public class ServiceCatalogControllerTests
     {
         // Arrange
         var factory = TestProperties.Factory;
-        var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
+        var client = factory.GetAuthenticatedClient(RoleNames.Administrator);
 
         var request = new CreateServiceCatalogRequest
         {
@@ -62,7 +62,7 @@ public class ServiceCatalogControllerTests
     {
         // Arrange
         var factory = TestProperties.Factory;
-        var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
+        var client = factory.GetAuthenticatedClient(RoleNames.Administrator);
 
         var name = $"Balanceamento {Guid.NewGuid():N}";
 
@@ -107,7 +107,7 @@ public class ServiceCatalogControllerTests
     {
         // Arrange
         var factory = TestProperties.Factory;
-        var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
+        var client = factory.GetAuthenticatedClient(RoleNames.Administrator);
 
         var description = "Geometria para SUV e balanceamento de rodas";
         var request = new CreateServiceCatalogRequest
@@ -138,7 +138,7 @@ public class ServiceCatalogControllerTests
     {
         // Arrange
         var factory = TestProperties.Factory;
-        var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
+        var client = factory.GetAuthenticatedClient(RoleNames.Administrator);
 
         // Act
         var response = await client.GetAsync("api/service-catalog/search?term=xyz-inexistente",
@@ -156,7 +156,7 @@ public class ServiceCatalogControllerTests
     {
         // Arrange
         var factory = TestProperties.Factory;
-        var client = await factory.GetAuthenticatedClient(RoleNames.Administrator);
+        var client = factory.GetAuthenticatedClient(RoleNames.Administrator);
 
         for (var i = 0; i < 15; i++)
         {

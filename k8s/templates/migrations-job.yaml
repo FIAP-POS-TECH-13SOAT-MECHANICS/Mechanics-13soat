@@ -16,7 +16,7 @@ spec:
       containers:
       - name: migrations
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-        command: ["/dist/efbundle"]
+        command: ["/app/efbundle"]
         args: ["--connection", "$(CONNECTION_STRING)"]
         env:
         - name: CONNECTION_STRING

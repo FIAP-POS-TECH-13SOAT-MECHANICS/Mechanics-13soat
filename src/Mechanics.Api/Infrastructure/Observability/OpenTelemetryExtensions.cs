@@ -13,7 +13,7 @@ public static class OpenTelemetryExtensions
         this WebApplicationBuilder builder)
     {
         var serviceName = ObservabilityConstants.ResolveServiceName(builder.Configuration);
-        var serviceVersion = ObservabilityConstants.ResolveServiceVersion();
+        var serviceVersion = ObservabilityConstants.ResolveServiceVersion(builder.Configuration);
         var environment = ObservabilityConstants.ResolveDeploymentEnvironment(builder.Environment);
 
         var otlpEndpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT");
@@ -86,7 +86,7 @@ public static class OpenTelemetryExtensions
 
                 if (builder.Environment.IsDevelopment())
                 {
-                    tracing.AddConsoleExporter();
+                    //tracing.AddConsoleExporter();
                 }
             })
             .WithMetrics(metrics =>
@@ -106,7 +106,7 @@ public static class OpenTelemetryExtensions
 
                 if (builder.Environment.IsDevelopment())
                 {
-                    metrics.AddConsoleExporter();
+                    //metrics.AddConsoleExporter();
                 }
             });
 

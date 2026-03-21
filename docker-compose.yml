@@ -7,7 +7,7 @@ services:
       - ASPNETCORE_ENVIRONMENT=Development
       - ConnectionStrings__Default=Server=mssql;Database=fiap-mechanics;User Id=sa;Password=2%r6dZ6Xk@g3;TrustServerCertificate=True;
       - EmailSenderOptions__SmtpServer=mailpit
-      - SERVICE_VERSION=local
+      - Application__Version=local
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://datadog-agent:4317
     ports:
       - "5000:8080"

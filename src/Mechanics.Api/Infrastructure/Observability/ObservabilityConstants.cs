@@ -9,8 +9,8 @@ public static class ObservabilityConstants
     public static string ResolveServiceName(IConfiguration configuration)
         => configuration["Application:Name"] ?? "mechanics-api";
 
-    public static string ResolveServiceVersion()
-        => Environment.GetEnvironmentVariable("SERVICE_VERSION") ?? "0.0.0";
+    public static string ResolveServiceVersion(IConfiguration configuration)
+        => configuration["Application:Version"] ?? "0.0.0";
 
     public static string ResolveDeploymentEnvironment(IHostEnvironment environment)
         => environment.EnvironmentName;

@@ -13,6 +13,7 @@ using Mechanics.Domain.WorkOrders;
 using Mechanics.Infra.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Net.NetworkInformation;
 
 namespace Mechanics.Application.WorkOrders.Services;
 
@@ -237,6 +238,15 @@ public class WorkOrderAppService(
             PerformedByUserId = performedByUserId,
         };
         await db.WorkOrderHistories.AddAsync(hist, cancellationToken);
+
+        var timeInPreviousStatus = DateTime.UtcNow - wo.LastUpdate;
+
+        logger.LogInformation(
+            "Work order status changed | {work_order.id} | {work_order.previous_status} → {work_order.new_status} | {work_order.time_in_status_hours}h",
+            wo.Id,
+            previous.ToString(),
+            newStatus.ToString(),
+            Math.Round(timeInPreviousStatus.TotalHours, 2));
 
         await db.SaveChangesAsync(cancellationToken);
 

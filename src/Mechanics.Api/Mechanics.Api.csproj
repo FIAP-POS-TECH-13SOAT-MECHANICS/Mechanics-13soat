@@ -43,4 +43,9 @@
     <ProjectReference Include="..\Mechanics.Infra.Data\Mechanics.Infra.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Condition="Exists('keys\jwt-public.pem')" Include="keys\jwt-public.pem">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

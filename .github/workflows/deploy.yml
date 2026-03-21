@@ -58,26 +58,6 @@ jobs:
       - name: Get ECR Repository URI
         run: echo "REPOSITORY_URI=$(aws ecr describe-repositories --repository-names fiap-mechanics-${{ inputs.environment }}-cr --query 'repositories[0].repositoryUri' --output text)" >> $GITHUB_ENV
 
-      - name: Install Datadog Agent
-        if: ${{ secrets.DD_API_KEY != '' }}
-        run: |
-          aws eks update-kubeconfig --name fiap-mechanics-${{ inputs.environment }}-cluster --region ${{ secrets.AWS_REGION }}
-          helm repo add datadog https://helm.datadoghq.com
-          helm repo update
-          kubectl create secret generic datadog-api-key \
-            --from-literal=api-key="${{ secrets.DD_API_KEY }}" \
-            --dry-run=client \
-            --output yaml | kubectl apply -f -
-          helm upgrade --install datadog-agent datadog/datadog \
-            --set datadog.apiKeyExistingSecret=datadog-api-key \
-            --set datadog.site=us5.datadoghq.com \
-            --set datadog.env=${{ inputs.environment }} \
-            --set datadog.apm.enabled=true \
-            --set datadog.otlp.receiver.protocols.grpc.enabled=true \
-            --set datadog.otlp.receiver.protocols.grpc.useHostPort=true \
-            --set agents.useHostPort=true \
-            --wait --timeout=120s
-
       - name: Install Helm Chart
         run: |
           aws eks update-kubeconfig --name fiap-mechanics-${{ inputs.environment }}-cluster --region ${{ secrets.AWS_REGION }}

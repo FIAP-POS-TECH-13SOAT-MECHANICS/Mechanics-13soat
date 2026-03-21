@@ -10,17 +10,12 @@
 
 ## Visão geral
 
-O projeto utiliza [OpenTelemetry](https://opentelemetry.io/) (OTel) como padrão de instrumentação para coleta de traces distribuídos, métricas e logs estruturados.
-Os dados de telemetria são enviados para o [Datadog](https://www.datadoghq.com/) via protocolo OTLP.
+O projeto utiliza [OpenTelemetry](https://opentelemetry.io/) (OTel) para coleta de traces, métricas e logs estruturados.
+Os dados são enviados via OTLP (gRPC) para o [Datadog Agent](https://docs.datadoghq.com/agent/), que encaminha ao Datadog.
 
-Optamos por utilizar o OpenTelemetry Collector, pois o mesmo é mais flexível.
-Mudando apenas a variável de ambiente `OTEL_EXPORTER_OTLP_ENDPOINT`, é possível trocar o backend de observabilidade sem alterar o código da aplicação.
+A aplicação não possui dependência com o Datadog — utiliza o SDK do OpenTelemetry.
+Para trocar o backend, basta alterar a variável `OTEL_EXPORTER_OTLP_ENDPOINT`.
 
-```
-Hoje: Datadog             → OTEL_EXPORTER_OTLP_ENDPOINT=http://datadog-agent:4317
-Amanhã: Grafana           → OTEL_EXPORTER_OTLP_ENDPOINT=http://grafana-agent:4317
-Depois: Jaeger            → OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
-```
 
 ## Por que OpenTelemetry?
 
@@ -33,47 +28,44 @@ Depois: Jaeger            → OTEL_EXPORTER_OTLP_ENDPOINT=http://jaeger:4317
 ## Arquitetura
 
 ```
-┌────────────────────────────────┐
-│        Mechanics API           │
-│        (.NET 8)                │
-│                                │
-│  Serilog         → stdout JSON │─── logs ────▶  stdout (coletado pelo K8s)
-│  OTel SDK traces → OTLP gRPC  │─── :4317 ──▶  Datadog Agent → Datadog APM
-│  OTel SDK metrics → OTLP gRPC │─── :4317 ──▶  Datadog Agent → Datadog Metrics
-└────────────────────────────────┘
+┌──────────────────────────────────────┐
+│           Mechanics API              │
+│           (.NET 8)                   │
+│                                      │
+│  Serilog (JSON)       → stdout       │─── logs ────▶  stdout (coletado pelo K8s / Docker)
+│  OTel SDK traces      → OTLP gRPC   │─── :4317 ──▶  Datadog Agent → Datadog APM
+│  OTel SDK metrics     → OTLP gRPC   │─── :4317 ──▶  Datadog Agent → Datadog Metrics
+│                                      │
+│  DatadogTraceEnricher → dd.trace_id  │─── correlação logs ↔ traces
+│  CorrelationIdMiddleware → X-Corr-ID │─── rastreabilidade entre chamadas
+└──────────────────────────────────────┘
 ```
 
 O [Datadog Agent](https://docs.datadoghq.com/agent/) roda como container (local) ou DaemonSet (Kubernetes) e recebe dados via [OTLP Receiver](https://docs.datadoghq.com/opentelemetry/config/otlp_receiver/) na porta 4317 (gRPC).
 
-
 ### Instrumentação automática
 
-| Operação | Instrumentação | O que gera |
-|----------|---------------|------------|
-| Requisições HTTP de entrada | `AddAspNetCoreInstrumentation` | Spans com `http.method`, `http.route`, `http.response.status_code` |
-| Chamadas HTTP de saída | `AddHttpClientInstrumentation` | Spans com propagação de contexto W3C |
-| Queries SQL (EF Core) | `AddSqlClientInstrumentation` | Spans com `db.system`, `db.statement` |
-| Runtime .NET | `AddRuntimeInstrumentation` | Métricas de GC, thread pool e heap |
+| Operação | O que gera |
+|----------|------------|
+| Requisições HTTP de entrada | Spans com método, rota e status code |
+| Chamadas HTTP de saída | Spans com propagação W3C |
+| Queries SQL (EF Core) | Spans com `db.statement` (desabilitado em prod) |
+| Runtime .NET | Métricas de GC, thread pool e heap |
 
-### Sampling
+Os endpoints `/health` e `/swagger` não geram spans.
+Em produção, o sampling é de 10%. Nos demais ambientes, 100%.
 
-| Ambiente | Taxa | Descrição |
-|----------|:----:|-----------|
-| Development | 100% | Todos os traces são capturados |
-| Staging | 100% | Todos os traces são capturados |
-| Production | 10% | 1 em cada 10 requisições gera trace |
+### Correlação logs ↔ traces
 
-### Endpoints filtrados
+O `DatadogTraceEnricher` injeta `dd.trace_id` e `dd.span_id` nos logs do Serilog.
+Isso permite navegar de um log diretamente para o trace no Datadog.
+O `CorrelationIdMiddleware` propaga o header `X-Correlation-ID` em todas as requisições.
 
-Os seguintes endpoints não geram spans para reduzir ruído:
-
-- `/health`
-- `/swagger` 
 
 ## Execução local
 
 O Docker Compose está configurado para subir o Datadog Agent junto com a aplicação.
-É necessário definir a variável de ambiente `DD_API_KEY` antes de executar.
+É **obrigatório** definir a variável de ambiente `DD_API_KEY` antes de executar (o compose falhará sem ela).
 
 ### Obter a API Key
 
@@ -81,47 +73,68 @@ O Docker Compose está configurado para subir o Datadog Agent junto com a aplica
 2. Acesse **Organization Settings → API Keys**
 3. Copie a chave
 
+### Subir o projeto
+
+**PowerShell:**
 ```powershell
 $env:DD_API_KEY = "sua_api_key"
 docker compose up -d --build
 ```
 
-### Serviços disponíveis
-
-| Serviço | URL |
-|---------|-----|
-| Swagger da API | http://localhost:5000/swagger |
-| Health check | http://localhost:5000/health |
-| Cliente de e-mail | http://localhost:8025 |
-| Datadog APM | https://us5.datadoghq.com/apm/traces |
+**Bash / Linux / macOS:**
+```bash
+export DD_API_KEY="sua_api_key"
+docker compose up -d --build
+```
 
 ### Sem Datadog (apenas console)
 
-Para rodar sem o Datadog, remova as variáveis `OTEL_EXPORTER_OTLP_ENDPOINT` e o serviço `datadog-agent` do `docker-compose.yml`.
-Em ambiente `Development`, os traces são exibidos no console:
+Para rodar sem o Datadog, é necessário fazer três ajustes no `docker-compose.yml`:
 
-```powershell
+1. Remover o serviço `datadog-agent`
+2. Remover a variável `OTEL_EXPORTER_OTLP_ENDPOINT` do serviço `dotnet`
+3. Remover o `depends_on: datadog-agent` do serviço `dotnet`
+
+Em ambiente `Development`, os traces e métricas são exibidos no console:
+
+```bash
 docker compose logs -f dotnet
 ```
 
 ## Execução no Kubernetes
 
-O Datadog Agent é instalado no cluster EKS via Helm chart durante a pipeline de CI/CD.
-A API Key deve ser adicionada como **repository secret** no GitHub.
+O Datadog Agent é instalado no cluster EKS como **DaemonSet** via Helm chart gerenciado pelo Terraform, no repositório [`mechanics-infra`](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-infra).
+
+A configuração está em:
+
+| Arquivo | Repositório | Descrição |
+|---------|-------------|-----------|
+| `k8s/addons.tf` | `mechanics-infra` | Helm release do Datadog Agent |
+| `k8s/vars.tf` | `mechanics-infra` | Variável `dd_api_key` |
+| `.github/workflows/infra.yml` | `mechanics-infra` | Passa `DD_API_KEY` para o módulo Terraform |
 
 ### Adicionar secret no GitHub
 
-Acesse **Settings → Secrets and variables → Actions → Repository secrets** e adicione:
+Acesse o repositório **[mechanics-infra](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-infra)** → **Settings → Secrets and variables → Actions → Repository secrets** e adicione:
 
 | Secret | Valor |
 |--------|-------|
 | `DD_API_KEY` | API Key do Datadog |
 
-A pipeline `deploy.yml` utiliza essa secret para:
-1. Criar uma Kubernetes secret (`datadog-api-key`) no cluster
-2. Instalar o Datadog Agent como DaemonSet via Helm
-3. Configurar a variável `OTEL_EXPORTER_OTLP_ENDPOINT` na API
+### Como funciona
 
+1. A pipeline de infra passa `DD_API_KEY` como variável do Terraform (`TF_VAR_dd_api_key`)
+2. O Terraform instala o Datadog Agent como DaemonSet via Helm (somente se a key não estiver vazia)
+3. O Agent escuta na porta 4317 (gRPC) em cada node do cluster (`useHostPort: true`)
+4. O `deployment.yaml` da aplicação resolve o endpoint automaticamente via `HOST_IP`:
+   ```yaml
+   - name: HOST_IP
+     valueFrom:
+       fieldRef:
+         fieldPath: status.hostIP
+   - name: OTEL_EXPORTER_OTLP_ENDPOINT
+     value: "http://$(HOST_IP):4317"
+   ```
 
 ## Configuração
 
@@ -129,30 +142,37 @@ A pipeline `deploy.yml` utiliza essa secret para:
 
 | Variável | Descrição | Obrigatória | Padrão |
 |----------|-----------|:-----------:|--------|
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | Endpoint do coletor OTLP (gRPC) | Não | Vazio (sem exportação) |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | Endpoint do receptor OTLP (gRPC) | Não | NaN |
 | `SERVICE_VERSION` | Versão do serviço | Não | `0.0.0` |
-| `ASPNETCORE_ENVIRONMENT` | Ambiente .NET | Sim | `Production` |
-| `DD_API_KEY` | API Key do Datadog (Datadog Agent) | Sim* | — |
+| `ASPNETCORE_ENVIRONMENT` | Ambiente .NET (`Development`, `Staging`, `Production`) | Sim | `Production` |
+| `DD_API_KEY` | API Key do Datadog | Sim* | — |
 
-\* Necessária apenas para o container do Datadog Agent, não para a aplicação.
+\* Necessária apenas para o container do Datadog Agent, não para a aplicação .NET.
 
-### Parâmetros do Helm chart
-
-| Parâmetro | Descrição | Padrão |
-|-----------|-----------|--------|
-| `otel.otlpEndpoint` | Endpoint OTLP do Datadog Agent | Vazio |
 
 ## Verificação
 
 ### Checklist
 
-1. Suba o projeto com `docker compose up -d --build`
-2. Acesse http://localhost:5000/swagger
-3. Faça login via `POST /api/auth/login` (CPF `12345678909`, senha `5eCre+Key`)
-4. Chame qualquer endpoint autenticado (ex: `GET /api/work-orders`)
-5. Acesse https://us5.datadoghq.com/apm/traces
-6. Filtre por `service:mechanics-api`
-7. Verifique os spans de HTTP e SQL nos traces
+1. Defina `DD_API_KEY` no ambiente
+2. Suba o projeto com `docker compose up -d --build`
+3. Acesse http://localhost:5000/swagger
+4. Faça login via `POST /api/auth/login` (CPF `12345678909`, senha `5eCre+Key`)
+5. Chame qualquer endpoint autenticado (ex: `GET /api/work-orders`)
+6. Aguarde ~2 minutos para os dados serem processados
+7. Acesse https://us5.datadoghq.com/apm/traces
+8. Filtre por `service:mechanics-api`
+9. Verifique os spans de HTTP e SQL nos traces
+10. Acesse **Logs** e procure por `dd.trace_id` para validar a correlação
+
+### Troubleshooting
+
+| Problema | Causa | Solução |
+|----------|-------|---------|
+| `docker compose up` falha | `DD_API_KEY` não definida | Defina a variável antes de executar |
+| Traces não aparecem no Datadog | Agent não está healthy | `docker compose logs datadog-agent` |
+| Logs sem `dd.trace_id` | Request fora de um span ativo | Verifique se o endpoint não está filtrado |
+| Apenas console output, sem export | `OTEL_EXPORTER_OTLP_ENDPOINT` vazio | Verifique o `docker-compose.yml` |
 
 ## Referências
 
@@ -160,3 +180,5 @@ A pipeline `deploy.yml` utiliza essa secret para:
 - [Datadog OTLP Receiver](https://docs.datadoghq.com/opentelemetry/config/otlp_receiver/)
 - [Datadog Agent Docker](https://docs.datadoghq.com/containers/docker/)
 - [Datadog Agent Kubernetes (Helm)](https://docs.datadoghq.com/containers/kubernetes/installation/?tab=helm)
+- [Serilog Enrichers](https://github.com/serilog/serilog/wiki/Enrichment)
+- [Datadog Log-Trace Correlation](https://docs.datadoghq.com/tracing/other_telemetry/connect_logs_and_traces/dotnet/)

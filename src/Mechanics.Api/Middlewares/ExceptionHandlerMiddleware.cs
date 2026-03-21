@@ -1,5 +1,6 @@
 using Mechanics.Domain.Base.Exceptions;
 using Microsoft.AspNetCore.Mvc;
+using OpenTelemetry.Trace;
 using System.Diagnostics;
 using System.Text.Json;
 
@@ -37,6 +38,10 @@ public class ExceptionHandlerMiddleware(RequestDelegate next, ILogger<ExceptionH
     }
     private async Task HandleException(HttpContext context, Exception exception, string method, string httpRoute)
     {
+        var activity = Activity.Current;
+        activity?.SetStatus(ActivityStatusCode.Error, exception.Message);
+        activity?.RecordException(exception);
+
         switch (exception)
         {
             case EntityNotFoundException e:

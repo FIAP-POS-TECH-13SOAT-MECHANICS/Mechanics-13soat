@@ -14,3 +14,4 @@ data:
   EmailSenderOptions__SslRequired: {{ .Values.email.sslRequired | quote }}
   EmailSenderOptions__SenderInformation__Name: {{ .Values.email.senderName | quote }}
   EmailSenderOptions__SenderInformation__Address: {{ .Values.email.senderAddress | quote }}
+  Application__Version: {{ .Values.image.tag | quote }}

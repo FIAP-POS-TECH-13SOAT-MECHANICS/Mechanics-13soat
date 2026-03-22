@@ -1,10 +1,12 @@
 using Mechanics.Domain.Base.Exceptions;
 using Microsoft.AspNetCore.Mvc;
+using OpenTelemetry.Trace;
+using System.Diagnostics;
 using System.Text.Json;
 
 namespace Mechanics.Api.Middlewares;
 
-public class ExceptionHandlerMiddleware(RequestDelegate next)
+public class ExceptionHandlerMiddleware(RequestDelegate next, ILogger<ExceptionHandlerMiddleware> logger)
 {
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
 
@@ -14,23 +16,68 @@ public class ExceptionHandlerMiddleware(RequestDelegate next)
         {
             await next(context);
         }
-        catch (EntityNotFoundException e)
-        {
-            await WriteProblemDetails(context, StatusCodes.Status400BadRequest, e);
-        }
-        catch (BusinessException e)
-        {
-            await WriteProblemDetails(context, StatusCodes.Status400BadRequest, e);
-        }
-
         catch (Exception e)
         {
-            await WriteProblemDetails(context, StatusCodes.Status500InternalServerError, e);
+            var method = context.Request.Method;
+            var path = context.Request.Path.ToString();
+            var routePattern = (context.GetEndpoint() as RouteEndpoint)?.RoutePattern?.RawText;
+            var httpRoute = routePattern ?? path;
+
+            if (context.Response.HasStarted)
+            {
+                logger.LogError(e,
+                    "Response already started, cannot handle exception | {http.method} {http.route}",
+                    method,
+                    httpRoute);
+
+                throw;
+            }
+
+            await HandleException(context, e, method, httpRoute);
+        }
+    }
+    private async Task HandleException(HttpContext context, Exception exception, string method, string httpRoute)
+    {
+        var activity = Activity.Current;
+        activity?.SetStatus(ActivityStatusCode.Error, exception.Message);
+        activity?.RecordException(exception);
+
+        switch (exception)
+        {
+            case EntityNotFoundException e:
+                logger.LogWarning(e,
+                    "Entity not found | {http.method} {http.route}",
+                    method,
+                    httpRoute);
+
+                await WriteProblemDetails(context, StatusCodes.Status400BadRequest, e);
+                break;
+
+            case BusinessException e:
+                logger.LogWarning(e,
+                    "Business rule violation | {http.method} {http.route}",
+                    method,
+                    httpRoute);
+
+                await WriteProblemDetails(context, StatusCodes.Status400BadRequest, e);
+                break;
+
+            default:
+                logger.LogError(exception,
+                    "Unhandled exception | {http.method} {http.route} | {ExceptionType}: {ExceptionMessage}",
+                    method,
+                    httpRoute,
+                    exception.GetType().Name,
+                    exception.Message);
+
+                await WriteProblemDetails(context, StatusCodes.Status500InternalServerError, exception);
+                break;
         }
     }
 
     private static async Task WriteProblemDetails(HttpContext context, int statusCode, Exception e)
     {
+
         context.Response.StatusCode = statusCode;
         context.Response.ContentType = "application/problem+json";
 
@@ -38,7 +85,11 @@ public class ExceptionHandlerMiddleware(RequestDelegate next)
         {
             Status = statusCode,
             Type = e.GetType().FullName,
-            Title = $"Application error: {e.Message}",
+            Title = GetErrorTitle(statusCode, e),
+            Extensions =
+            {
+                ["traceId"] = Activity.Current?.TraceId.ToString() ?? context.TraceIdentifier
+            },
 #if DEBUG
             Detail = JsonSerializer.Serialize(new ExceptionDetails(e), SerializerOptions),
 #endif
@@ -46,6 +97,13 @@ public class ExceptionHandlerMiddleware(RequestDelegate next)
         await context.Response.WriteAsync(JsonSerializer.Serialize(response, SerializerOptions));
     }
 
+    private static string GetErrorTitle(int statusCode, Exception exception)
+    {
+        if (statusCode >= 500)
+            return "Internal server error.";
+
+        return exception.Message;
+    }
 
     public class ExceptionDetails(Exception e)
     {

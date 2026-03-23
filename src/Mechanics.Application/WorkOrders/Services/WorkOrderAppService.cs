@@ -292,6 +292,7 @@ public class WorkOrderAppService(
             tags);
 
         AppMetrics.TimeInStatusSamples.Add(1, tags);
+        AppMetrics.StatusTransitions.Add(1, tags);
 
         AppMetrics.StatusDurationSeconds.Record(
             Math.Round(timeInPreviousStatus.TotalSeconds, 2),

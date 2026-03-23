@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using Mechanics.Application.Observability;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -18,6 +20,37 @@ public static class OpenTelemetryExtensions
 
         var otlpEndpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT");
         var samplingRatio = builder.Environment.IsProduction() ? 0.1 : 1.0;
+        var resourceBuilder = ResourceBuilder.CreateDefault()
+            .AddService(
+                serviceName: serviceName,
+                serviceVersion: serviceVersion)
+            .AddAttributes(new Dictionary<string, object>
+            {
+                ["deployment.environment"] = environment,
+            });
+
+        builder.Logging.AddOpenTelemetry(logging =>
+        {
+            logging
+                .SetResourceBuilder(resourceBuilder)
+                .IncludeFormattedMessage = true;
+            logging.IncludeScopes = true;
+            logging.ParseStateValues = true;
+
+            if (!string.IsNullOrEmpty(otlpEndpoint))
+            {
+                logging.AddOtlpExporter(opts =>
+                {
+                    opts.Endpoint = new Uri(otlpEndpoint);
+                    opts.TimeoutMilliseconds = 10_000;
+                });
+            }
+
+            if (builder.Environment.IsDevelopment())
+            {
+                logging.AddConsoleExporter();
+            }
+        });
 
         builder.Services.AddOpenTelemetry()
             .ConfigureResource(resource => resource
@@ -92,6 +125,7 @@ public static class OpenTelemetryExtensions
             .WithMetrics(metrics =>
             {
                 metrics
+                    .AddMeter(AppMetrics.Meter.Name)
                     .AddAspNetCoreInstrumentation()
                     .AddHttpClientInstrumentation()
                     .AddRuntimeInstrumentation();

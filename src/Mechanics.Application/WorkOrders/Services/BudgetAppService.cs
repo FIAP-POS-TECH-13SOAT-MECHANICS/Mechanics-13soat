@@ -1,10 +1,12 @@
 using Mechanics.Application.Notification.Services;
+using Mechanics.Application.Observability;
 using Mechanics.Application.Utils;
 using Mechanics.Domain.Base.Exceptions;
 using Mechanics.Domain.WorkOrders;
 using Mechanics.Infra.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 
 namespace Mechanics.Application.WorkOrders.Services;
 
@@ -118,9 +120,17 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
         try
         {
             await emailService.SendWorkOrderPendingApproval(customer, wo, budget, cancellationToken);
+            AppMetrics.EmailsSent.Add(1, new TagList
+            {
+                { "template", "budget_pending_approval" }
+            });
         }
         catch (Exception ex)
         {
+            AppMetrics.EmailsFailed.Add(1, new TagList
+            {
+                { "template", "budget_pending_approval" }
+            });
             logger.LogWarning(ex, "Failed to send pending approval email for WorkOrder {WorkOrderId}", wo.Id);
         }
     }
@@ -184,9 +194,17 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
         try
         {
             await emailService.SendWorkOrderStatusChanged(customer, wo, WorkOrderStatus.PendingApproval, cancellationToken);
+            AppMetrics.EmailsSent.Add(1, new TagList
+            {
+                { "template", "budget_approved_customer" }
+            });
         }
         catch (Exception ex)
         {
+            AppMetrics.EmailsFailed.Add(1, new TagList
+            {
+                { "template", "budget_approved_customer" }
+            });
             logger.LogWarning(ex, "Failed to send status changed email after budget approval for WorkOrder {WorkOrderId}",
                 wo.Id);
         }
@@ -199,9 +217,17 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
             try
             {
                 await emailService.SendMechanicBudgetDecision(mechanic, wo, budget, approved: true, cancellationToken);
+                AppMetrics.EmailsSent.Add(1, new TagList
+                {
+                    { "template", "budget_approved_customer" }
+                });
             }
             catch (Exception ex)
             {
+                AppMetrics.EmailsFailed.Add(1, new TagList
+                {
+                    { "template", "budget_approved_customer" }
+                });
                 logger.LogWarning(ex, "Failed to send mechanic notification for approved budget {BudgetId}", budget.Id);
             }
         }
@@ -266,9 +292,17 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
             {
                 await emailService.SendWorkOrderStatusChanged(customerEntity, wo, WorkOrderStatus.PendingApproval,
                     cancellationToken);
+                AppMetrics.EmailsSent.Add(1, new TagList
+                {
+                    { "template", "budget_rejected_customer" }
+                });
             }
             catch (Exception ex)
             {
+                AppMetrics.EmailsFailed.Add(1, new TagList
+                {
+                    { "template", "budget_rejected_customer" }
+                });
                 logger.LogWarning(ex, "Failed to send status changed email after budget rejection for WorkOrder {WorkOrderId}",
                     wo.Id);
             }
@@ -282,9 +316,17 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
             try
             {
                 await emailService.SendMechanicBudgetDecision(mechanic, wo, budget, approved: false, cancellationToken);
+                AppMetrics.EmailsSent.Add(1, new TagList
+                {
+                    { "template", "budget_rejected_mechanic" }
+                });
             }
             catch (Exception ex)
             {
+                AppMetrics.EmailsFailed.Add(1, new TagList
+                {
+                    { "template", "budget_rejected_mechanic" }
+                });
                 logger.LogWarning(ex, "Failed to send mechanic notification for rejected budget {BudgetId}", budget.Id);
             }
         }

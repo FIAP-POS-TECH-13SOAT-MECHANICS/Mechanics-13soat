@@ -16,6 +16,11 @@ public class GetWorkOrdersRequest : PaginatedListRequest
     public Guid? VehicleId { get; init; }
 
     /// <summary>
+    ///     Filtro por data.
+    /// </summary>
+    public DateTime? DateOfTheDay { get; init; }
+
+    /// <summary>
     ///     Incluir OSs com status <see cref="WorkOrderStatus.Completed"/> ou <see cref="WorkOrderStatus.Delivered"/>.
     /// </summary>
     public bool IncludeCompleted { get; init; }

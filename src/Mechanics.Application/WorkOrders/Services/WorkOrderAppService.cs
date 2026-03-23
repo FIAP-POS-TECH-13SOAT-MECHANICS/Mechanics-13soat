@@ -88,6 +88,7 @@ public class WorkOrderAppService(
             {
                 { "status", "created" }
             });
+
             logger.LogInformation(
                 "Work order created | {work_order.id} | {vehicle.id} | {work_order.status}",
                 wo.Id,
@@ -96,7 +97,22 @@ public class WorkOrderAppService(
 
             if (vehicle.Owner != null)
             {
-                await emailService.SendWorkOrderCreated(vehicle.Owner!, wo, cancellationToken);
+                try
+                {
+                    await emailService.SendWorkOrderCreated(vehicle.Owner!, wo, cancellationToken);
+                    AppMetrics.EmailsSent.Add(1, new TagList
+                    {
+                        { "template", "work_order_created" }
+                    });
+                }
+                catch (Exception emailEx)
+                {
+                    AppMetrics.EmailsFailed.Add(1, new TagList
+                    {
+                        { "template", "work_order_created" }
+                    });
+                    logger.LogWarning(emailEx, "Failed to send WorkOrder created email for {WorkOrderId}", wo.Id);
+                }
             }
 
             return new CreateItemResponse { CreatedId = wo.Id };
@@ -277,6 +293,13 @@ public class WorkOrderAppService(
 
         AppMetrics.TimeInStatusSamples.Add(1, tags);
 
+        AppMetrics.StatusDurationSeconds.Record(
+            Math.Round(timeInPreviousStatus.TotalSeconds, 2),
+            new TagList
+            {
+                { "status", previous.ToString() }
+            });
+
         logger.LogInformation(
             "Work order status changed | {work_order.id} | {work_order.previous_status} → {work_order.new_status} | {work_order.time_in_status_seconds}s",
             wo.Id,
@@ -293,9 +316,11 @@ public class WorkOrderAppService(
             try
             {
                 await emailService.SendWorkOrderStatusChanged(customer, wo, previous, cancellationToken);
+                AppMetrics.EmailsSent.Add(1, new TagList { { "template", "status_changed" } });
             }
             catch (Exception ex)
             {
+                AppMetrics.EmailsFailed.Add(1, new TagList { { "template", "status_changed" } });
                 logger.LogWarning(ex, "Failed to send status changed email for WorkOrder {WorkOrderId}", wo.Id);
             }
         }

@@ -14,6 +14,9 @@ public static class LoggingExtensions
 
         builder.Host.UseSerilog((context, services, configuration) =>
         {
+            var datadogApiKey = context.Configuration["Datadog:ApiKey"]
+                    ?? Environment.GetEnvironmentVariable("DD_API_KEY");
+                    
             configuration
                 .ReadFrom.Configuration(context.Configuration)
                 .ReadFrom.Services(services)
@@ -26,7 +29,7 @@ public static class LoggingExtensions
                 .Enrich.WithProperty("service.name", serviceName)
                 .Enrich.WithProperty("service.version", serviceVersion)
                 .Enrich.WithProperty("deployment.environment", deploymentEnvironment)
-                .WriteTo.Console(new CompactJsonFormatter());
+                .WriteTo.Console(new RenderedCompactJsonFormatter());
         });
 
         return builder;

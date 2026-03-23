@@ -1,5 +1,6 @@
 using AutoMapper;
 using Mechanics.Application.Notification.Services;
+using Mechanics.Application.Observability;
 using Mechanics.Application.Utils;
 using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Application.Utils.PagedList;
@@ -13,7 +14,7 @@ using Mechanics.Domain.WorkOrders;
 using Mechanics.Infra.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System.Net.NetworkInformation;
+using System.Diagnostics;
 
 namespace Mechanics.Application.WorkOrders.Services;
 
@@ -30,58 +31,81 @@ public class WorkOrderAppService(
     /// </summary>
     public async Task<CreateItemResponse> Create(CreateWorkOrderRequest request, CancellationToken cancellationToken = default)
     {
-        var vehicle = await db.Vehicles
-            .Include(v => v.Owner)
-            .FirstOrDefaultAsync(v => v.Id == request.VehicleId, cancellationToken);
-
-        EntityNotFoundException.ThrowIfNull(vehicle, request.VehicleId);
-        EntityNotFoundException.ThrowIfNull(vehicle.Owner, vehicle.OwnerId);
-
-        var existingOrders = await db.WorkOrders.Where(w => w.CustomerId == vehicle.OwnerId)
-            .ToListAsync(cancellationToken);
-        var accessKey = WorkOrder.GenerateNewAccessKey(existingOrders);
-
-        var now = DateTime.Now;
-        var wo = new WorkOrder
-        {
-            CustomerId = vehicle.OwnerId,
-            VehicleId = request.VehicleId,
-            AccessKey = accessKey,
-            Status = WorkOrderStatus.Received,
-            CreationDate = now,
-            LastUpdate = now,
-            ReportedProblem = request.ReportedProblem,
-        };
-
-        if (request.Products?.Any() == true)
-        {
-            wo.Products = request.Products.Select(product => new WorkOrderProduct
-            {
-                ProductId = product.ProductId,
-                Quantity = product.Quantity,
-            }).ToList();
-        }
-
-        if (request.ServiceCatalogIds?.Any() == true)
-        {
-            var services = await db.ServiceCatalog.Where(s => request.ServiceCatalogIds.Contains(s.Id))
-                .ToListAsync(cancellationToken);
-            wo.ServiceCatalog = services;
-        }
-
-        await db.WorkOrders.AddAsync(wo, cancellationToken);
-        await db.SaveChangesAsync(cancellationToken);
-
         try
         {
-            await emailService.SendWorkOrderCreated(vehicle.Owner!, wo, cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            logger.LogWarning(ex, "Failed to send WorkOrder created email for {WorkOrderId}", wo.Id);
-        }
+            var vehicle = await db.Vehicles
+                .Include(v => v.Owner)
+                .FirstOrDefaultAsync(v => v.Id == request.VehicleId, cancellationToken);
 
-        return new CreateItemResponse { CreatedId = wo.Id };
+            EntityNotFoundException.ThrowIfNull(vehicle, request.VehicleId);
+            EntityNotFoundException.ThrowIfNull(vehicle.Owner, vehicle.OwnerId);
+
+            var existingOrders = await db.WorkOrders.Where(w => w.CustomerId == vehicle.OwnerId)
+                .ToListAsync(cancellationToken);
+            var accessKey = WorkOrder.GenerateNewAccessKey(existingOrders);
+
+            var now = DateTime.Now;
+            var wo = new WorkOrder
+            {
+                CustomerId = vehicle.OwnerId,
+                VehicleId = request.VehicleId,
+                AccessKey = accessKey,
+                Status = WorkOrderStatus.Received,
+                CreationDate = now,
+                LastUpdate = now,
+                ReportedProblem = request.ReportedProblem,
+            };
+
+            if (request.Products != null)
+            {
+                var productIds = request.Products.Select(p => p.ProductId).ToList();
+                var existingIds = await db.Products
+                    .Where(product => productIds.Contains(product.Id))
+                    .Select(product => product.Id)
+                    .ToListAsync(cancellationToken);
+
+                var notFoundId = productIds.Except(existingIds).FirstOrDefault();
+                EntityNotFoundException.ThrowIfNotFound<Product>(notFoundId == Guid.Empty, notFoundId);
+
+                wo.Products = request.Products.Select(product => new WorkOrderProduct
+                {
+                    ProductId = product.ProductId,
+                    Quantity = product.Quantity,
+                }).ToList();
+            }
+
+            if (request.ServiceCatalogIds?.Any() == true)
+            {
+                var services = await db.ServiceCatalog.Where(s => request.ServiceCatalogIds.Contains(s.Id))
+                    .ToListAsync(cancellationToken);
+                wo.ServiceCatalog = services;
+            }
+
+            await db.WorkOrders.AddAsync(wo, cancellationToken);
+            await db.SaveChangesAsync(cancellationToken);
+
+            AppMetrics.WorkOrdersCreated.Add(1, new TagList
+            {
+                { "status", "created" }
+            });
+            logger.LogInformation(
+                "Work order created | {work_order.id} | {vehicle.id} | {work_order.status}",
+                wo.Id,
+                wo.VehicleId,
+                wo.Status.ToString());
+
+            if (vehicle.Owner != null)
+            {
+                await emailService.SendWorkOrderCreated(vehicle.Owner!, wo, cancellationToken);
+            }
+
+            return new CreateItemResponse { CreatedId = wo.Id };
+        }
+        catch (Exception e)
+        {
+            logger.LogError(e, "Error while creating work order");
+            throw;
+        }
     }
 
     public async Task Assign(Guid workOrderId, Guid assignedToUserId, Guid performedByUserId, string? comment = null,
@@ -221,6 +245,8 @@ public class WorkOrderAppService(
                 throw new BusinessException("Order must be approved before starting.");
         }
 
+        var timeInPreviousStatus = DateTime.UtcNow - wo.LastUpdate.ToUniversalTime();
+
         wo.Status = newStatus;
         wo.LastStatusChangeBy = performedByUserId;
         if (newStatus == WorkOrderStatus.InProgress)
@@ -239,14 +265,24 @@ public class WorkOrderAppService(
         };
         await db.WorkOrderHistories.AddAsync(hist, cancellationToken);
 
-        var timeInPreviousStatus = DateTime.UtcNow - wo.LastUpdate;
+        var tags = new TagList
+        {
+            { "previous_status", previous.ToString() },
+            { "new_status", newStatus.ToString() }
+        };
+
+        AppMetrics.TimeInStatusTotalSeconds.Add(
+            Math.Round(timeInPreviousStatus.TotalSeconds, 2),
+            tags);
+
+        AppMetrics.TimeInStatusSamples.Add(1, tags);
 
         logger.LogInformation(
-            "Work order status changed | {work_order.id} | {work_order.previous_status} → {work_order.new_status} | {work_order.time_in_status_hours}h",
+            "Work order status changed | {work_order.id} | {work_order.previous_status} → {work_order.new_status} | {work_order.time_in_status_seconds}s",
             wo.Id,
             previous.ToString(),
             newStatus.ToString(),
-            Math.Round(timeInPreviousStatus.TotalHours, 2));
+            Math.Round(timeInPreviousStatus.TotalSeconds, 2));
 
         await db.SaveChangesAsync(cancellationToken);
 

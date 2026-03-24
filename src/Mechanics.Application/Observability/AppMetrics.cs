@@ -2,7 +2,7 @@ using System.Diagnostics.Metrics;
 
 namespace Mechanics.Application.Observability;
 
-public class AppMetrics
+public static class AppMetrics
 {
     public static readonly Meter Meter = new("Mechanics.Api");
 

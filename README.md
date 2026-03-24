@@ -35,6 +35,15 @@ Baixe a chave pública do AWS Secrets Manager (ajuste o nome de acordo o ambient
 aws secretsmanager get-secret-value --secret-id "fiap-mechanics-dev-jwt/public-key" --query SecretString --output text > "src/Mechanics.Api/keys/jwt-public.pem"
 ```
 
+Defina a variável de ambiente com a ApiKey do DataDog:
+
+```powershell
+# somente sesão atual do terminal
+$env:DD_API_KEY = 'xxx'
+# persistir nas variáveis de ambiente no Windows
+[System.Environment]::SetEnvironmentVariable('DD_API_KEY', 'xxx', 'User')
+```
+
 Inicie o projeto via Docker Compose:
 
 ```bash
@@ -86,8 +95,8 @@ Acesse o repositório pelo link abaixo.
 
 [Mechanics Sonar](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/Mechanics-Sonar)
 
-Esse repositório contém instruções para execução local das análises com **SonarQube**, **OWASP Dependency Check** e *
-*OWASP ZAP**.
+Esse repositório contém instruções para execução local das análises com **SonarQube**, **OWASP Dependency Check** e
+**OWASP ZAP**.
 
 ## Links úteis
 

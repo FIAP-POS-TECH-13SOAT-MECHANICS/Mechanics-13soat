@@ -21,6 +21,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0-noble-chiseled-extra AS final
 COPY --from=build /tmp/aws-rds-global.crt /usr/local/share/ca-certificates/aws-rds-global.crt
 ENV SSL_CERT_FILE=/usr/local/share/ca-certificates/aws-rds-global.crt
 
+ENV TZ=America/Sao_Paulo
 ENV LANG=pt_BR.UTF-8 LANGUAGE=pt_BR:pt LC_ALL=pt_BR.UTF-8
 EXPOSE 8080
 

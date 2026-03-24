@@ -104,15 +104,15 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
         wo.LastUpdate = now;
 
         var tags = new TagList
-            {
-                { "previous_status", previousStatus.ToString() },
-                { "new_status", WorkOrderStatus.PendingApproval.ToString() }
-            };
+        {
+            { "previous_status", previousStatus.ToString() },
+            { "new_status", nameof(WorkOrderStatus.PendingApproval) },
+        };
 
         AppMetrics.TimeInStatusTotalSeconds.Add(
             Math.Round(timeInPreviousStatus.TotalSeconds, 2), tags);
-            AppMetrics.TimeInStatusSamples.Add(1, tags);
-            AppMetrics.StatusTransitions.Add(1, tags);
+        AppMetrics.TimeInStatusSamples.Add(1, tags);
+        AppMetrics.StatusTransitions.Add(1, tags);
 
         AppMetrics.StatusDurationSeconds.Record(
             Math.Round(timeInPreviousStatus.TotalSeconds, 2),
@@ -201,10 +201,10 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
 
 
         var tags = new TagList
-            {
-                { "previous_status", previousStatus.ToString() },
-                { "new_status", WorkOrderStatus.InProgress.ToString() }
-            };
+        {
+            { "previous_status", previousStatus.ToString() },
+            { "new_status", nameof(WorkOrderStatus.InProgress) }
+        };
 
         AppMetrics.TimeInStatusTotalSeconds.Add(
             Math.Round(timeInPreviousStatus.TotalSeconds, 2), tags);
@@ -313,10 +313,10 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
         wo.LastUpdate = DateTime.Now;
 
         var tags = new TagList
-            {
-                { "previous_status", previousStatus.ToString() },
-                { "new_status", WorkOrderStatus.UnderDiagnosis.ToString() }
-            };
+        {
+            { "previous_status", previousStatus.ToString() },
+            { "new_status", nameof(WorkOrderStatus.UnderDiagnosis) }
+        };
 
         AppMetrics.TimeInStatusTotalSeconds.Add(
             Math.Round(timeInPreviousStatus.TotalSeconds, 2), tags);

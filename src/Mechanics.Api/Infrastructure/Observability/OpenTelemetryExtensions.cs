@@ -132,9 +132,10 @@ public static class OpenTelemetryExtensions
 
                 if (!string.IsNullOrEmpty(otlpEndpoint))
                 {
-                    metrics.AddOtlpExporter(opts =>
+                    metrics.AddOtlpExporter((exporterOptions, metricReaderOptions) =>
                     {
-                        opts.Endpoint = new Uri(otlpEndpoint);
+                        exporterOptions.Endpoint = new Uri(otlpEndpoint);
+                        metricReaderOptions.TemporalityPreference = MetricReaderTemporalityPreference.Delta;
                     });
                 }
 

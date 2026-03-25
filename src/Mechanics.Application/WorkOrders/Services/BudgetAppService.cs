@@ -95,10 +95,28 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
 
         await dbContext.Budgets.AddAsync(budget, cancellationToken);
 
+        var previousStatus = wo.Status;
+        var timeInPreviousStatus = DateTime.Now - wo.LastUpdate;
+
         wo.ApprovalRequestedAt = now;
         wo.Status = WorkOrderStatus.PendingApproval;
         wo.LastStatusChangeBy ??= performedByUserId;
         wo.LastUpdate = now;
+
+        var tags = new TagList
+        {
+            { "previous_status", previousStatus.ToString() },
+            { "new_status", nameof(WorkOrderStatus.PendingApproval) },
+        };
+
+        AppMetrics.TimeInStatusTotalSeconds.Add(
+            Math.Round(timeInPreviousStatus.TotalSeconds, 2), tags);
+        AppMetrics.TimeInStatusSamples.Add(1, tags);
+        AppMetrics.StatusTransitions.Add(1, tags);
+
+        AppMetrics.StatusDurationSeconds.Record(
+            Math.Round(timeInPreviousStatus.TotalSeconds, 2),
+            new TagList { { "status", previousStatus.ToString() } });
 
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -169,6 +187,9 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
             throw new BusinessException("Budget expired.");
         }
 
+        var previousStatus = wo.Status;
+        var timeInPreviousStatus = DateTime.Now - wo.LastUpdate;
+
         // Approve
         budget.Status = BudgetStatus.Approved;
         budget.ApprovedAt = DateTime.Now;
@@ -177,6 +198,22 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
 
         wo.Status = WorkOrderStatus.InProgress;
         wo.LastUpdate = DateTime.Now;
+
+
+        var tags = new TagList
+        {
+            { "previous_status", previousStatus.ToString() },
+            { "new_status", nameof(WorkOrderStatus.InProgress) }
+        };
+
+        AppMetrics.TimeInStatusTotalSeconds.Add(
+            Math.Round(timeInPreviousStatus.TotalSeconds, 2), tags);
+        AppMetrics.TimeInStatusSamples.Add(1, tags);
+        AppMetrics.StatusTransitions.Add(1, tags);
+
+        AppMetrics.StatusDurationSeconds.Record(
+            Math.Round(timeInPreviousStatus.TotalSeconds, 2),
+            new TagList { { "status", previousStatus.ToString() } });
 
         var hist = new WorkOrderHistory
         {
@@ -265,12 +302,30 @@ public class BudgetAppService(AppDbContext dbContext, IEmailService emailService
             throw new BusinessException("Budget expired.");
         }
 
+        var previousStatus = wo.Status;
+        var timeInPreviousStatus = DateTime.Now - wo.LastUpdate;
+
         budget.Status = BudgetStatus.Rejected;
         budget.RejectedAt = DateTime.Now;
         budget.Description = description;
 
         wo.Status = WorkOrderStatus.UnderDiagnosis;
         wo.LastUpdate = DateTime.Now;
+
+        var tags = new TagList
+        {
+            { "previous_status", previousStatus.ToString() },
+            { "new_status", nameof(WorkOrderStatus.UnderDiagnosis) }
+        };
+
+        AppMetrics.TimeInStatusTotalSeconds.Add(
+            Math.Round(timeInPreviousStatus.TotalSeconds, 2), tags);
+        AppMetrics.TimeInStatusSamples.Add(1, tags);
+        AppMetrics.StatusTransitions.Add(1, tags);
+
+        AppMetrics.StatusDurationSeconds.Record(
+            Math.Round(timeInPreviousStatus.TotalSeconds, 2),
+            new TagList { { "status", previousStatus.ToString() } });
 
         var hist = new WorkOrderHistory
         {

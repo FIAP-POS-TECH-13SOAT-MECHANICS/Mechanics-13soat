@@ -261,7 +261,7 @@ public class WorkOrderAppService(
                 throw new BusinessException("Order must be approved before starting.");
         }
 
-        var timeInPreviousStatus = DateTime.UtcNow - wo.LastUpdate.ToUniversalTime();
+        var timeInPreviousStatus = DateTime.Now - wo.LastUpdate;
 
         wo.Status = newStatus;
         wo.LastStatusChangeBy = performedByUserId;

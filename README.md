@@ -38,10 +38,10 @@ aws secretsmanager get-secret-value --secret-id "fiap-mechanics-dev-jwt/public-k
 Defina a variável de ambiente com a ApiKey do DataDog:
 
 ```powershell
-# somente sesão atual do terminal
+# somente sessão atual do terminal
 $env:DD_API_KEY = 'xxx'
-# persistir nas variáveis de ambiente no Windows
-[System.Environment]::SetEnvironmentVariable('DD_API_KEY', 'xxx', 'User')
+# persistir no perfil do PowerShell
+'$env:DD_API_KEY = "xxx"' | Out-File -FilePath $profile -Append
 ```
 
 Inicie o projeto via Docker Compose:

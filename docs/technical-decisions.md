@@ -135,3 +135,19 @@ Utilizar *SQL Server Express* hospedado no RDS da AWS.
 - Diagrama ER com normalização
 - Scripts de criação e migração via EF Core
 - Monitoramento de performance via CloudWatch
+
+## Banco de dados
+
+Optamos por utilizar um banco de dados relacional para garantir a consistência e integridade das informações, já que o sistema envolve diversas entidades relacionadas, como clientes, veículos, ordens de serviço e produtos.
+
+O Microsoft SQL Server foi escolhido por conta da facilidade de integração com aplicações C#/.NET, oferecendo suporte nativo a bibliotecas como Entity Framework. A versão Express é gratuita e suporta uma base de dados de até 10 GB, o que é condizente para o escopo do projeto.
+
+Além disso, o SQL Server apresenta um bom desempenho mesmo em ambientes de menor porte, com recursos como cache de consultas e otimização automática de índices. Isso o torna uma escolha mais completa em comparação com alternativas menores, como o MySQL, especialmente em um contexto de aplicação C#.
+
+![Modelo ER](./images/er-model.jpg)
+
+## Notificações por e-mail
+
+Para o ambiente de desenvolvimento, o sistema utiliza a ferramenta [MailPit](mailpit.axllent.org). Ela fornece um servidor SMTP para simular o envio de mensagens.
+
+Todos os e-mails enviados podem ser acessados pelo cliente web da ferramenta, que roda na porta [8025](http://localhost:8025/).

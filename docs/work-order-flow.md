@@ -51,8 +51,14 @@
 | Gerenciamento | `GET /api/WorkOrders/{id}` | Usuários autenticados* | Recupera os detalhes da OS para prosseguir com o atendimento. |
 | Gerenciamento | `GET /api/WorkOrders` | Usuários autenticados* |Recupera OS para acompanhamento interno |
 
-* Usuários autenticados: (Atendente, Administrador ou Mecânico)
+> Usuários autenticados: (Atendente, Administrador ou Mecânico)
 
 ## Diagrama
-![FluxodaOS](images/d.png)
 
+### Login
+
+![Fluxo com login](images/auth.png)
+
+### Ordem de Serviço
+
+![Fluxo da OS](images/d.png)

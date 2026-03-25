@@ -104,6 +104,7 @@ Esse repositório contém instruções para execução local das análises com *
 
 - [Configuração do ambiente](./docs/configuration.md)
 - [Dados de exemplo](./dev-seeds/README.md)
+- [Decisões técnicas](./docs/technical-decisions.md)
 - [Diagramas](./docs/diagrams.md)
 - [Diretrizes de design do projeto](./docs/design-guidelines.md)
 - [Fluxo de Ordem de Serviço](./docs/work-order-flow.md)

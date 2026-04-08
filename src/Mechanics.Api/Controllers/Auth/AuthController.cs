@@ -12,7 +12,7 @@ namespace Mechanics.Api.Controllers.Auth;
 /// </summary>
 [ApiController]
 [ApiExplorerSettings(GroupName = "v1")]
-[Route("api/auth")]
+[Route("auth")]
 [Authorize(Policy = PolicyNames.AllAuthenticated)]
 public class AuthController(AuthAppService service) : ControllerBase
 {

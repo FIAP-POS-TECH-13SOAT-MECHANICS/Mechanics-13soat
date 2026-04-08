@@ -22,7 +22,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<WorkOrderHistory> WorkOrderHistories { get; set; }
     public DbSet<Budget> Budgets { get; set; } = default!;
     public DbSet<BudgetItem> BudgetItems { get; set; } = default!;
-
     public DbSet<User> Users { get; set; }
     public DbSet<Role> Roles { get; set; }
 

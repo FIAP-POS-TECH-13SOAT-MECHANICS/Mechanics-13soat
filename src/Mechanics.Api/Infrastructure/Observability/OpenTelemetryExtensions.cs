@@ -1,9 +1,9 @@
-using System.Diagnostics;
 using Mechanics.Application.Observability;
-using OpenTelemetry.Logs;
+using Microsoft.Data.SqlClient;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using System.Diagnostics;
 
 namespace Mechanics.Api.Infrastructure.Observability;
 
@@ -20,47 +20,13 @@ public static class OpenTelemetryExtensions
 
         var otlpEndpoint = Environment.GetEnvironmentVariable("OTEL_EXPORTER_OTLP_ENDPOINT");
         var samplingRatio = builder.Environment.IsProduction() ? 0.1 : 1.0;
-        var resourceBuilder = ResourceBuilder.CreateDefault()
-            .AddService(
-                serviceName: serviceName,
-                serviceVersion: serviceVersion)
-            .AddAttributes(new Dictionary<string, object>
-            {
-                ["deployment.environment"] = environment,
-            });
-
-        builder.Logging.AddOpenTelemetry(logging =>
-        {
-            logging
-                .SetResourceBuilder(resourceBuilder)
-                .IncludeFormattedMessage = true;
-            logging.IncludeScopes = true;
-            logging.ParseStateValues = true;
-
-            if (!string.IsNullOrEmpty(otlpEndpoint))
-            {
-                logging.AddOtlpExporter(opts =>
-                {
-                    opts.Endpoint = new Uri(otlpEndpoint);
-                    opts.TimeoutMilliseconds = 10_000;
-                });
-            }
-
-            if (builder.Environment.IsDevelopment())
-            {
-                logging.AddConsoleExporter();
-            }
-        });
 
         builder.Services.AddOpenTelemetry()
             .ConfigureResource(resource => resource
                 .AddService(
                     serviceName: serviceName,
                     serviceVersion: serviceVersion)
-                .AddAttributes(new Dictionary<string, object>
-                {
-                    ["deployment.environment"] = environment,
-                }))
+                .AddAttributes(new Dictionary<string, object> { ["deployment.environment"] = environment }))
             .WithTracing(tracing =>
             {
                 tracing
@@ -72,20 +38,18 @@ public static class OpenTelemetryExtensions
                         options.Filter = httpContext =>
                         {
                             var path = httpContext.Request.Path.Value;
-                            return path != null
-                                && !path.StartsWith("/health",
-                                    StringComparison.OrdinalIgnoreCase)
-                                && !path.StartsWith("/swagger",
-                                    StringComparison.OrdinalIgnoreCase);
+                            return path != null &&
+                                   !path.StartsWith("/health", StringComparison.OrdinalIgnoreCase) &&
+                                   !path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase);
                         };
 
                         options.EnrichWithHttpRequest = (activity, request) =>
                         {
                             var clientIp = request.Headers["X-Forwarded-For"]
-                                .FirstOrDefault()
-                                ?.Split(',').FirstOrDefault()?.Trim()
-                                ?? request.HttpContext.Connection
-                                    .RemoteIpAddress?.ToString();
+                                               .FirstOrDefault()
+                                               ?.Split(',').FirstOrDefault()?.Trim() ??
+                                           request.HttpContext.Connection
+                                               .RemoteIpAddress?.ToString();
 
                             if (clientIp != null)
                                 activity.SetTag("http.client_ip", clientIp);
@@ -97,30 +61,21 @@ public static class OpenTelemetryExtensions
                     .AddSqlClientInstrumentation(options =>
                     {
                         options.SetDbStatementForText = !builder.Environment.IsProduction();
-                        options.Filter = (object obj) =>
+                        options.Filter = obj =>
                         {
-                            if (obj is Microsoft.Data.SqlClient.SqlCommand cmd)
-                            {
-                                return cmd.CommandText == null
-                                    || !cmd.CommandText.Contains("__EFMigrationsHistory");
-                            }
+                            if (obj is SqlCommand cmd)
+                                return !cmd.CommandText.Contains("__EFMigrationsHistory");
+
                             return true;
                         };
                     });
 
                 if (!string.IsNullOrEmpty(otlpEndpoint))
-                {
                     tracing.AddOtlpExporter(opts =>
                     {
                         opts.Endpoint = new Uri(otlpEndpoint);
                         opts.TimeoutMilliseconds = 10_000;
                     });
-                }
-
-                if (builder.Environment.IsDevelopment())
-                {
-                    //tracing.AddConsoleExporter();
-                }
             })
             .WithMetrics(metrics =>
             {
@@ -137,11 +92,6 @@ public static class OpenTelemetryExtensions
                         exporterOptions.Endpoint = new Uri(otlpEndpoint);
                         metricReaderOptions.TemporalityPreference = MetricReaderTemporalityPreference.Delta;
                     });
-                }
-
-                if (builder.Environment.IsDevelopment())
-                {
-                    //metrics.AddConsoleExporter();
                 }
             });
 

@@ -13,7 +13,7 @@ namespace Mechanics.Api.Controllers.Vehicles;
 /// </summary>
 [ApiController]
 [ApiExplorerSettings(GroupName = "v1")]
-[Route("api/[controller]")]
+[Route("[controller]")]
 [Authorize(Policy = PolicyNames.EmployeesOnly)]
 public class VehiclesController(VehicleAppService service) : ControllerBase
 {

@@ -13,7 +13,7 @@ namespace Mechanics.Api.Controllers.Customers;
 ///     Controller para gerenciar usuários de um cliente.
 /// </summary>
 [ApiController]
-[Route("api/customers/users")]
+[Route("customers/users")]
 [Authorize(Roles = RoleNames.CustomerAdmin)]
 public class CustomerUserController(UserAppService service) : ControllerBase
 {

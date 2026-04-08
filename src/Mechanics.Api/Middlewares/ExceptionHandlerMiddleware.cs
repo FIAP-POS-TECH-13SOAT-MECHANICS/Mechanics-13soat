@@ -1,6 +1,5 @@
 using Mechanics.Domain.Base.Exceptions;
 using Microsoft.AspNetCore.Mvc;
-using OpenTelemetry.Trace;
 using System.Diagnostics;
 using System.Text.Json;
 
@@ -36,17 +35,18 @@ public class ExceptionHandlerMiddleware(RequestDelegate next, ILogger<ExceptionH
             await HandleException(context, e, method, httpRoute);
         }
     }
+
     private async Task HandleException(HttpContext context, Exception exception, string method, string httpRoute)
     {
         var activity = Activity.Current;
         activity?.SetStatus(ActivityStatusCode.Error, exception.Message);
-        activity?.RecordException(exception);
+        activity?.AddException(exception);
 
         switch (exception)
         {
             case EntityNotFoundException e:
                 logger.LogWarning(e,
-                    "Entity not found | {http.method} {http.route}",
+                    "Entity not found | {HttpMethod} {HttpRoute}",
                     method,
                     httpRoute);
 
@@ -55,7 +55,7 @@ public class ExceptionHandlerMiddleware(RequestDelegate next, ILogger<ExceptionH
 
             case BusinessException e:
                 logger.LogWarning(e,
-                    "Business rule violation | {http.method} {http.route}",
+                    "Business rule violation | {HttpMethod} {HttpRoute}",
                     method,
                     httpRoute);
 
@@ -64,7 +64,7 @@ public class ExceptionHandlerMiddleware(RequestDelegate next, ILogger<ExceptionH
 
             default:
                 logger.LogError(exception,
-                    "Unhandled exception | {http.method} {http.route} | {ExceptionType}: {ExceptionMessage}",
+                    "Unhandled exception | {HttpMethod} {HttpRoute} | {ExceptionType}: {ExceptionMessage}",
                     method,
                     httpRoute,
                     exception.GetType().Name,
@@ -77,7 +77,6 @@ public class ExceptionHandlerMiddleware(RequestDelegate next, ILogger<ExceptionH
 
     private static async Task WriteProblemDetails(HttpContext context, int statusCode, Exception e)
     {
-
         context.Response.StatusCode = statusCode;
         context.Response.ContentType = "application/problem+json";
 
@@ -99,10 +98,7 @@ public class ExceptionHandlerMiddleware(RequestDelegate next, ILogger<ExceptionH
 
     private static string GetErrorTitle(int statusCode, Exception exception)
     {
-        if (statusCode >= 500)
-            return "Internal server error.";
-
-        return exception.Message;
+        return statusCode >= 500 ? "Internal server error." : exception.Message;
     }
 
     public class ExceptionDetails(Exception e)

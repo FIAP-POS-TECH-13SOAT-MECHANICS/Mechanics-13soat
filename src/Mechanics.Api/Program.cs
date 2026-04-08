@@ -45,6 +45,7 @@ public class Program
         builder.Services.AddGlobalCorsPolicy();
 
         var app = builder.Build();
+        app.UsePathBase(builder.Configuration["AppInfo:RoutePrefix"]);
 
         app.UseMiddleware<CorrelationIdMiddleware>();
         app.UseMiddleware<RequestLoggingMiddleware>();
@@ -57,7 +58,6 @@ public class Program
         app.UseAuthorization();
         app.MapControllers()
             .RequireAuthorization();
-
 
         if (app.Environment.IsDevelopment())
             await app.ApplyMigrations();

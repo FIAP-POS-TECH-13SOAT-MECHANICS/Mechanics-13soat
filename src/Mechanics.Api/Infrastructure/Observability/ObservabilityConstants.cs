@@ -7,11 +7,20 @@ namespace Mechanics.Api.Infrastructure.Observability;
 public static class ObservabilityConstants
 {
     public static string ResolveServiceName(IConfiguration configuration)
-        => configuration["Application:Name"] ?? "mechanics-api";
+        => configuration["AppInfo:Name"] ?? "fiap-mechanics";
 
     public static string ResolveServiceVersion(IConfiguration configuration)
-        => configuration["Application:Version"] ?? "0.0.0";
+        => configuration["AppInfo:Version"] ?? "1.0.0";
 
     public static string ResolveDeploymentEnvironment(IHostEnvironment environment)
         => environment.EnvironmentName;
+
+    public static string ResolveOtplEndpoint(IConfiguration configuration)
+        => configuration["DataDog:OtplEndpoint"] ?? "";
+
+    public static string ResolveDatadogApiKey(IConfiguration configuration)
+        => configuration["DataDog:ApiKey"] ?? "";
+
+    public static bool ResolveUseJsonLogs(IConfiguration contextConfiguration)
+        => bool.TryParse(contextConfiguration["DataDog:UseJsonLogs"], out var result) && result;
 }

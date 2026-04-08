@@ -11,7 +11,7 @@ namespace Mechanics.Api.Controllers.WorkOrders;
 /// </summary>
 [ApiController]
 [ApiExplorerSettings(GroupName = "v1")]
-[Route("api/work-orders")]
+[Route("work-orders")]
 [Authorize(Policy = PolicyNames.CustomersOnly)]
 public class BudgetsController(BudgetAppService budgetService) : ControllerBase
 {

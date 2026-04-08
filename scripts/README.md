@@ -10,7 +10,7 @@
    - Repita o comando para gerar uma nova release.
 4. Utilize o script `get-token.ps1` para gerar um token de acesso.
 
-O comando abaixo sobe a infraestrutura e faz deploy no ambiente DEV.
+O comando abaixo faz deploy no ambiente DEV com base no nome do serviço especificado em [appsettings.json](..//src/appsettings.json).
 Execute na raiz do projeto.
 
 ```powershell

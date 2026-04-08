@@ -1,20 +1,25 @@
+using Mechanics.Application.Options;
+using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Enrichers.Span;
 using Serilog.Formatting.Compact;
 using Serilog.Sinks.OpenTelemetry;
 
-namespace Mechanics.Api.Infrastructure.Observability;
+namespace Mechanics.Infra.Observability;
 
 public static class LoggingExtensions
 {
     public static WebApplicationBuilder AddStructuredLogging(this WebApplicationBuilder builder)
     {
-        var serviceName = ObservabilityConstants.ResolveServiceName(builder.Configuration);
-        var serviceVersion = ObservabilityConstants.ResolveServiceVersion(builder.Configuration);
-        var deploymentEnvironment = ObservabilityConstants.ResolveDeploymentEnvironment(builder.Environment);
+        builder.Services.Configure<DatadogOptions>(builder.Configuration.GetSection("Datadog"));
+
+        var appInfo = builder.Configuration.GetSection(nameof(AppInfo)).Get<AppInfo>()!;
+        var deploymentEnvironment = builder.Environment.EnvironmentName;
 
         builder.Host.UseSerilog((context, services, configuration) =>
         {
+            var dataDogOptions = services.GetRequiredService<IOptions<DatadogOptions>>().Value;
+
             var loggerConfiguration = configuration
                 .ReadFrom.Configuration(context.Configuration)
                 .ReadFrom.Services(services)
@@ -24,30 +29,29 @@ public static class LoggingExtensions
                 .Enrich.WithProcessId()
                 .Enrich.WithSpan()
                 .Enrich.With(new DatadogTraceEnricher())
-                .Enrich.WithProperty("service.name", serviceName)
-                .Enrich.WithProperty("service.version", serviceVersion)
+                .Enrich.WithProperty("service.name", appInfo.Name)
+                .Enrich.WithProperty("service.version", appInfo.Version)
                 .Enrich.WithProperty("deployment.environment", deploymentEnvironment)
                 .WriteTo.OpenTelemetry(options =>
                 {
-                    var otlpEndpoint = ObservabilityConstants.ResolveOtplEndpoint(context.Configuration);
-                    if (!string.IsNullOrEmpty(otlpEndpoint))
-                        options.Endpoint = $"{otlpEndpoint}/v1/logs";
+                    if (!string.IsNullOrEmpty(dataDogOptions.OtlpEndpoint))
+                        options.Endpoint = $"{dataDogOptions.OtlpEndpoint}/v1/logs";
                     options.Protocol = OtlpProtocol.HttpProtobuf;
 
                     options.Headers = new Dictionary<string, string>
                     {
-                        ["DD-API-KEY"] = ObservabilityConstants.ResolveDatadogApiKey(context.Configuration),
+                        ["DD-API-KEY"] = dataDogOptions.ApiKey,
                     };
 
                     options.ResourceAttributes = new Dictionary<string, object>
                     {
-                        ["service.name"] = serviceName,
-                        ["service.version"] = serviceVersion,
+                        ["service.name"] = appInfo.Name,
+                        ["service.version"] = appInfo.Version,
                         ["deployment.environment"] = deploymentEnvironment,
                     };
                 });
 
-            if (ObservabilityConstants.ResolveUseJsonLogs(context.Configuration))
+            if (dataDogOptions.UseJsonLogs)
                 loggerConfiguration.WriteTo.Console(new RenderedCompactJsonFormatter());
             else
                 loggerConfiguration.WriteTo.Console();

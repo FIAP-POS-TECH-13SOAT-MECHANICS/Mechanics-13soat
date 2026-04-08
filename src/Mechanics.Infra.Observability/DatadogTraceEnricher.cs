@@ -2,7 +2,7 @@ using Serilog.Core;
 using Serilog.Events;
 using System.Diagnostics;
 
-namespace Mechanics.Api.Infrastructure.Observability;
+namespace Mechanics.Infra.Observability;
 
 public class DatadogTraceEnricher : ILogEventEnricher
 {

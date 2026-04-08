@@ -325,7 +325,8 @@ public class EmailServiceTests
 
     private static EmailService CreateInstance(IEmailSenderService senderService)
     {
-        var options = new OptionsWrapper<AppInfo>(new AppInfo { BaseUrl = "http://localhost:5000" });
+        var options = new OptionsWrapper<AppInfo>(new AppInfo
+            { Name = "fiap-mechanics", Version = "1.0.0", BaseUrl = "http://localhost:5000", RoutePrefix = "/api" });
         return new EmailService(new NullLoggerFactory().CreateLogger<EmailService>(), senderService);
     }
 }

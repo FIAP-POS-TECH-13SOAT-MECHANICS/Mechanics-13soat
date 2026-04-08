@@ -7,7 +7,7 @@ app:
   baseUrl: http://localhost:5000
   routePrefix: /api
 
-dataDog:
+datadog:
   useJsonLogs: true
 
 image:

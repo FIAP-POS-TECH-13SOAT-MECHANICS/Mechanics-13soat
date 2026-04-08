@@ -1,7 +1,8 @@
 using Mechanics.Api.Extensions;
-using Mechanics.Api.Infrastructure.Observability;
 using Mechanics.Api.Middlewares;
+using Mechanics.Application.Options;
 using Mechanics.Infra.CrossCutting.IoC.Extensions;
+using Mechanics.Infra.Observability;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
@@ -45,7 +46,8 @@ public class Program
         builder.Services.AddGlobalCorsPolicy();
 
         var app = builder.Build();
-        app.UsePathBase(builder.Configuration["AppInfo:RoutePrefix"]);
+        var appInfo = builder.Configuration.GetSection(nameof(AppInfo)).Get<AppInfo>()!;
+        app.UsePathBase(appInfo.RoutePrefix);
 
         app.UseMiddleware<CorrelationIdMiddleware>();
         app.UseMiddleware<RequestLoggingMiddleware>();

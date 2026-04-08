@@ -12,7 +12,7 @@ data:
   AppInfo__Version: {{ .Values.app.version | quote }}
   AppInfo__BaseUrl: {{ .Values.app.baseUrl | quote }}
   AppInfo__RoutePrefix: {{ .Values.app.routePrefix | quote }}
-  DataDog__UseJsonLogs: {{ .Values.dataDog.useJsonLogs | quote }}
+  Datadog__UseJsonLogs: {{ .Values.datadog.useJsonLogs | quote }}
   EmailSenderOptions__SmtpServer: {{ .Values.email.smtpServer | quote }}
   EmailSenderOptions__SmtpPort: {{ .Values.email.smtpPort | quote }}
   EmailSenderOptions__SslRequired: {{ .Values.email.sslRequired | quote }}

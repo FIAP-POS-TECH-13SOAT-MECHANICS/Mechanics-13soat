@@ -3,10 +3,11 @@ using Mechanics.Application.WorkOrders.Responses;
 using Mechanics.Application.WorkOrders.Services;
 using Mechanics.Domain.Auth;
 using Mechanics.Domain.WorkOrders;
+using Mechanics.Infra.Security;
+using Mechanics.Infra.Security.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
-using System.Security.Claims;
 
 namespace Mechanics.Api.Controllers.WorkOrders;
 
@@ -17,7 +18,7 @@ namespace Mechanics.Api.Controllers.WorkOrders;
 [ApiExplorerSettings(GroupName = "v1")]
 [Route("[controller]")]
 [Authorize(Policy = PolicyNames.EmployeesOnly)]
-public class WorkOrdersController(WorkOrderAppService workOrderService) : ControllerBase
+public class WorkOrdersController(WorkOrderAppService workOrderService, ICurrentUserService currentUserService) : ControllerBase
 {
     /// <summary>
     ///     Cria uma nova ordem de serviço.
@@ -67,7 +68,7 @@ public class WorkOrdersController(WorkOrderAppService workOrderService) : Contro
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> RequestApproval(Guid id, CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
+        var userId = currentUserService.GetData().UserId;
 
         await workOrderService.RequestApproval(id, userId, cancellationToken);
         return NoContent();
@@ -89,7 +90,7 @@ public class WorkOrdersController(WorkOrderAppService workOrderService) : Contro
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Assign(Guid id, [FromBody] AssignWorkOrderRequest request, CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
+        var userId = currentUserService.GetData().UserId;
 
         await workOrderService.Assign(id, request.AssignedToUserId, userId, request.Description, cancellationToken);
         return NoContent();
@@ -110,7 +111,7 @@ public class WorkOrdersController(WorkOrderAppService workOrderService) : Contro
     public async Task<IActionResult> ChangeStatus(Guid id, [FromBody] ChangeStatusRequest request,
         CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
+        var userId = currentUserService.GetData().UserId;
 
         await workOrderService.ChangeStatus(id, request.NewStatus, userId, request.Description, cancellationToken);
         return NoContent();
@@ -133,7 +134,7 @@ public class WorkOrdersController(WorkOrderAppService workOrderService) : Contro
     public async Task<IActionResult> Update(Guid id, UpdateWorkOrderRequest request,
         CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
+        var userId = currentUserService.GetData().UserId;
 
         await workOrderService.UpdateDetails(id, request, userId, cancellationToken);
         return NoContent();
@@ -147,7 +148,7 @@ public class WorkOrdersController(WorkOrderAppService workOrderService) : Contro
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Start(Guid id, CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
+        var userId = currentUserService.GetData().UserId;
 
         await workOrderService.ChangeStatus(id, WorkOrderStatus.InProgress, userId, cancellationToken: cancellationToken);
         return NoContent();
@@ -161,7 +162,7 @@ public class WorkOrdersController(WorkOrderAppService workOrderService) : Contro
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Complete(Guid id, CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
+        var userId = currentUserService.GetData().UserId;
 
         await workOrderService.ChangeStatus(id, WorkOrderStatus.Completed, userId,
             cancellationToken: cancellationToken);
@@ -176,7 +177,7 @@ public class WorkOrdersController(WorkOrderAppService workOrderService) : Contro
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Deliver(Guid id, CancellationToken cancellationToken)
     {
-        var userId = GetCurrentUserId();
+        var userId = currentUserService.GetData().UserId;
 
         await workOrderService.ChangeStatus(id, WorkOrderStatus.Delivered, userId,
             cancellationToken: cancellationToken);
@@ -215,13 +216,5 @@ public class WorkOrdersController(WorkOrderAppService workOrderService) : Contro
     {
         var response = await workOrderService.GetAverageServiceTime(id, cancellationToken);
         return Ok(response);
-    }
-
-    private Guid GetCurrentUserId()
-    {
-        var identifier = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        return Guid.TryParse(identifier, out var userId)
-            ? userId
-            : throw new InvalidOperationException("User is not authenticated.");
     }
 }

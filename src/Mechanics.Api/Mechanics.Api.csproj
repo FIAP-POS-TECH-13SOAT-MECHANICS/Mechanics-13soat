@@ -25,6 +25,7 @@
     <ProjectReference Include="..\Mechanics.Domain\Mechanics.Domain.csproj" />
     <ProjectReference Include="..\Mechanics.Infra.CrossCutting.IoC\Mechanics.Infra.CrossCutting.IoC.csproj" />
     <ProjectReference Include="..\Mechanics.Infra.Data\Mechanics.Infra.Data.csproj" />
+    <ProjectReference Include="..\Mechanics.Infra.Security\Mechanics.Infra.Security.csproj" />
   </ItemGroup>
 
   <ItemGroup>

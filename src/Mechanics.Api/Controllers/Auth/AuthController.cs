@@ -1,9 +1,9 @@
 ﻿using Mechanics.Application.Auth.Requests;
 using Mechanics.Application.Auth.Services;
-using Mechanics.Domain.Auth;
+using Mechanics.Infra.Security;
+using Mechanics.Infra.Security.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 
 namespace Mechanics.Api.Controllers.Auth;
 
@@ -14,7 +14,7 @@ namespace Mechanics.Api.Controllers.Auth;
 [ApiExplorerSettings(GroupName = "v1")]
 [Route("auth")]
 [Authorize(Policy = PolicyNames.AllAuthenticated)]
-public class AuthController(AuthAppService service) : ControllerBase
+public class AuthController(AuthAppService service, ICurrentUserService currentUserService) : ControllerBase
 {
     /// <summary>
     ///     Envia um código de criação de senha para o e-mail do usuário associado ao CPF informado.
@@ -61,7 +61,7 @@ public class AuthController(AuthAppService service) : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ChangePassword(ChangePasswordRequest request, CancellationToken cancellationToken)
     {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var userId = currentUserService.GetData().UserId;
 
         await service.ChangePassword(userId, request, cancellationToken);
         return NoContent();

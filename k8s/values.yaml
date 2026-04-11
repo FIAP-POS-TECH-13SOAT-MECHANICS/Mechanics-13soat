@@ -7,6 +7,10 @@ app:
   baseUrl: http://localhost:5000
   routePrefix: /api
 
+service:
+  minReplicas: 2
+  maxReplicas: 4
+
 datadog:
   useJsonLogs: true
 

@@ -136,8 +136,8 @@
       },
       "Microsoft.AspNetCore.Authentication.JwtBearer": {
         "type": "Transitive",
-        "resolved": "8.0.20",
-        "contentHash": "ojfy39qaCtNOrXOut4Jreqj5WYSRJMqvQif46KzMtaJiZcByAbZtO+QDM9JQvQAzPtWnzWSCz5DcZJ/82IeOFQ==",
+        "resolved": "8.0.25",
+        "contentHash": "nb6jCyxh5eP9bsXkHmGcDxUiVIl5wJSombl3LN2L+sjGEVXzcMKbdRe0fp8LQtuBM2hKXcXFxMAYdnohdYJF8Q==",
         "dependencies": {
           "Microsoft.IdentityModel.Protocols.OpenIdConnect": "7.1.2"
         }
@@ -1038,7 +1038,8 @@
           "Mechanics.Domain": "[1.0.0, )",
           "Mechanics.Infra.Data": "[1.0.0, )",
           "Mechanics.Infra.Integrations.EmailSender": "[1.0.0, )",
-          "Microsoft.AspNetCore.Authentication.JwtBearer": "[8.0.20, )",
+          "Mechanics.Infra.Security": "[1.0.0, )",
+          "Microsoft.AspNetCore.Authentication.JwtBearer": "[8.0.25, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[8.0.0, )",
           "Microsoft.IdentityModel.Protocols": "[8.14.0, )",
           "Microsoft.IdentityModel.Protocols.OpenIdConnect": "[8.14.0, )"
@@ -1064,6 +1065,7 @@
         "type": "Project",
         "dependencies": {
           "Mechanics.Domain": "[1.0.0, )",
+          "Mechanics.Infra.Security": "[1.0.0, )",
           "Microsoft.EntityFrameworkCore": "[8.0.8, )",
           "Microsoft.EntityFrameworkCore.Design": "[8.0.8, )",
           "Microsoft.EntityFrameworkCore.SqlServer": "[8.0.8, )"
@@ -1095,6 +1097,12 @@
           "Serilog.Settings.Configuration": "[8.0.4, )",
           "Serilog.Sinks.Console": "[6.0.0, )",
           "Serilog.Sinks.OpenTelemetry": "[4.2.0, )"
+        }
+      },
+      "mechanics.infra.security": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.AspNetCore.Authentication.JwtBearer": "[8.0.25, )"
         }
       }
     }

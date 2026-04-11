@@ -3,6 +3,7 @@ using Mechanics.Application.Vehicles.Requests;
 using Mechanics.Application.Vehicles.Responses;
 using Mechanics.Application.Vehicles.Services;
 using Mechanics.Domain.Auth;
+using Mechanics.Infra.Security.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

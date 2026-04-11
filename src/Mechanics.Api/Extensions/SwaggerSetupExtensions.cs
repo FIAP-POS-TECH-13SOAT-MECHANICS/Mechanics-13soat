@@ -56,12 +56,12 @@ public static class SwaggerSetupExtensions
         services.AddSwaggerExamplesFromAssemblies(Assembly.GetExecutingAssembly());
     }
 
-    public static void UseSwaggerDocumentation(this IApplicationBuilder app)
+    public static void UseSwaggerDocumentation(this IApplicationBuilder app, string routePrefix)
     {
         app.UseSwagger();
         app.UseSwaggerUI(c =>
         {
-            c.SwaggerEndpoint("/swagger/v1/swagger.json", "Mechanics API v1");
+            c.SwaggerEndpoint($"{routePrefix}/swagger/v1/swagger.json", "Mechanics API v1");
             c.RoutePrefix = "swagger";
         });
     }

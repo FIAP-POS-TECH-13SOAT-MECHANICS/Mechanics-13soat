@@ -1,6 +1,7 @@
 ﻿using Mechanics.Application.WorkOrders.Responses;
 using Mechanics.Application.WorkOrders.Services;
-using Mechanics.Domain.Auth;
+using Mechanics.Infra.Security;
+using Mechanics.Infra.Security.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,7 +14,8 @@ namespace Mechanics.Api.Controllers.WorkOrders;
 [ApiExplorerSettings(GroupName = "v1")]
 [Route("work-orders")]
 [Authorize(Policy = PolicyNames.CustomersOnly)]
-public class WorkOrdersCustomerController(WorkOrderAppService workOrderService) : ControllerBase
+public class WorkOrdersCustomerController(WorkOrderAppService workOrderService, ICurrentUserService currentUserService)
+    : ControllerBase
 {
     /// <summary>
     ///     Consulta da ordem de serviço pela chave de acesso.
@@ -28,7 +30,7 @@ public class WorkOrdersCustomerController(WorkOrderAppService workOrderService) 
     [ProducesResponseType(typeof(void), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Track(string accessKey, CancellationToken cancellationToken)
     {
-        var customerId = Guid.Parse(User.Claims.First(c => c.Type == "customerId").Value);
+        var customerId = currentUserService.GetData().CustomerId;
 
         var response = await workOrderService.TrackByAccessKey(customerId, accessKey, cancellationToken);
         return response is not null ? Ok(response) : NotFound();

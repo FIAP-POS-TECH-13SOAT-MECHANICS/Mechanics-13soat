@@ -3,6 +3,7 @@ using Mechanics.Api.Middlewares;
 using Mechanics.Application.Options;
 using Mechanics.Infra.CrossCutting.IoC.Extensions;
 using Mechanics.Infra.Observability;
+using Mechanics.Infra.Security.Extensions;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
@@ -35,7 +36,7 @@ public class Program
         builder.Services.AddSwaggerDocumentation();
 
         builder.Services.AddDbContext(builder.Configuration)
-            .AddCustomAuthentication(builder.Configuration)
+            .AddAuthenticationWithoutValidation()
             .AddAppServices(builder.Configuration)
             .AddRequestValidators()
             .AddEmailSender(builder.Configuration);
@@ -65,7 +66,7 @@ public class Program
             await app.ApplyMigrations();
 
         if (!app.Environment.IsProduction())
-            app.UseSwaggerDocumentation();
+            app.UseSwaggerDocumentation(appInfo.RoutePrefix);
 
         app.UseHealthChecks("/health");
 

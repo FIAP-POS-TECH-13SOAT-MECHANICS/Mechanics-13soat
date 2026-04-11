@@ -12,7 +12,7 @@
    do endpoint de login.
 
 O comando abaixo faz deploy no ambiente DEV com base no nome do serviço especificado
-em [appsettings.json](..//src/appsettings.json).
+em [appsettings.json](../src/Mechanics.Api/appsettings.json).
 Execute na raiz do projeto.
 
 ```powershell

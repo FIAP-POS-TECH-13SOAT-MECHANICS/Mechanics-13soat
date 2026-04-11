@@ -14,7 +14,7 @@ if (-not $Role) {
         New-Object System.Management.Automation.Host.ChoiceDescription "Customer&Admin", "Customer (admin)"
     )
     $selectedIndex = $host.UI.PromptForChoice("Role selection", "Select the role for the token:", $options, 0)
-    $Role = @('Administrator', 'Attendant', 'Mechanic', 'CustomerUser', 'CustomerAdmin')[$selectedIndex]
+    $Role = @('ADMINISTRATOR', 'ATTENDANT', 'MECHANIC', 'CUSTOMER_USER', 'CUSTOMER_ADMIN')[$selectedIndex]
 }
 
 if (-not $UserId)

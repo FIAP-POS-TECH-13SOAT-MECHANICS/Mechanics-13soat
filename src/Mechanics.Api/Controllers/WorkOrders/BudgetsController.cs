@@ -1,6 +1,7 @@
 using Mechanics.Application.WorkOrders.Requests;
 using Mechanics.Application.WorkOrders.Services;
-using Mechanics.Domain.Auth;
+using Mechanics.Infra.Security;
+using Mechanics.Infra.Security.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,9 +12,9 @@ namespace Mechanics.Api.Controllers.WorkOrders;
 /// </summary>
 [ApiController]
 [ApiExplorerSettings(GroupName = "v1")]
-[Route("api/work-orders")]
+[Route("work-orders")]
 [Authorize(Policy = PolicyNames.CustomersOnly)]
-public class BudgetsController(BudgetAppService budgetService) : ControllerBase
+public class BudgetsController(BudgetAppService budgetService, ICurrentUserService currentUserService) : ControllerBase
 {
     /// <summary>
     ///     Aprova um orçamento associado à ordem de serviço.
@@ -25,7 +26,8 @@ public class BudgetsController(BudgetAppService budgetService) : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ApproveBudget(BudgetReviewRequest request, CancellationToken cancellationToken)
     {
-        await budgetService.ApproveBudget(GetCustomerId(), request.AccessKey, request.Description, cancellationToken);
+        var customerId = currentUserService.GetData().CustomerId;
+        await budgetService.ApproveBudget(customerId, request.AccessKey, request.Description, cancellationToken);
         return NoContent();
     }
 
@@ -37,9 +39,8 @@ public class BudgetsController(BudgetAppService budgetService) : ControllerBase
     [ProducesResponseType(typeof(void), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> RejectBudget(BudgetReviewRequest request, CancellationToken cancellationToken)
     {
-        await budgetService.RejectBudget(GetCustomerId(), request.AccessKey, request.Description, cancellationToken);
+        var customerId = currentUserService.GetData().CustomerId;
+        await budgetService.RejectBudget(customerId, request.AccessKey, request.Description, cancellationToken);
         return NoContent();
     }
-
-    private Guid GetCustomerId() => Guid.Parse(User.Claims.First(c => c.Type == "customerId").Value);
 }

@@ -13,7 +13,8 @@ public static class TestProperties
     [AssemblyInitialize]
     public static async Task Setup(TestContext context)
     {
-        Environment.SetEnvironmentVariable("JwtOptions__AccessTokenLifetime", "60");
+        // desativa a telemetria
+        Environment.SetEnvironmentVariable("Datadog__OtlpEndpoint", "http://localhost");
 
         await Task.WhenAll(
             SetupDatabase(context),

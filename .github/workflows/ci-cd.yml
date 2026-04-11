@@ -55,5 +55,6 @@ jobs:
     uses: FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-infra/.github/workflows/deploy-eks.yml@main
     with:
       environment: ${{ needs.resolve-environment.outputs.environment }}
-      project: 'fiap-mechanics'
+      service-name: ${{ vars.SERVICE_NAME }}
+
     secrets: inherit

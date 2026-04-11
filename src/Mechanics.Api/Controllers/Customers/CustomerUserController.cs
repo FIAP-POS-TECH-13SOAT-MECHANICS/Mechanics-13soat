@@ -4,6 +4,7 @@ using Mechanics.Application.Auth.Services;
 using Mechanics.Application.Customers.Requests;
 using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Domain.Auth;
+using Mechanics.Infra.Security;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,9 +14,9 @@ namespace Mechanics.Api.Controllers.Customers;
 ///     Controller para gerenciar usuários de um cliente.
 /// </summary>
 [ApiController]
-[Route("api/customers/users")]
+[Route("customers/users")]
 [Authorize(Roles = RoleNames.CustomerAdmin)]
-public class CustomerUserController(UserAppService service) : ControllerBase
+public class CustomerUserController(UserAppService service, ICurrentUserService currentUserService) : ControllerBase
 {
     /// <summary>
     ///     Cria um novo usuário para o cliente autenticado.
@@ -31,7 +32,7 @@ public class CustomerUserController(UserAppService service) : ControllerBase
     public async Task<IActionResult> Create(CreateIndividualCustomerRequest request,
         CancellationToken cancellationToken = default)
     {
-        var customerId = GetCustomerId();
+        var customerId = currentUserService.GetData().CustomerId;
 
         var createUserRequest = new CreateUserForCustomerRequest(customerId, request);
         var response = await service.Create(createUserRequest, cancellationToken);
@@ -49,7 +50,7 @@ public class CustomerUserController(UserAppService service) : ControllerBase
     public async Task<IActionResult> GetUsers([FromQuery] GetUsersRequest request,
         CancellationToken cancellationToken = default)
     {
-        var customerId = GetCustomerId();
+        var customerId = currentUserService.GetData().CustomerId;
         var response = await service.GetListByCustomerId(customerId, request, cancellationToken);
         return Ok(response);
     }
@@ -65,7 +66,7 @@ public class CustomerUserController(UserAppService service) : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetUser(Guid id, CancellationToken cancellationToken = default)
     {
-        var customerId = GetCustomerId();
+        var customerId = currentUserService.GetData().CustomerId;
         var response = await service.GetByIdAndCustomerId(customerId, id, cancellationToken);
         if (response is null)
             return NotFound();
@@ -87,10 +88,8 @@ public class CustomerUserController(UserAppService service) : ControllerBase
     public async Task<IActionResult> UpdateUser(Guid id, UpdateUserRequest request,
         CancellationToken cancellationToken = default)
     {
-        var customerId = GetCustomerId();
+        var customerId = currentUserService.GetData().CustomerId;
         var response = await service.UpdateByIdAndCustomerId(customerId, id, request, cancellationToken);
         return response is null ? NotFound() : NoContent();
     }
-
-    private Guid GetCustomerId() => Guid.Parse(User.Claims.First(c => c.Type == "customerId").Value);
 }

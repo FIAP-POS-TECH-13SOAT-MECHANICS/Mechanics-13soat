@@ -3,6 +3,7 @@ using Mechanics.Application.Vehicles.Requests;
 using Mechanics.Application.Vehicles.Responses;
 using Mechanics.Application.Vehicles.Services;
 using Mechanics.Domain.Auth;
+using Mechanics.Infra.Security.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,7 +14,7 @@ namespace Mechanics.Api.Controllers.Vehicles;
 /// </summary>
 [ApiController]
 [ApiExplorerSettings(GroupName = "v1")]
-[Route("api/[controller]")]
+[Route("[controller]")]
 [Authorize(Policy = PolicyNames.EmployeesOnly)]
 public class VehiclesController(VehicleAppService service) : ControllerBase
 {

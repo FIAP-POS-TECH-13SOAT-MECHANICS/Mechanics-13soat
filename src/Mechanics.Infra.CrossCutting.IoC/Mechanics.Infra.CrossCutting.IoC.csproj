@@ -8,11 +8,12 @@
 
   <ItemGroup>
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0"/>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="8.0.2"/>
-    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="8.0.6"/>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="8.0.25" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Mechanics.Infra.Observability\Mechanics.Infra.Observability.csproj" />
     <ProjectReference Include="..\Mechanics.Infra.Integrations.EmailSender\Mechanics.Infra.Integrations.EmailSender.csproj"/>
     <ProjectReference Include="..\Mechanics.Application\Mechanics.Application.csproj" />
     <ProjectReference Include="..\Mechanics.Domain\Mechanics.Domain.csproj" />

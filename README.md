@@ -10,7 +10,7 @@ os [objetivos do projeto](./docs/objectives.md).
 - [x] **Fase 1**: Implementação inicial em arquitetura monolítica
 - [x] **Fase 2**: Evolução da arquitetura e CI/CD para infraestrutura e deploy
 - [x] **Fase 3**: Implementação de login via AWS Lambda e monitoramento
-- [ ] Fase 4
+- [x] **Fase 4**: Migração para microsserviços e SAGA pattern
 - [ ] Fase 5
 
 ## Definição do ambiente
@@ -35,15 +35,6 @@ Baixe a chave pública do AWS Secrets Manager (ajuste o nome de acordo o ambient
 aws secretsmanager get-secret-value --secret-id "fiap-mechanics-dev-jwt/public-key" --query SecretString --output text > "src/Mechanics.Api/keys/jwt-public.pem"
 ```
 
-Defina a variável de ambiente com a ApiKey do DataDog:
-
-```powershell
-# somente sessão atual do terminal
-$env:DD_API_KEY = 'xxx'
-# persistir no perfil do PowerShell
-'$env:DD_API_KEY = "xxx"' | Out-File -FilePath $profile -Append
-```
-
 Inicie o projeto via Docker Compose:
 
 ```bash
@@ -52,7 +43,7 @@ docker compose up -d --build
 
 Após o processo concluir, o projeto estará disponível nas seguintes URLs:
 
-- Swagger do projeto: <http://localhost:5000/swagger>
+- Swagger do projeto: <http://localhost:5000/api/swagger>
 - Cliente de e-mail: <http://localhost:8025>
 
 > **Opcional**

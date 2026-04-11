@@ -1,7 +1,9 @@
 using Mechanics.Api.Extensions;
-using Mechanics.Api.Infrastructure.Observability;
 using Mechanics.Api.Middlewares;
+using Mechanics.Application.Options;
 using Mechanics.Infra.CrossCutting.IoC.Extensions;
+using Mechanics.Infra.Observability;
+using Mechanics.Infra.Security.Extensions;
 using Microsoft.AspNetCore.Mvc.ApplicationModels;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
@@ -34,7 +36,7 @@ public class Program
         builder.Services.AddSwaggerDocumentation();
 
         builder.Services.AddDbContext(builder.Configuration)
-            .AddCustomAuthentication(builder.Configuration)
+            .AddAuthenticationWithoutValidation()
             .AddAppServices(builder.Configuration)
             .AddRequestValidators()
             .AddEmailSender(builder.Configuration);
@@ -45,6 +47,8 @@ public class Program
         builder.Services.AddGlobalCorsPolicy();
 
         var app = builder.Build();
+        var appInfo = builder.Configuration.GetSection(nameof(AppInfo)).Get<AppInfo>()!;
+        app.UsePathBase(appInfo.RoutePrefix);
 
         app.UseMiddleware<CorrelationIdMiddleware>();
         app.UseMiddleware<RequestLoggingMiddleware>();
@@ -58,12 +62,11 @@ public class Program
         app.MapControllers()
             .RequireAuthorization();
 
-
         if (app.Environment.IsDevelopment())
             await app.ApplyMigrations();
 
         if (!app.Environment.IsProduction())
-            app.UseSwaggerDocumentation();
+            app.UseSwaggerDocumentation(appInfo.RoutePrefix);
 
         app.UseHealthChecks("/health");
 

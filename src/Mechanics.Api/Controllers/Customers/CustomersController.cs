@@ -3,6 +3,7 @@ using Mechanics.Application.Customers.Responses;
 using Mechanics.Application.Customers.Services;
 using Mechanics.Application.Utils.CommonResponses;
 using Mechanics.Domain.Auth;
+using Mechanics.Infra.Security.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,7 +14,7 @@ namespace Mechanics.Api.Controllers.Customers;
 /// </summary>
 [ApiController]
 [ApiExplorerSettings(GroupName = "v1")]
-[Route("api/[controller]")]
+[Route("[controller]")]
 [Authorize(Policy = PolicyNames.EmployeesOnly)]
 public class CustomersController(CustomerAppService service) : ControllerBase
 {

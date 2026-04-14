@@ -1,12 +1,10 @@
 using Mechanics.Application.Notification.Services;
-using Mechanics.Application.Options;
 using Mechanics.Domain.Auth;
 using Mechanics.Domain.WorkOrders;
 using Mechanics.Infra.Integrations.EmailSender;
 using Mechanics.Tests.Unit.Mocks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
 using Moq;
 
 namespace Mechanics.Tests.Unit.Tests.Notifications;
@@ -323,10 +321,6 @@ public class EmailServiceTests
         Assert.IsTrue(emailMessage.Body.Contains("senha", StringComparison.OrdinalIgnoreCase));
     }
 
-    private static EmailService CreateInstance(IEmailSenderService senderService)
-    {
-        var options = new OptionsWrapper<AppInfo>(new AppInfo
-            { Name = "fiap-mechanics", Version = "1.0.0", BaseUrl = "http://localhost:5000", RoutePrefix = "/api" });
-        return new EmailService(new NullLoggerFactory().CreateLogger<EmailService>(), senderService);
-    }
+    private static EmailService CreateInstance(IEmailSenderService senderService) =>
+        new(new NullLoggerFactory().CreateLogger<EmailService>(), senderService);
 }

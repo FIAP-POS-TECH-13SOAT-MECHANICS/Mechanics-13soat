@@ -22,10 +22,11 @@ os [objetivos do projeto](./docs/objectives.md).
 
 ## Microsserviços do projeto
 
-Acesse [Microsserviços](./docs/microservices.md) para instruções de como criar um novo serviço.
+Acesse [Microsserviços](./docs/microservices.md) para instruções de como criar um.
 
 <!-- Mantenha a lista em ordem alfabética -->
 
+- [auth (serverless)](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-auth): Lambda Function para autenticação
 - [billing](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-billing): controle de orçamentos e pagamentos
 - [execution](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-execution): execução das ordens de serviço
 - [identity](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-identity): cadastro e permissões de usuários

@@ -33,10 +33,14 @@ public class Program
             options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase)));
         builder.Services.AddEndpointsApiExplorer();
 
-        builder.Services.AddSwaggerDocumentation();
+        builder.Services.AddSwaggerDocumentation(builder.Configuration);
 
         builder.Services.AddDbContext(builder.Configuration)
+#if DEBUG
             .AddAuthenticationWithoutValidation()
+#else
+            .AddValidatedAuthentication()
+#endif
             .AddAppServices(builder.Configuration)
             .AddRequestValidators()
             .AddEmailSender(builder.Configuration);
@@ -48,7 +52,7 @@ public class Program
 
         var app = builder.Build();
         var appInfo = builder.Configuration.GetSection(nameof(AppInfo)).Get<AppInfo>()!;
-        app.UsePathBase(appInfo.RoutePrefix);
+        app.UsePathBase($"/{appInfo.RoutePrefix}");
 
         app.UseMiddleware<CorrelationIdMiddleware>();
         app.UseMiddleware<RequestLoggingMiddleware>();
@@ -66,7 +70,7 @@ public class Program
             await app.ApplyMigrations();
 
         if (!app.Environment.IsProduction())
-            app.UseSwaggerDocumentation(appInfo.RoutePrefix);
+            app.UseSwaggerDocumentation($"/{appInfo.RoutePrefix}");
 
         app.UseHealthChecks("/health");
 

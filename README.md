@@ -20,46 +20,17 @@ os [objetivos do projeto](./docs/objectives.md).
 - Serviço de E-mail: MailPit
 - Chave pública para JWT: AWS Secrets Manager
 
-## Execução do projeto
+## Microsserviços do projeto
 
-Em cada nova fase do projeto, é recomendável apagar os volumes do Docker para evitar conflitos com a estrutura do banco
-de dados criado em fases anteriores. Para fazer isso, execute o seguinte comando na raiz do projeto:
+Acesse [Microsserviços](./docs/microservices.md) para instruções de como criar um.
 
-```bash
-docker compose down -v
-```
+<!-- Mantenha a lista em ordem alfabética -->
 
-Baixe a chave pública do AWS Secrets Manager (ajuste o nome de acordo o ambiente):
-
-```powershell
-aws secretsmanager get-secret-value --secret-id "fiap-mechanics-dev-jwt/public-key" --query SecretString --output text > "src/Mechanics.Api/keys/jwt-public.pem"
-```
-
-Inicie o projeto via Docker Compose:
-
-```bash
-docker compose up -d --build
-```
-
-Após o processo concluir, o projeto estará disponível nas seguintes URLs:
-
-- Swagger do projeto: <http://localhost:5000/api/swagger>
-- Cliente de e-mail: <http://localhost:8025>
-
-> **Opcional**
-> Utilize o script [dev-seeds](./dev-seeds/README.md) para popular o banco com dados de exemplo.
-
-## Opções do projeto
-
-As configurações são definidas em arquivos `appsettings`.
-Para execução local, crie [um arquivo `appsettings.Development`](./docs/configuration.md).
-Algumas dessas configurações também poder ser definidas no [Helm chart](./k8s/README.md).
-
-| Branch    | Ambiente    | Swagger | EF Migrations          |
-|-----------|-------------|---------|------------------------|
-| `main`    | Production  | Não     | Somente via Helm chart |
-| `release` | Staging     | Sim     | Somente via Helm chart |
-| `develop` | Development | Sim     | Executadas ao iniciar  |
+- [auth (serverless)](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-auth): Lambda Function para autenticação
+- [billing](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-billing): controle de orçamentos e pagamentos
+- [execution](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-execution): execução das ordens de serviço
+- [identity](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-identity): cadastro e permissões de usuários
+- [work-orders](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-work-orders): gestão de ordens de serviço
 
 ## Usuários padrão
 

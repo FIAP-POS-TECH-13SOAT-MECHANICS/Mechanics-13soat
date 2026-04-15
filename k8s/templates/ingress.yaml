@@ -9,7 +9,7 @@ spec:
   rules:
     - http:
         paths:
-          - path: {{ .Values.app.routePrefix }}
+          - path: "/{{ .Values.app.routePrefix }}"
             pathType: Prefix
             backend:
               service:

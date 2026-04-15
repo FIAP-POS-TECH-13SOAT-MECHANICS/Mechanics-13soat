@@ -1,4 +1,5 @@
-﻿using Mechanics.Application.Utils;
+﻿using Mechanics.Application.Options;
+using Mechanics.Application.Utils;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
 using System.Reflection;
@@ -7,15 +8,17 @@ namespace Mechanics.Api.Extensions;
 
 public static class SwaggerSetupExtensions
 {
-    public static void AddSwaggerDocumentation(this IServiceCollection services)
+    public static void AddSwaggerDocumentation(this IServiceCollection services, IConfiguration configuration)
     {
+        var appInfo = configuration.GetSection("AppInfo").Get<AppInfo>()!;
+
         services.AddSwaggerGen(c =>
         {
             c.SwaggerDoc("v1", new OpenApiInfo
             {
-                Title = "Mechanics API",
+                Title = appInfo.Name,
                 Version = "v1",
-                Description = "API para gestão de ordens de serviço.",
+                Description = appInfo.Description,
             });
 
             c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme

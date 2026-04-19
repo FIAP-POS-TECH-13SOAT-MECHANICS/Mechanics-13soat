@@ -71,6 +71,19 @@
           "Microsoft.IdentityModel.JsonWebTokens": "8.14.0"
         }
       },
+      "AWSSDK.Core": {
+        "type": "Transitive",
+        "resolved": "4.0.3.29",
+        "contentHash": "y07n9BHBVRDe3fDAjitnOBPwDwJ5NZ4oOh6ZvOizYWEsJnYcs34FQtTJ70Gt17qTCH86ma5kJdyMZ2lixm/dqg=="
+      },
+      "AWSSDK.SQS": {
+        "type": "Transitive",
+        "resolved": "4.0.2.25",
+        "contentHash": "oYYPNmsFZg+rTKAyX/I1gYn3NTHXsWH1+Tp1H8YN0HalMPwZIDbkm8FTGESJgHjmfq3rdEkXBln96J97JFdB7g==",
+        "dependencies": {
+          "AWSSDK.Core": "[4.0.3.29, 5.0.0)"
+        }
+      },
       "Azure.Core": {
         "type": "Transitive",
         "resolved": "1.35.0",
@@ -770,6 +783,7 @@
           "Mechanics.Domain": "[1.0.0, )",
           "Mechanics.Infra.Data": "[1.0.0, )",
           "Mechanics.Infra.Integrations.EmailSender": "[1.0.0, )",
+          "Mechanics.Infra.Messaging": "[1.0.0, )",
           "Mechanics.Infra.Security": "[1.0.0, )",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "[8.0.25, )",
           "Microsoft.Extensions.Configuration.Abstractions": "[8.0.0, )",
@@ -794,6 +808,12 @@
         "type": "Project",
         "dependencies": {
           "MailKit": "[4.12.1, )"
+        }
+      },
+      "mechanics.infra.messaging": {
+        "type": "Project",
+        "dependencies": {
+          "AWSSDK.SQS": "[4.0.2.25, )"
         }
       },
       "mechanics.infra.security": {

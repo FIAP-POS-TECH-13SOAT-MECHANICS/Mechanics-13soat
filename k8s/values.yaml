@@ -13,6 +13,8 @@ service:
 
 datadog:
   useJsonLogs: true
+  otlpEndpoint: https://otlp.us5.datadoghq.com
+  apiKey: ""
 
 image:
   repository: ""
@@ -27,6 +29,9 @@ email:
 
 secrets:
   clusterSecretStore: fiap-mechanics-aws-secrets
-  databaseSecretNameSufix: database
-  emailSecretNameSufix: email
-  keysSecretNameSufix: jwt/public-key
+  databaseSecretName: database
+  emailSecretName: email
+  keysSecretName: jwt/public-key
+
+queueNames:
+  CustomerCreated: customer-created

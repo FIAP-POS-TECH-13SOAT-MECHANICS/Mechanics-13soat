@@ -3,6 +3,7 @@ using Mechanics.Infra.Security.Models;
 using Mechanics.Infra.Security.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
@@ -14,6 +15,17 @@ namespace Mechanics.Infra.Security.Extensions;
 public static class AuthExtensions
 {
     private const string JwtTokenIssuer = "fiap-mechanics";
+
+    public static IServiceCollection AddJwtAuthentication(this IServiceCollection services, bool validateInDebugMode)
+    {
+#if DEBUG
+        return validateInDebugMode
+            ? services.AddValidatedAuthentication()
+            : services.AddAuthenticationWithoutValidation();
+#else
+        return   services.AddValidatedAuthentication();
+#endif
+    }
 
     /// <summary>
     ///     Configura autenticação sem validação de token.

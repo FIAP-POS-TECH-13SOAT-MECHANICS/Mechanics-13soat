@@ -71,6 +71,7 @@ Esse repositório contém instruções para execução local das análises com *
 - [Diretrizes de design do projeto](./docs/design-guidelines.md)
 - [Fluxo de Ordem de Serviço](./docs/work-order-flow.md)
 - [Kubernetes e Helm chart](./k8s/README.md)
+- [Messageria](./docs/messaging.md)
 - [Migrações do banco de dados](./docs/migrations.md)
 - [Objetivos](./docs/objectives.md)
 - [Relatórios](./docs/reports/README.md)

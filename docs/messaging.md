@@ -1,6 +1,6 @@
 # Messageria
 
-A comunicação assíncrona entre microsserviços é feita via **Amazon SQS**, utilizando o modelo pub/sub desacoplado: um serviço publica um evento em uma fila e outro serviço consome essa fila de forma independente, sem conhecimento direto entre os lados.
+A comunicação assíncrona entre microsserviços é feita via **Amazon SQS**, utilizando um modelo de filas desacoplado (work-queue/point-to-point): um serviço publica um evento em uma fila e outro serviço consome essa fila de forma independente, sem conhecimento direto entre os lados.
 
 A integração é fornecida pelo projeto `Mechanics.Infra.Messaging`, que encapsula o SDK da AWS e expõe interfaces simples para publicação e consumo de eventos.
 

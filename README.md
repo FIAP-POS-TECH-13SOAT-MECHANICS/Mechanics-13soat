@@ -65,6 +65,7 @@ Esse repositório contém instruções para execução local das análises com *
 <!-- Mantenha a lista em ordem alfabética -->
 
 - [Configuração do ambiente](./docs/configuration.md)
+- [Criação de novos microsserviços](./docs/microservices.md)
 - [Dados de exemplo](./dev-seeds/README.md)
 - [Decisões técnicas](./docs/technical-decisions.md)
 - [Diagramas](./docs/diagrams.md)

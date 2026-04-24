@@ -61,7 +61,16 @@ O exemplo abaixo contém algumas configurações comuns:
     "AppInfo": {
         // endereço base do projeto (para links em e-mails)
         "BaseUrl": "http://localhost:5000"
-    }
+    },
+    // credenciais da AWS
+    "AwsCredentials": {
+        // desativar o serviço local (emulador)
+        "UseLocalstack": false,
+        // use as credenciais da AWS Academy
+        "AccessKey": "ACCESS-KEY",
+        "SecretAccessKey": "SECRET",
+        "SessionToken": "TOKEN"
+  }
 }
 ```
 

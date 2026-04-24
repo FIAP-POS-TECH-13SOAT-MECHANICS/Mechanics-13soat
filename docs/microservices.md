@@ -96,7 +96,7 @@ Revise todos os pontos abaixo para considerar o trabalho como concluído:
    1. Repositório ECR criado via camada `cr` do [mechanics-infra](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-infra)
    2. Filas SQS/SNS criadas via [mechanics-infra](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-infra), se aplicável
    3. Banco de dados criado via [mechanics-database](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-database)
-   4. Inclua o novo serviço na lista do [README](../README.md#microsservicos-do-projeto) deste repositório
+   4. Inclua o novo serviço na lista do [README](../README.md#microsserviços-do-projeto) deste repositório
 2. Projeto executa localmente
    1. Suba os containers de dependências com `docker compose up mssql mailpit localstack -d`
    2. Execute a aplicação com `dotnet run --project .\src\Mechanics.Api`

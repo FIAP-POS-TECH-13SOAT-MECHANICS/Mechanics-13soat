@@ -70,7 +70,7 @@ O exemplo abaixo contém algumas configurações comuns:
         "AccessKey": "ACCESS-KEY",
         "SecretAccessKey": "SECRET",
         "SessionToken": "TOKEN"
-  }
+    }
 }
 ```
 

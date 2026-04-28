@@ -40,11 +40,15 @@ O exemplo abaixo contém algumas configurações comuns:
 ```json
 {
     // logs mais detalhados
-    "Logging": {
-        "LogLevel": {
+    "Serilog": {
+        "MinimumLevel": {
             "Default": "Debug",
-            "System": "Information",
-            "Microsoft": "Information"
+            "Override": {
+                "System": "Information",
+                "Microsoft": "Information",
+                "Microsoft.AspNetCore": "Information",
+                "Microsoft.EntityFrameworkCore": "Information"
+            }
         }
     },
     "ConnectionStrings": {

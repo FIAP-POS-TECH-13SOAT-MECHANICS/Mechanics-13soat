@@ -74,6 +74,11 @@ O exemplo abaixo contém algumas configurações comuns:
         "AccessKey": "ACCESS-KEY",
         "SecretAccessKey": "SECRET",
         "SessionToken": "TOKEN"
+    },
+    "CrossServiceClients": {
+        // URL base para serviços externos
+        "IdentityBaseUrl": "http://fiap-mechanics-dev-318.elb.us-east-1.amazonaws.com",
+        "ExecutionBaseUrl": "http://fiap-mechanics-dev-318.elb.us-east-1.amazonaws.com"
     }
 }
 ```
@@ -87,7 +92,7 @@ Certifique-se que o Docker está em execução e rode o seguinte comando na raiz
 Pode levar algum tempo até o SQL Server iniciar totalmente.
 
 ```cmd
-docker compose up mssql mailpit -d
+docker compose up mssql mailpit localstack -d
 ```
 
 ## Execução do projeto
@@ -98,4 +103,4 @@ Para rodar o projeto via terminal, use o comando abaixo:
 dotnet run --project .\src\Mechanics.Api\Mechanics.Api.csproj
 ```
 
-Acesse o Swagger do projeto em [http://localhost:5000/swagger/index.html](http://localhost:5000/swagger/index.html).
+Acesse o Swagger do projeto em [http://localhost:5000/NOME_SERVICO/swagger/index.html](http://localhost:5000/swagger/index.html).

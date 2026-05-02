@@ -13,7 +13,11 @@ Acesse também o repositório [mechanics-database](https://github.com/FIAP-POS-T
 
 O repositório [mechanics-example](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-example) contém uma versão monolítica do projeto.
 Crie o repositório a partir desse template seguindo o padrão `mechanics-SERVICE` e clone ele.
-Logo após clonar, crie uma nova feature-branch.
+Logo após clonar, crie uma nova feature-branch:
+
+```bash
+git checkout -b feature/init
+```
 
 >Não faça nenhuma alteração antes de criar uma nova branch!
 
@@ -45,6 +49,13 @@ mechanics-service/
 
 O template também não tem nenhuma migração do banco de dados.
 Remova as entidades e mapeamentos que não estão relacionadas ao serviço e siga as instruções de [migrações](./migrations.md) (caso utilize um banco de dados relacional).
+O comando abaixo sobe um container Docker para o Microsoft SQL Server, baixa as dependências do projeto e cria uma migração chamada `Init`.
+
+```powershell
+docker compose up mssql -d
+dotnet restore
+dotnet ef migrations add Init --project src\Mechanics.Infra.Data --startup-project src\Mechanics.Api
+```
 
 Acesse as configurações do repositório e crie uma branch protection rule bloqueando commits na branch `main` sem abertura de PR.
 
@@ -93,9 +104,9 @@ dotnet test
 Revise todos os pontos abaixo para considerar o trabalho como concluído:
 
 1. Infraestrutura provisionada
-   1. Repositório ECR criado via camada `cr` do [mechanics-infra](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-infra)
-   2. Filas SQS/SNS criadas via [mechanics-infra](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-infra), se aplicável
-   3. Banco de dados criado via [mechanics-database](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-database)
+   1. Crie o Repositório ECR via camada `cr` do [mechanics-infra](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-infra)
+   2. Crie as filas SQS via [mechanics-infra](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-infra), se aplicável
+   3. Crie o Banco de dados via [mechanics-database](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-database)
    4. Inclua o novo serviço na lista do [README](../README.md#microsserviços-do-projeto) deste repositório
 2. Projeto executa localmente
    1. Suba os containers de dependências com `docker compose up mssql mailpit localstack -d`

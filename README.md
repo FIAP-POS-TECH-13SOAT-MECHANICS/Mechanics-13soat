@@ -1,7 +1,5 @@
 # Fiap.Mechanics
 
-[![.NET](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/Mechanics-13soat/actions/workflows/ci-cd.yml/badge.svg?branch=main)](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/Mechanics-13soat/actions/workflows/ci-cd.yml)
-
 Repositório do projeto destinado aos Tech Challenges da Oficina Mecânica da FIAP.
 
 A implementação está dividida em 5 fases. Para os detalhes de cada fase, veja
@@ -13,12 +11,7 @@ os [objetivos do projeto](./docs/objectives.md).
 - [x] **Fase 4**: Migração para microsserviços e SAGA pattern
 - [ ] Fase 5
 
-## Definição do ambiente
-
-- SDK: .NET 8.0
-- Banco de dados: MSSQL 2025
-- Serviço de E-mail: MailPit
-- Chave pública para JWT: AWS Secrets Manager
+O código da aplicação evoluiu até a Fase 3, contemplando a arquitetura monolítica, Kubernetes e pipelines de CI/CD. A partir da Fase 4, o repositório passou a ser utilizado como documentação central do projeto, com os microsserviços mantidos em repositórios independentes.
 
 ## Microsserviços do projeto
 
@@ -70,6 +63,7 @@ Esse repositório contém instruções para execução local das análises com *
 - [Decisões técnicas](./docs/technical-decisions.md)
 - [Diagramas](./docs/diagrams.md)
 - [Diretrizes de design do projeto](./docs/design-guidelines.md)
+- [Filas](./docs/queues.md)
 - [Fluxo de Ordem de Serviço](./docs/work-order-flow.md)
 - [Integração entre microsserviços](./docs/integration.md)
 - [Kubernetes e Helm chart](./k8s/README.md)

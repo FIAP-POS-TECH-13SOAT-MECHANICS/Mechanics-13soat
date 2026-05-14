@@ -69,3 +69,25 @@ Os endpoints abaixo são requisitos para a segunda fase:
     - O mecânico responsável também recebe uma mensagem quando o orçamento é aprovado.
 
 Se estiver utilizando Docker Compose, o cliente de e-mail roda na porta [8025](http://localhost:8025).
+
+### Quarta fase
+
+A aplicação deve ser refatorada para uma arquitetura de microsserviços com gestão transacional
+distribuída e automação completa de build, testes e deploy.
+
+Cada microsserviço deve ter repositório, infraestrutura e banco de dados próprios. É obrigatório
+o uso de pelo menos um banco relacional e pelo menos um banco não-relacional entre os serviços.
+**Nenhum serviço pode acessar diretamente o banco de outro serviço.**
+
+A comunicação entre microsserviços deve ser definida com APIs RESTful síncronas quando necessário
+e mensageria assíncrona para eventos e integrações desacopladas.
+
+Deve ser implementado o Saga Pattern para coordenar o fluxo transacional das ordens de serviço,
+com rollback e compensação em caso de falha em qualquer etapa. A escolha entre orquestração e
+coreografia deve ser documentada e justificada.
+
+Cada microsserviço deve ter pipeline independente de CI/CD, cobertura mínima de 80% de testes,
+pelo menos um fluxo completo testado com BDD, e validação de qualidade via SonarQube ou similar.
+Os repositórios devem ter a branch `main` protegida com PR obrigatório e checagens automáticas.
+
+A observabilidade deve reutilizar as ferramentas implementadas na Fase 3.

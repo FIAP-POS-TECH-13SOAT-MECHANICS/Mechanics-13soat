@@ -12,7 +12,7 @@ Consulte a [documentação de mensageria](./messaging.md) para mais informaçõe
 - **Producer:** `work-orders`
 - **Consumer:** `identity`
 
-Publicada ao cadastrar um cliente.
+Publicado ao cadastrar um cliente.
 
 ```csharp
 public record CustomerCreatedEvent
@@ -58,7 +58,7 @@ public class UserChangedEvent(User user)
 - **Producer:** `work-orders`
 - **Consumer:** `execution`
 
-Publicada ao criar uma nova OS.
+Publicado ao criar uma nova OS.
 
 ```csharp
 public record WorkOrderCreatedEvent

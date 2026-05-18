@@ -15,7 +15,8 @@ O código da aplicação evoluiu até a Fase 3, contemplando a arquitetura monol
 
 ## Microsserviços do projeto
 
-Acesse [Microsserviços](./docs/microservices.md) para instruções de como criar um.
+Consulte [Microsserviços](./docs/microservices.md) para detalhes.
+Acesse [Criação de novos microsserviços](./docs/create-microservices.md) para instruções de como criar um novo.
 
 <!-- Mantenha a lista em ordem alfabética -->
 
@@ -69,6 +70,7 @@ Esse repositório contém instruções para execução local das análises com *
 - [Integração entre microsserviços](./docs/integration.md)
 - [Kubernetes e Helm chart](./k8s/README.md)
 - [Messageria](./docs/messaging.md)
+- [Microsserviços](./docs/microservices.md)
 - [Migrações do banco de dados](./docs/migrations.md)
 - [Objetivos](./docs/objectives.md)
 - [Relatórios](./docs/reports/README.md)

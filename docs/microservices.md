@@ -19,12 +19,12 @@ Ao receber uma requisição, valida o CPF do solicitante, consulta o banco de da
 
 Centraliza tudo que envolve dinheiro no ciclo de uma ordem de serviço.
 
-Gera orçamentos a partir dos dados recebidos do `work-orders`, envia o orçamento para aprovação do cliente, registra a resposta (aprovação, rejeição ou expiração) e processa o pagamento via Mercado Pago.
+Gera orçamentos a partir dos dados recebidos do `execution`, envia o orçamento para aprovação do cliente, registra a resposta (aprovação, rejeição ou expiração) e processa o pagamento via Mercado Pago.
 Ao confirmar o pagamento, publica um evento que desencadeia as etapas seguintes [no fluxo do SAGA](./saga.md).
 
 ## `execution`
 
-Gerencia a fila de execução física das ordens aprovadas.
+Gerencia a fila de execução física das ordens geradas.
 
 Recebe o sinal de início de trabalho, acompanha o progresso pelas etapas de diagnóstico e reparo, e comunica a finalização ao `work-orders` ao término. Isola a lógica de produção das demais áreas do sistema, permitindo que a oficina opere de forma independente do fluxo administrativo.
 

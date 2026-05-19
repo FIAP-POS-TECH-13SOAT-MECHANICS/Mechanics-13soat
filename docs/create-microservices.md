@@ -12,14 +12,14 @@ Acesse também o repositório [mechanics-database](https://github.com/FIAP-POS-T
 ## Repositório da aplicação
 
 O repositório [mechanics-example](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-example) contém uma versão monolítica do projeto.
-Crie o repositório a partir desse template seguindo o padrão `mechanics-SERVICE` e clone ele.
+Crie o repositório a partir desse template seguindo o padrão `mechanics-SERVICE` e clone-o.
 Logo após clonar, crie uma nova feature-branch:
 
 ```bash
 git checkout -b feature/init
 ```
 
->Não faça nenhuma alteração antes de criar uma nova branch!
+> Não faça nenhuma alteração antes de criar uma nova branch!
 
 O primeiro passo é remover tudo que não faz parte do domínio do serviço.
 Por exemplo, para o serviço de cadastro de usuários, todos os AppServices, controllers, entidades e testes relacionados a outras partes do projeto devem ser excluídas, como o fluxo de ordens de serviço ou de cadastro de veículos.
@@ -78,7 +78,7 @@ docker compose up mssql mailpit -d
 dotnet run --project .\src\Mechanics.Api
 ```
 
->Certifique-se de não ter outros containers em execução para evitar conflito de portas.
+> Certifique-se de não ter outros containers em execução para evitar conflito de portas.
 
 O Swagger estará disponível na URL abaixo. Ajuste de acordo com o prefixo do serviço (informado na appsettings).
 

@@ -1,5 +1,16 @@
 # Fluxos SAGA
 
+A implementação segue o padrão **coreografado**: cada microsserviço reage a eventos publicados por outros serviços, sem a necessidade de um orquestrador central.
+
+A escolha se justifica pela simplicidade operacional. A integração é feita diretamente via AWS SDK, sem dependências de bibliotecas de mensageria de terceiros.
+O SDK já oferece retry automático para falhas de comunicação com a API da AWS, o que reduz a necessidade de lógica de resiliência adicional na aplicação.
+
+As filas SQS são provisionadas na camada `messaging` do [repositório de infraestrutura](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-infra).
+Para cada fila principal existe uma fila de mensagens mortas (DLQ) associada.
+Após 3 tentativas sem confirmação de processamento, a mensagem é encaminhada automaticamente para a DLQ, onde fica retida por 14 dias para análise e reprocessamento manual.
+
+Os contratos e a definição de cada fila estão documentados em [Filas](./queues.md).
+
 ## Criação de usuário
 
 ![Diagrama de sequência do fluxo de criação de usuário](./images/saga-user-creation.svg)

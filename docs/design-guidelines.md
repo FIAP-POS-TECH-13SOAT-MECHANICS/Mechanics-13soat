@@ -76,24 +76,24 @@ Mechanics.Application
 ```
 
 - **Request**
-    - É a requisição recebida pela controller.
-    - Pode conter validações.
+  - É a requisição recebida pela controller.
+  - Pode conter validações.
 - **Response**
-    - É a resposta retornada à controller.
+  - É a resposta retornada à controller.
 - **Service**
-    - Executa a operação seguindo as regras de negócio.
-    - Implementa a interface `IAppService` (configura automaticamente a injeção de dependência).
-    - Devem ser agrupados por entidade de domínio.
-    - Sempre passe o `CancellationToken` para serviços externos, como queries ou outras APIs.
+  - Executa a operação seguindo as regras de negócio.
+  - Implementa a interface `IAppService` (configura automaticamente a injeção de dependência).
+  - Devem ser agrupados por entidade de domínio.
+  - Sempre passe o `CancellationToken` para serviços externos, como queries ou outras APIs.
 - **Validator**
-    - Valida as requisições.
-    - Estende a classe `IAbstractValidator<TRequest>`.
-    - As validações de requests são aplicadas automaticamente via filtro de requisições.
+  - Valida as requisições.
+  - Estende a classe `IAbstractValidator<TRequest>`.
+  - As validações de requests são aplicadas automaticamente via filtro de requisições.
 - **MapperProfile**
-    - Configura o mapeamento entre as entidades e os DTOs de request e response.
-    - Estende a classe `AutoMapper.Profile`.
-    - Request e response devem estar em DTOs separados (não utilize `ReverseMap()`).
-    - Mantenha o arquivo em ordem alfabética e separe os DTOs de cada entidade com uma linha em branco.
+  - Configura o mapeamento entre as entidades e os DTOs de request e response.
+  - Estende a classe `AutoMapper.Profile`.
+  - Request e response devem estar em DTOs separados (não utilize `ReverseMap()`).
+  - Mantenha o arquivo em ordem alfabética e separe os DTOs de cada entidade com uma linha em branco.
 
 ## Validações
 

@@ -75,3 +75,4 @@ Esse repositório contém instruções para execução local das análises com *
 - [Objetivos](./docs/objectives.md)
 - [Relatórios](./docs/reports/README.md)
 - [Scripts para deploy](./scripts/README.md)
+- [SonarQube](./docs/sonarqube.md)

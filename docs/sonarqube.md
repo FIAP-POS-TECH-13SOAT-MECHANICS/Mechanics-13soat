@@ -18,7 +18,6 @@ Com isso:
 
 - o `mechanics-infra` mantém o workflow reutilizável de testes (`dotnet-tests.yml`) com suporte a Sonar;
 - o provisionamento e a governança do Sonar ficam centralizados no repositório `mechanics-sonar-plataform`;
-- o `mechanics-database` e o `mechanics-infra` deixam de provisionar camada SonarQube no fluxo padrão.
 
 ## Operação
 

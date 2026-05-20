@@ -24,9 +24,5 @@ Com isso:
 
 As instruções operacionais (tokens, bootstrap de projetos, chaves por repositório e troubleshooting) estão em:
 
-- [mechanics-sonar-plataform/docs/operations.md](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-sonar-plataform/blob/main/docs/operations.md)
+- [mechanics-sonar-plataform/docs/sonarqube.md](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-sonar-plataform/blob/main/docs/sonarqube.md)
 
-Fluxos automatizados de governança:
-
-- [platform-governance.yml](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-sonar-plataform/blob/main/.github/workflows/platform-governance.yml)
-- [sonarqube-projects.json](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-sonar-plataform/blob/main/scripts/sonarqube-projects.json)

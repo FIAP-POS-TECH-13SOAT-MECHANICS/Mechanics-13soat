@@ -1,7 +1,11 @@
 # Microsserviços
 
+![Microsserviços](./images/microsservices.svg)
+
 O sistema é composto por cinco componentes principais, cada um com responsabilidade bem delimitada e repositório independente.
 O conjunto cobre desde a autenticação até a conclusão de uma ordem de serviço, passando por orçamento, pagamento e execução.
+
+![Diagrama](./images/microsservices.svg)
 
 - [auth (serverless)](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-auth): Lambda Function para autenticação
 - [billing](https://github.com/FIAP-POS-TECH-13SOAT-MECHANICS/mechanics-billing): controle de orçamentos e pagamentos
